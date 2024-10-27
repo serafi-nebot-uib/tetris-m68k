@@ -10,72 +10,63 @@ start:
         move.l  #srcmat, -(a7)                  ; source piece layout matrix
         move.b  #0<<8|0, -(a7)                  ; rx, ry
         ; load x and y into d0 before moving to the stack to allow for negative numbers
-        move.b  #-3, d0                         ; x
+        move.b  #0, d0                          ; x
         lsl.w   #8, d0
-        move.b  #-1, d0                         ; y
+        move.b  #0, d0                          ; y
         move.w  d0, -(a7)
 
         jsr     pieceinit
         addq.l  #8, a7                          ; pop stack
 
-; --- RECTANGLE INTERECTION ----------------------------------------------------
-        lea.l   piece, a0
-        ; load current matrix address into a1
-        lea.l   piece, a1
-        addq.l  #4, a1
-        move.l  (a1), a1
-
-        ; piece y end | board y end
-        move.b  -1(a1), d0                      ; current piece height
-        add.b   1(a0), d0                       ; add current y coordinate to calculate piece y end
-        lsl.w   #8, d0                          ; shift left to make space for board y end
-        move.b  #BOARDHEIGHT, d0                ; load board y end
-        move.w  d0, -(a7)
-
-        ; piece x end | board x end
-        move.b  -2(a1), d0                      ; current piece width
-        add.b   (a0), d0                        ; add current x coordinate to calcualate piece x end
-        lsl.w   #8, d0                          ; shift left to make space for board x end
-        move.b  #BOARDWIDTH, d0                 ; load board x end
-        move.w  d0, -(a7)
-
-        ; piece y start | board y start
-        move.b  1(a0), d0                       ; piece y start
-        lsl.w   #8, d0                          ; shift left to load board y start (always a 0)
-        move.w  d0, -(a7)
-
-        ; piece x start | board x start
-        move.b  (a0), d0                        ; piece x start
-        lsl.w   #8, d0                          ; shift left to load board x start (always a 0)
-        move.w  d0, -(a7)
-
-        jsr     rectintersect
-
-        ; get rectintersect results
-        ;    d0 -> x start
-        ;    d1 -> y start
-        ;    d2 -> x end
-        ;    d3 -> y end
-        clr.l   d0
-        clr.l   d1
-        clr.l   d2
-        clr.l   d3
-        clr.l   d4
-        movem.w (a7)+, d0-d3
-
 ; --- COLLISION DETECTION ------------------------------------------------------
-        sub.w   d0, d2                          ; d2 -> dx
-        sub.w   d1, d3                          ; d3 -> dy
+        lea.l   piece, a0                       ; piece address
+        move.l  4(a0), a1                       ; current matrix address
+        lea.l   board, a2                       ; board matrix address
 
-        ; a0 -> piece address (already loaded by rectintersect argument setup)
-        ; a1 -> board address
-        lea.l   board, a1
+        clr.w   d0
+        clr.w   d1
+        clr.w   d2
+        clr.w   d3
+        move.b  -2(a1), d3                      ; piece width
+.loop:
+        ; idx = x + y*width
+        move.b  d1, d2                          ; y
+        mulu    d3, d2                          ; y * width
+        add.b   d0, d2                          ; y * width + x
+        move.b  (a1,d2), d2                     ; get current piece block
+        ; if current piece block is empty there's nothing else to check
+        beq     .nitr
 
-; .loop:
-;         cmpm.b  (a0)+, (a1)+
-;         dbra    d2, .loop                       ; x loop
-;         dbra    d3, .loop                       ; y loop
+        ; check if current piece position is out of board bounds (for x & y)
+.chkx:
+        move.b  d0, d2                          ; x idx
+        add.b   (a0), d2                        ; x idx + x piece coordinate
+        bmi     .collision                      ; is current x < 0?
+        cmp.b   #BOARDWIDTH, d2                 ; is current x > board width?
+        bge     .collision
+.chky:
+        move.b  d1, d2                          ; y idx
+        add.b   1(a0), d2                       ; y idx + y piece coordinate
+        bmi     .collision                      ; is current y < 0?
+        cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
+        bge     .collision
 
+        ; calculate board index
+        ; check if both piece and board have a 1
+.nitr:
+        addq.b  #1, d0                          ; increment x index
+        cmp.b   d3, d0                          ; compare with piece width
+        blo     .loop
+        clr.b   d0                              ; reset x index
+        addq.b  #1, d1                          ; increment y index
+        cmp.b   -1(a1), d1                      ; compare with piece height
+        blo     .loop
+        bra     .done
+
+.collision:
+        move.l  #1, d5
+
+.done:
         ; stop simulator
         move.b  #9, d0
         trap    #15
