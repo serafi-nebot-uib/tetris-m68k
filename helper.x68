@@ -40,6 +40,34 @@ maxb:
 .done:
         rts
 
+arrrev:
+; matrix reverse
+; arguments:
+;    sp+0: array size in bytes
+;    sp+2: array address high order word
+;    sp+4: array address low order word
+        movem.l d0/a0-a1, -(a7)                 ; 3 * 4 = 12 bytes
+.base:  equ     16                              ; 12 + 4 = 16
+
+        clr.l   d0
+        move.w  .base+0(a7), d0                 ; array size
+        move.l  .base+2(a7), a0                 ; array address
+
+        ; a1 -> array address end
+        move.l  a0, a1
+        add.l   d0, a1
+        subq.w  #1, a1
+.loop:
+        move.b  (a1), d1
+        move.b  (a0), (a1)
+        move.b  d1, (a0)+
+        subq.l  #1, a1
+        cmp.l   a0, a1
+        bhi     .loop
+
+        movem.l (a7)+, d0/a0-a1
+        rts
+
 rectintersect:
 ; rectangle intersect
 ; ---------------------
