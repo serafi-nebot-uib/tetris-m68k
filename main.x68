@@ -14,68 +14,14 @@ start:
         lsl.w   #8, d0
         move.b  #0, d0                          ; y
         move.w  d0, -(a7)
-
         jsr     pieceinit
         addq.l  #8, a7                          ; pop stack
 
-; --- COLLISION DETECTION ------------------------------------------------------
-        lea.l   piece, a0                       ; piece address
-        move.l  4(a0), a1                       ; current matrix address
-        lea.l   board, a2                       ; board matrix address
+        ; detect collisions
+        subq.l  #2, a7                          ; reserve space for return value
+        jsr     boardcol
+        move.w  (a7)+, d1
 
-        clr.w   d0
-        clr.w   d1
-        clr.w   d2
-        clr.w   d3
-        move.b  -2(a1), d3                      ; piece width
-.loop:
-        ; check block bounds
-        ; idx = x + y*width
-        move.b  d1, d2                          ; y
-        mulu    d3, d2                          ; y * width
-        add.b   d0, d2                          ; y * width + x
-        move.b  (a1,d2), d4                     ; get current piece block
-        ; if current piece block is empty there's nothing else to check
-        beq     .nitr
-
-        ; check if current piece position is out of board bounds (for x & y)
-.chkx:
-        move.b  d0, d2                          ; x idx
-        add.b   (a0), d2                        ; x idx + x piece coordinate
-        bmi     .collision                      ; is current x < 0?
-        cmp.b   #BOARDWIDTH, d2                 ; is current x > board width?
-        bge     .collision
-.chky:
-        move.b  d1, d2                          ; y idx
-        add.b   1(a0), d2                       ; y idx + y piece coordinate
-        bmi     .collision                      ; is current y < 0?
-        cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
-        bge     .collision
-
-        ; check block collision
-        ; idx = x + piece x + (y + piece y)*width
-        move.b  d1, d2                          ; y
-        add.b   1(a0), d2                       ; y + piece y
-        mulu    #BOARDWIDTH, d2                 ; (y + piece y) * width
-        add.b   d0, d2                          ; (y + piece y) * width + x
-        add.b   (a0), d2                        ; (y + piece y) * width + x + piece x
-        move.b  (a2,d2), d2                     ; get current piece block
-        and.b   d2, d4                          ; check if both are 1
-        bne     .collision
-.nitr:
-        addq.b  #1, d0                          ; increment x index
-        cmp.b   d3, d0                          ; compare with piece width
-        blo     .loop
-        clr.b   d0                              ; reset x index
-        addq.b  #1, d1                          ; increment y index
-        cmp.b   -1(a1), d1                      ; compare with piece height
-        blo     .loop
-        bra     .done
-
-.collision:
-        move.l  #1, d5
-
-.done:
         ; stop simulator
         move.b  #9, d0
         trap    #15

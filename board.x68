@@ -38,7 +38,7 @@ board:
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $01, $01, $01, $01, $01, $01, $01, $01, $01, $01
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -51,8 +51,6 @@ board:
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
 pieceinit:
-; len(d0-d3/a0-a1) = 6 * 4 + len(PC) = 4 -> 28 bytes
-.base:  equ     28
 ; arguments:
 ;       sp+0 (x pos)
 ;       sp+1 (y pos)
@@ -65,7 +63,8 @@ pieceinit:
 ; d2: temporary calculations
 ; d3: current piece matrix cell value (a0+d0)
 ; a0: src piece matrix address
-        movem.l d0-d3/a0-a1, -(a7)
+        movem.l d0-d3/a0-a1, -(a7)              ; (4 + 2) * 4 = 24
+.base:  equ     28                              ; 24 + 4 (PC) =  28
 
         move.l  .base+0(a7), (piece)
         move.l  .base+4(a7), a0
@@ -106,4 +105,68 @@ pieceinit:
         blt     .hmatcpy
 
         movem.l (a7)+, d0-d3/a0-a1
+        rts
+
+boardcol:
+; --- COLLISION DETECTION ------------------------------------------------------
+; arguments:
+;    sp+0: reserved space for result
+        movem.l d0-d4/a0-a2, -(a7)              ; (5+3) * 4 = 32
+.base   equ     36                              ; 32 + 4 (PC) = 36
+
+        lea.l   piece, a0                       ; piece address
+        move.l  4(a0), a1                       ; current matrix address
+        lea.l   board, a2                       ; board matrix address
+
+        clr.w   d0
+        clr.w   d1
+        clr.w   d2
+        clr.w   d3
+        move.b  -2(a1), d3                      ; piece width
+.loop:
+        ; check block bounds
+        ; idx = x + y*width
+        move.b  d1, d2                          ; y
+        mulu    d3, d2                          ; y * width
+        add.b   d0, d2                          ; y * width + x
+        move.b  (a1,d2), d4                     ; get current piece block
+        ; if current piece block is empty there's nothing else to check
+        beq     .nitr
+        ; check if current piece position is out of board bounds (for x & y)
+.chkx:
+        move.b  d0, d2                          ; x idx
+        add.b   (a0), d2                        ; x idx + x piece coordinate
+        bmi     .collision                      ; is current x < 0?
+        cmp.b   #BOARDWIDTH, d2                 ; is current x > board width?
+        bge     .collision
+.chky:
+        move.b  d1, d2                          ; y idx
+        add.b   1(a0), d2                       ; y idx + y piece coordinate
+        bmi     .collision                      ; is current y < 0?
+        cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
+        bge     .collision
+        ; check block collision
+        ; idx = x + piece x + (y + piece y)*width
+        move.b  d1, d2                          ; y
+        add.b   1(a0), d2                       ; y + piece y
+        mulu    #BOARDWIDTH, d2                 ; (y + piece y) * width
+        add.b   d0, d2                          ; (y + piece y) * width + x
+        add.b   (a0), d2                        ; (y + piece y) * width + x + piece x
+        move.b  (a2,d2), d2                     ; get current piece block
+        and.b   d2, d4                          ; check if both are 1
+        bne     .collision
+.nitr:
+        addq.b  #1, d0                          ; increment x index
+        cmp.b   d3, d0                          ; compare with piece width
+        blo     .loop
+        clr.b   d0                              ; reset x index
+        addq.b  #1, d1                          ; increment y index
+        cmp.b   -1(a1), d1                      ; compare with piece height
+        blo     .loop
+        move.w  #0, .base+0(a7)                 ; store result
+        bra     .done
+.collision:
+        move.w  #1, .base+0(a7)                 ; store result
+.done:
+        movem.l (a7)+, d0-d4/a0-a2
         rts
