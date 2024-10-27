@@ -1,0 +1,7 @@
+# macos files
+.DS_Store
+.localized
+
+# m68k assembly files
+*.L68
+*.S68
