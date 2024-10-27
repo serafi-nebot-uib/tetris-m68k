@@ -26,6 +26,20 @@ maxw:
 .done:
         rts
 
+minb:
+        cmp.b   d0, d1
+        bgt     .done
+        move.b  d1, d0
+.done:
+        rts
+
+maxb:
+        cmp.b   d0, d1
+        blt     .done
+        move.b  d1, d0
+.done:
+        rts
+
 rectintersect:
 ; rectangle intersect
 ; ---------------------
@@ -45,25 +59,25 @@ rectintersect:
         move.w  .base+0(a7), d0
         move.b  d0, d1
         lsr.w   #8, d0
-        jsr     maxw
+        jsr     maxb
         move.w  d0, .base+0(a7)
 
         move.w  .base+2(a7), d0
         move.b  d0, d1
         lsr.w   #8, d0
-        jsr     maxw
+        jsr     maxb
         move.w  d0, .base+2(a7)
 
         move.w  .base+4(a7), d0
         move.b  d0, d1
         lsr.w   #8, d0
-        jsr     minw
+        jsr     minb
         move.w  d0, .base+4(a7)
 
         move.w  .base+6(a7), d0
         move.b  d0, d1
         lsr.w   #8, d0
-        jsr     minw
+        jsr     minb
         move.w  d0, .base+6(a7)
 
         movem.w (a7)+, d0-d1

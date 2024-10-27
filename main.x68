@@ -8,8 +8,13 @@ srcmat: dc.b    $01, $01, $00, $00, $00, $01, $01, $00
 
 start:
         move.l  #srcmat, -(a7)                  ; source piece layout matrix
-        move.w  #0<<8|0, -(a7)                  ; rx, ry
-        move.w  #-3<<8|-1, -(a7)                ; x, y
+        move.b  #0<<8|0, -(a7)                  ; rx, ry
+        ; load x and y into d0 before moving to the stack to allow for negative numbers
+        move.b  #-3, d0                         ; x
+        lsl.w   #8, d0
+        move.b  #-1, d0                         ; y
+        move.w  d0, -(a7)
+
         jsr     pieceinit
         addq.l  #8, a7                          ; pop stack
 
