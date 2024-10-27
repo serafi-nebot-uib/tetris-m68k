@@ -29,11 +29,12 @@ start:
         clr.w   d3
         move.b  -2(a1), d3                      ; piece width
 .loop:
+        ; check block bounds
         ; idx = x + y*width
         move.b  d1, d2                          ; y
         mulu    d3, d2                          ; y * width
         add.b   d0, d2                          ; y * width + x
-        move.b  (a1,d2), d2                     ; get current piece block
+        move.b  (a1,d2), d4                     ; get current piece block
         ; if current piece block is empty there's nothing else to check
         beq     .nitr
 
@@ -51,8 +52,16 @@ start:
         cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
         bge     .collision
 
-        ; calculate board index
-        ; check if both piece and board have a 1
+        ; check block collision
+        ; idx = x + piece x + (y + piece y)*width
+        move.b  d1, d2                          ; y
+        add.b   1(a0), d2                       ; y + piece y
+        mulu    #BOARDWIDTH, d2                 ; (y + piece y) * width
+        add.b   d0, d2                          ; (y + piece y) * width + x
+        add.b   (a0), d2                        ; (y + piece y) * width + x + piece x
+        move.b  (a2,d2), d2                     ; get current piece block
+        and.b   d2, d4                          ; check if both are 1
+        bne     .collision
 .nitr:
         addq.b  #1, d0                          ; increment x index
         cmp.b   d3, d0                          ; compare with piece width
