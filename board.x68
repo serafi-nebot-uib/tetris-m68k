@@ -50,6 +50,42 @@ board:
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
+piecefwd:
+; cycle piece forward (rotate right)
+        move.l  a0, -(a7)
+
+        ; reverse last matrix
+        move.l  (piece+8), -(a7)                ; push current matrix address
+        move.w  #PSIZE, -(a7)                   ; push matrix size
+        jsr     arrrev                          ; reverse array
+        addq.l  #6, a7                          ; remove arguments from stack
+
+        ; swap current & last matrices
+        move.l  (piece+4), a0
+        move.l  (piece+8), (piece+4)
+        move.l  a0, (piece+8)
+
+        movem.l (a7)+, a0
+        rts
+
+piecebak:
+; cycle piece backward (rotate left)
+        move.l  a0, -(a7)
+
+        ; reverse last matrix
+        move.l  (piece+4), -(a7)                ; push current matrix address
+        move.w  #PSIZE, -(a7)                   ; push matrix size
+        jsr     arrrev                          ; reverse array
+        addq.l  #6, a7                          ; remove arguments from stack
+
+        ; swap current & last matrices
+        move.l  (piece+4), a0
+        move.l  (piece+8), (piece+4)
+        move.l  a0, (piece+8)
+
+        movem.l (a7)+, a0
+        rts
+
 pieceinit:
 ; arguments:
 ;       sp+0 (x pos)
@@ -63,13 +99,13 @@ pieceinit:
 ; d2: temporary calculations
 ; d3: current piece matrix cell value (a0+d0)
 ; a0: src piece matrix address
-        movem.l d0-d3/a0-a1, -(a7)              ; (4 + 2) * 4 = 24
-.base:  equ     28                              ; 24 + 4 (PC) =  28
+        movem.l d0-d3/a0-a3, -(a7)              ; (4 + 4) * 4 = 32
+.base:  equ     36                              ; 32 + 4 (PC) =  36
 
-        move.l  .base+0(a7), (piece)
-        move.l  .base+4(a7), a0
-        move.l  a0, a1
+        move.l  .base+0(a7), (piece)            ; copy x, y, rx, ry
+        move.l  .base+4(a7), a0                 ; load address of current matrix
         lea.l   hmat, a2
+        lea.l   vmat, a3
         clr.l   d0
         clr.l   d1
 .hmatcpy:
@@ -77,12 +113,11 @@ pieceinit:
         move.b  (a0)+, d3
         move.b  d3, (a2)+
 
-        ; TODO: does this work with other matrix dimensions?
-        ; TODO: this whole calculation can probably be optimised
         ; copy matrix data to vmat
         ; hmat -> vmat:
         ;       vmat[((size) - 1) - ((i % width) * height) - int(i < width)] = hmat[i]
-        ; NOTE: magic formula works for 4x2, does it work for other dimensions?
+        ; NOTE: magic formula works for 4x2, not tested for other dimensions
+        ; TODO: this whole calculation can probably be optimised
         move.w  d0, d1
         divu    #PWIDTH, d1
         move.l  #16, d2
@@ -93,18 +128,15 @@ pieceinit:
         bge     .vmatcpy
         subq.w  #1, d1
 .vmatcpy:
-        ; TODO: indexed mode possible? to avoid loading a3 everytime
-        lea.l   vmat, a3
         ; clear higher word from possible calculation overflow
         andi.l  #$0000ffff, d1
-        add.l   d1, a3
-        move.b  d3, (a3)
+        move.b  d3, (a3,d1)
 
         addq.w  #1, d0
         cmp.w   #PSIZE, d0
         blt     .hmatcpy
 
-        movem.l (a7)+, d0-d3/a0-a1
+        movem.l (a7)+, d0-d3/a0-a3
         rts
 
 boardcol:

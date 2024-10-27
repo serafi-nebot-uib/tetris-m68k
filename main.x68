@@ -17,6 +17,9 @@ start:
         jsr     pieceinit
         addq.l  #8, a7                          ; pop stack
 
+        jsr     piecefwd                        ; rotate piece right
+        jsr     piecebak                        ; rotate piece left
+
         ; detect collisions
         subq.l  #2, a7                          ; reserve space for return value
         jsr     boardcol
