@@ -26,13 +26,18 @@ maxw:
 .done:
         rts
 
-polyinter:
+rectintersect:
+; rectangle intersect
+; ---------------------
+; arguments:
+;  sp+0: x1 start | x2 start
+;  sp+2: y1 start | y2 start
+;  sp+4: x1 end | x2 end
+;  sp+6: y1 end | y2 end
+
 ; 2 words for d0-d1 + 2 words for PC -> 6 bytes
 .base:  equ     8
-; sp+0: x1 start | x2 start
-; sp+2: y1 start | y2 start
-; sp+4: x1 end | x2 end
-; sp+6: y1 end | y2 end
+
         movem.w d0-d1, -(a7)
         clr.w   d1
 
