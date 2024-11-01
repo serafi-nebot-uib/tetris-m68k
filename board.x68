@@ -1,10 +1,15 @@
+; TODO: rethink subroutine & label names
+
 PWIDTH: equ     4
 PHEIGHT: equ    2
 PSIZE:  equ     PWIDTH*PHEIGHT
 
 BOARDWIDTH: equ 10
 BOARDHEIGHT: equ 20
+BOARDSIZE: equ  BOARDWIDTH*BOARDHEIGHT
 
+; --- piece data structure -----------------------------------------------------
+; current falling piece data
 piece:
         ds.b    1                               ; x
         ds.b    1                               ; y
@@ -14,19 +19,22 @@ piece:
         dc.l    vmat                            ; previous matrix
 
 ; current matrix data
-        dc.b    PWIDTH                          ; number of columns
-        dc.b    PHEIGHT                         ; number of rows
+        dc.b    PWIDTH                          ; number of columns (width)
+        dc.b    PHEIGHT                         ; number of rows (height)
 hmat:
         ds.b    PSIZE                           ; current matrix
         ds.w    0                               ; align
 
 ; previous matrix data
-        dc.b    PHEIGHT                         ; number of columns 
-        dc.b    PWIDTH                          ; number of rows
+        dc.b    PHEIGHT                         ; number of columns (width)
+        dc.b    PWIDTH                          ; number of rows (height)
 vmat:
         ds.b    PSIZE                           ; previous matrix
-        ds.w    0                               ; align
+        ds.w    0
 
+; --- board array --------------------------------------------------------------
+; representation of the game board; each entry indicates what block is in that
+; board cell
 board:
         ; ds.b    BOARDWIDTH*BOARDHEIGHT
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -49,9 +57,133 @@ board:
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        ds.w    0
 
-piecefwd:
+; --- board update array -------------------------------------------------------
+; 0xff terminated array where entry indicates the index of the board array whose
+; block has been updated. used for efficient plotting
+boardupd: 
+        ds.b    BOARDSIZE+1
+        ds.w    0
+
+boardupdadd:
+; add index to board upd array
+; arguments:
+;    sp+0: index to append to boardupd
+        movem.l d0-d1/a0, -(a7)                 ; 3 * 4 = 12 bytes
+.base:  equ     16                              ; 12 + 4 (PC) = 16
+
+        lea.l   boardupd, a0
+        clr.w   d0                              ; boardupd index
+.loop:
+        ; check if d0 is out of bounds
+        cmp.w   #BOARDSIZE, d0
+        bls     .done
+        ; get current value and increment index
+        move.b  (a0,d0), d1
+        addq.w  #1, d0
+        ; check if current value is terminator sequence
+        eor.b   #$ff, d0
+        bne     .loop
+        ; copy index to update to boardupd
+        move.b  .base+1(a7), (a0,d0)
+        ; add terminator value
+        addq.b  #1, d0
+        move.b  #$ff, (a0,d0)
+.done:
+        movem.l (a7)+, d0-d1/a0
+        rts
+
+piececlr:
+; add removed piece blocks to boardupd array
+;    (to clear previous blocks from screen)
+; arguments:
+;    d5 -> x coord
+;    d6 -> y coord
+        movem.l d0-d4/a0, -(a7)
+
+        move.l  (piece+8), a0                   ; load previous matrix address
+        move.b  -2(a0), d3                      ; piece width
+        clr.w   d0                              ; piece matrix x coord
+        clr.w   d1                              ; piece matrix y coord
+.loop:
+        ; check block bounds
+        ; idx = x + y*width
+        move.b  d1, d2                          ; y
+        mulu    d3, d2                          ; y * width
+        add.b   d0, d2                          ; y * width + x
+        move.b  (a0,d2), d4                     ; get current piece block
+        ; if current piece block is empty there's nothing else to check
+        beq     .nitr
+        ; check if current piece position is out of board bounds (for x & y)
+.chkx:
+        move.b  d0, d2                          ; x idx
+        add.b   d5, d2                          ; x idx + x piece coordinate
+        bmi     .nitr                           ; is current x < 0?
+        cmp.b   #BOARDWIDTH, d2                 ; is current x > board width?
+        bge     .nitr
+.chky:
+        move.b  d1, d2                          ; y idx
+        add.b   d6, d2                          ; y idx + y piece coordinate
+        bmi     .nitr                           ; is current y < 0?
+        cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
+        bge     .nitr
+        ; add piece block index to boardupd array
+        ; idx = x + piece x + (y + piece y)*BOARDWIDTH
+        move.b  d1, d2                          ; y
+        add.b   (piece+1), d2                   ; y + piece y
+        mulu    #BOARDWIDTH, d2                 ; (y + piece y) * width
+        add.b   d0, d2                          ; (y + piece y) * width + x
+        add.b   (piece), d2                     ; (y + piece y) * width + x + piece x
+        move.w  d2, -(a7)                       ; push boardupadd argument
+        jsr     boardupdadd
+        addq.w  #2, a7                          ; pop boardupdadd argument
+.nitr:
+        addq.b  #1, d0                          ; increment x index
+        cmp.b   d3, d0                          ; compare with piece width
+        blo     .loop
+        clr.b   d0                              ; reset x index
+        addq.b  #1, d1                          ; increment y index
+        cmp.b   -1(a0), d1                      ; compare with piece height
+        blo     .loop
+.done:
+        movem.l (a7)+, d0-d4/a0
+        rts
+
+piecedown:
+        movem.w d0/d1, -(a7)
+
+        addq.b  #1, (piece+1)                   ; increment piece y
+        jsr     piececol                        ; check for collisions
+        cmp     #0, d0
+        beq     .upd
+        subq.b  #1, (piece+1)                   ; restore piece to previous location
+        bra     .done
+.upd:
+        ; add previous piece block indeces to boardupd (clear previous blocks)
+        clr.w   d0
+        clr.w   d1
+        move.b  (piece), d0                     ; x coord
+        move.b  (piece+1), d1                   ; y coord
+        subq.b  #1, d1                          ; return to previous y coord
+        jsr     piececlr
+.done:
+        movem.w (a7)+, d0-d1
+        rts
+
+pieceleft:
+        rts
+
+pieceright:
+        rts
+
+piecerotr:
 ; cycle piece forward (rotate right)
+; TODO: adjust piece to rotatation pivot
+;    1. get pivot x,y in board
+;    2. rotate piece
+;    3. get pivot new x,y in board
+;    4. adjust pivot new x,y to previous x,y
         move.l  a0, -(a7)
 
         ; reverse last matrix
@@ -68,7 +200,7 @@ piecefwd:
         movem.l (a7)+, a0
         rts
 
-piecebak:
+piecerotl:
 ; cycle piece backward (rotate left)
         move.l  a0, -(a7)
 
@@ -139,19 +271,17 @@ pieceinit:
         movem.l (a7)+, d0-d3/a0-a3
         rts
 
-boardcol:
+piececol:
 ; --- COLLISION DETECTION ------------------------------------------------------
-; arguments:
-;    sp+0: reserved space for result
-        movem.l d0-d4/a0-a2, -(a7)              ; (5+3) * 4 = 32
-.base   equ     36                              ; 32 + 4 (PC) = 36
+; result is stored in d0
+        movem.l d1-d4/a0-a2, -(a7)
 
         lea.l   piece, a0                       ; piece address
         move.l  4(a0), a1                       ; current matrix address
         lea.l   board, a2                       ; board matrix address
 
-        clr.w   d0
-        clr.w   d1
+        clr.w   d0                              ; x
+        clr.w   d1                              ; y
         clr.w   d2
         clr.w   d3
         move.b  -2(a1), d3                      ; piece width
@@ -178,7 +308,7 @@ boardcol:
         cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
         bge     .collision
         ; check block collision
-        ; idx = x + piece x + (y + piece y)*width
+        ; idx = x + piece x + (y + piece y)*BOARDWIDTH
         move.b  d1, d2                          ; y
         add.b   1(a0), d2                       ; y + piece y
         mulu    #BOARDWIDTH, d2                 ; (y + piece y) * width
@@ -195,10 +325,10 @@ boardcol:
         addq.b  #1, d1                          ; increment y index
         cmp.b   -1(a1), d1                      ; compare with piece height
         blo     .loop
-        move.w  #0, .base+0(a7)                 ; store result
+        move.w  #0, d0                          ; store result
         bra     .done
 .collision:
-        move.w  #1, .base+0(a7)                 ; store result
+        move.w  #1, d0                          ; store result
 .done:
-        movem.l (a7)+, d0-d4/a0-a2
+        movem.l (a7)+, d1-d4/a0-a2
         rts

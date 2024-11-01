@@ -17,12 +17,12 @@ start:
         jsr     pieceinit
         addq.l  #8, a7                          ; pop stack
 
-        jsr     piecefwd                        ; rotate piece right
-        jsr     piecebak                        ; rotate piece left
+        jsr     piecerotr                       ; rotate piece right
+        jsr     piecerotl                       ; rotate piece left
 
         ; detect collisions
         subq.l  #2, a7                          ; reserve space for return value
-        jsr     boardcol
+        jsr     piececol
         move.w  (a7)+, d1
 
         ; stop simulator
