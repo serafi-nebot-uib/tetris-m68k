@@ -13,12 +13,12 @@ BOARDSIZE: equ  BOARDWIDTH*BOARDHEIGHT
 piece:
         ds.b    1                               ; x
         ds.b    1                               ; y
-        ds.b    1                               ; rx (rotate x index)
-        ds.b    1                               ; ry (rotate y index)
         dc.l    hmat                            ; current matrix
         dc.l    vmat                            ; previous matrix
 
 ; current matrix data
+        ds.b    1                               ; rx (rotate x index)
+        ds.b    1                               ; ry (rotate y index)
         dc.b    PWIDTH                          ; number of columns (width)
         dc.b    PHEIGHT                         ; number of rows (height)
 hmat:
@@ -26,6 +26,8 @@ hmat:
         ds.w    0                               ; align
 
 ; previous matrix data
+        ds.b    1                               ; rx (rotate x index)
+        ds.b    1                               ; ry (rotate y index)
         dc.b    PHEIGHT                         ; number of columns (width)
         dc.b    PWIDTH                          ; number of rows (height)
 vmat:
@@ -66,6 +68,55 @@ boardupd:
         ds.b    BOARDSIZE+1
         ds.w    0
 
+; TODO: remove this, this is for testing
+pieceplot:
+        ; clear screen
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        ; draw current piece
+        move.b  #81, d0
+        move.l  #$0000ff00, d1
+        trap    #15
+
+        lea.l   piece, a0                       ; piece address
+        move.l  2(a0), a1                       ; piece current matrix address
+        clr.w   d5                              ; piece matrix index
+.loop:
+        cmp.b   #0, (a1,d5)
+        beq     .nitr
+        ; calculate x, y for current index
+        ; d1 -> x
+        ; d2 -> y
+        clr.l   d1
+        clr.l   d2
+        move.w  d5, d1
+        move.b  -2(a1), d2
+        divu    d2, d1
+        move.w  d1, d2
+        swap    d1
+        ; offset to board x,y
+        move.b  (a0), d3
+        add.w   d3, d1
+        move.b  1(a0), d4
+        add.w   d4, d2
+        ; draw rectangle
+        move.b  #87, d0
+        mulu    #20, d1
+        move.w  d1, d3
+        add.w   #20, d3
+        mulu    #20, d2
+        move.w  d2, d4
+        add.w   #20, d4
+        trap    #15
+.nitr:
+        ; next iteration
+        addq.w  #1, d5
+        cmp     #PSIZE, d5
+        blo     .loop
+        rts
+
 boardupdadd:
 ; add index to board upd array
 ; arguments:
@@ -102,7 +153,7 @@ piececlr:
 ;    d6 -> y coord
         movem.l d0-d4/a0, -(a7)
 
-        move.l  (piece+8), a0                   ; load previous matrix address
+        move.l  (piece+6), a0                   ; load previous matrix address
         move.b  -2(a0), d3                      ; piece width
         clr.w   d0                              ; piece matrix x coord
         clr.w   d1                              ; piece matrix y coord
@@ -187,15 +238,15 @@ piecerotr:
         move.l  a0, -(a7)
 
         ; reverse last matrix
-        move.l  (piece+8), -(a7)                ; push current matrix address
+        move.l  (piece+6), -(a7)                ; push last matrix address
         move.w  #PSIZE, -(a7)                   ; push matrix size
         jsr     arrrev                          ; reverse array
         addq.l  #6, a7                          ; remove arguments from stack
 
         ; swap current & last matrices
-        move.l  (piece+4), a0
-        move.l  (piece+8), (piece+4)
-        move.l  a0, (piece+8)
+        move.l  (piece+2), a0
+        move.l  (piece+6), (piece+2)
+        move.l  a0, (piece+6)
 
         movem.l (a7)+, a0
         rts
@@ -205,15 +256,15 @@ piecerotl:
         move.l  a0, -(a7)
 
         ; reverse last matrix
-        move.l  (piece+4), -(a7)                ; push current matrix address
+        move.l  (piece+2), -(a7)                ; push current matrix address
         move.w  #PSIZE, -(a7)                   ; push matrix size
         jsr     arrrev                          ; reverse array
         addq.l  #6, a7                          ; remove arguments from stack
 
         ; swap current & last matrices
-        move.l  (piece+4), a0
-        move.l  (piece+8), (piece+4)
-        move.l  a0, (piece+8)
+        move.l  (piece+2), a0
+        move.l  (piece+6), (piece+2)
+        move.l  a0, (piece+6)
 
         movem.l (a7)+, a0
         rts
@@ -231,19 +282,30 @@ pieceinit:
 ; d2: temporary calculations
 ; d3: current piece matrix cell value (a0+d0)
 ; a0: src piece matrix address
-        movem.l d0-d3/a0-a3, -(a7)              ; (4 + 4) * 4 = 32
-.base:  equ     36                              ; 32 + 4 (PC) =  36
+        movem.l d0-d3/a0-a2, -(a7)              ; (4 + 3) * 4 = 28
+.base:  equ     32                              ; 28 + 4 (PC) =  32
 
-        move.l  .base+0(a7), (piece)            ; copy x, y, rx, ry
+        lea.l   hmat, a1
+        lea.l   vmat, a2
         move.l  .base+4(a7), a0                 ; load address of current matrix
-        lea.l   hmat, a2
-        lea.l   vmat, a3
+        move.w  .base+0(a7), (piece)            ; copy x, y
+        move.w  .base+2(a7), d0
+        move.w  d0, -4(a1)                      ; copy rx, ry to hmat
+
+        ; calculate vmat rx, ry
+        move.b  d0, -4(a2)                      ; copy new rx
+        lsr     #8, d0                          ; rx
+        move.b  -1(a1), d1                      ; hmat h
+        subq.b  #1, d1                          ; hmat h - 1
+        sub.b   d0, d1                          ; hmat h - 1 - rx
+        move.b  d1, -3(a2)                      ; copy new ry
+
         clr.l   d0
         clr.l   d1
 .hmatcpy:
         ; copy matrix data to hmat
         move.b  (a0)+, d3
-        move.b  d3, (a2)+
+        move.b  d3, (a1)+
 
         ; copy matrix data to vmat
         ; hmat -> vmat:
@@ -262,13 +324,13 @@ pieceinit:
 .vmatcpy:
         ; clear higher word from possible calculation overflow
         andi.l  #$0000ffff, d1
-        move.b  d3, (a3,d1)
+        move.b  d3, (a2,d1)
 
         addq.w  #1, d0
         cmp.w   #PSIZE, d0
         blt     .hmatcpy
 
-        movem.l (a7)+, d0-d3/a0-a3
+        movem.l (a7)+, d0-d3/a0-a2
         rts
 
 piececol:
@@ -277,7 +339,7 @@ piececol:
         movem.l d1-d4/a0-a2, -(a7)
 
         lea.l   piece, a0                       ; piece address
-        move.l  4(a0), a1                       ; current matrix address
+        move.l  2(a0), a1                       ; current matrix address
         lea.l   board, a2                       ; board matrix address
 
         clr.w   d0                              ; x
