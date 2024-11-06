@@ -8,19 +8,10 @@ start:
         lea.l   pieceT, a0
         jsr     pieceinit
 
+.loop:
         jsr     pieceplot
         jsr     piecerotr
-
-        jsr     pieceplot
-        jsr     piecerotr
-
-        jsr     pieceplot
-        jsr     piecerotr
-
-        jsr     pieceplot
-        jsr     piecerotr
-
-        jsr     pieceplot
+        bra     .loop
 
         ; stop simulator
         move.b  #9, d0

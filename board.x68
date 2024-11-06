@@ -12,6 +12,30 @@ piece:
         ds.w    1                               ; orientation index
         ds.l    1                               ; piece address
 
+board:
+        ; ds.b    BOARDWIDTH*BOARDHEIGHT
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        ds.w    0
+
 pieceinit:
 ; d0 -> x << 8 | y (relative to the board)
 ; a0 -> piece matrix address
@@ -35,23 +59,35 @@ piecerotr:
         movem.l d0-d1/a0, -(a7)
 
         ; remove current x,y offset
-        clr.l   d0
+        moveq.l #0, d0
         move.w  (piece+2), d0                   ; orientation index
-        mulu    #(PSIZE+2), d0                  ; get current orientation offset
+        ; multiply d0 by PSIZE+2 to get current orientation offset
+        move.w  d0, d1
+        lsl.w   #3, d0                          ; multiply by 8 (PSIZE)
+        lsl.w   #1, d1                          ; multiply by 2 (rx,ry offset)
+        add.w   d1, d0
+
         move.l  (piece+4), a0                   ; piece matrix address
         move.w  (a0,d0), d1                     ; get current x,y offset
         add.b   d1, (piece+1)                   ; remove y offset
         lsr.w   #8, d1
         add.b   d1, (piece)                     ; remove x offset
 
-        ; cycle to next piece address (wrap around every 4)
-        clr.l   d0
+        ; cycle to next piece address
+        moveq.l #0, d0
         move.w  (piece+2), d0                   ; orientation index
         addq.w  #1, d0                          ; increment orientation index
-        divu    #4, d0                          ; divide by orientation count
-        swap    d0                              ; get modulus to wrap every 4
+        ; wrap around every 4 (faster than getting the modulus)
+        cmp.w   #4, d0
+        blo     .off
+        moveq.l #0, d0                          ; reset to 0 if d0 >= 4
+.off:
         move.w  d0, (piece+2)
-        mulu    #PSIZE+2, d0                    ; get current orientation offset
+        ; multiply d0 by PSIZE+2 get current orientation offset
+        move.w  d0, d1
+        lsl.w   #3, d0                          ; multiply by 8 (PSIZE)
+        lsl.w   #1, d1                          ; multiply by 2 (rx,ry offset)
+        add.w   d1, d0
 
         ; adjust new x,y offset
         move.w  (a0,d0), d1                     ; get new x,y offset
@@ -61,6 +97,67 @@ piecerotr:
 
         movem.l (a7)+, d0-d1/a0
         rts
+
+; TODO: implement piecerotl
+
+; piececoll:
+;         ; a0 -> current piece orientation matrix address
+;         clr.l   a0
+;         move.w  (piece+2), a0
+;         mulu    #PSIZE+2, a0
+;         add.l   #2, a0
+;         add.l   (piece+4), a0
+;
+;         ; d5 -> current piece orientation matrix width
+;         move.w  (piece+2), d0
+;         divu    #2, d0
+;         swap    d0
+;         cmp.w   #0, d0
+;         bne     .vert
+;         move.w  #PWIDTH, d5
+;         bra     .loop
+; .vert:
+;         move.w  #PHEIGHT, d5
+;
+;         move.w  #PSIZE-1, d0                    ; piece matrix index
+; .loop:
+;         ; x = i % width
+;         move.l  d0, d1
+;         divu    d5, d1
+;         swap    d1
+;
+;         ; y = (i - x) / w
+;         move.l  d0, d2
+;         sub.l   d1, d2
+;         divu    d5, d2
+;
+;         dbra.w  d0, .loop
+;
+;         rts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ; TODO: delete this; only for testing
 pieceplot:
