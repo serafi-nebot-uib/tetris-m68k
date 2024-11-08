@@ -114,7 +114,39 @@ piecerotr:
         movem.l (a7)+, d0-d1/a0
         rts
 
-; TODO: implement piecerotl
+piecerotl:
+        movem.l d0-d1/a0, -(a7)
+
+        ; remove current x,y offset
+        moveq.l #0, d0
+        move.w  (piece+2), d0                   ; orientation index
+        poff    d0, d1
+
+        move.l  (piece+4), a0                   ; piece matrix address
+        move.w  (a0,d0), d1                     ; get current x,y offset
+        add.b   d1, (piece+1)                   ; remove y offset
+        lsr.w   #8, d1
+        add.b   d1, (piece)                     ; remove x offset
+
+        ; cycle to next piece address
+        moveq.l #0, d0
+        move.w  (piece+2), d0                   ; orientation index
+        subq.w  #1, d0                          ; decrement orientation index
+        ; wrap around every 4 (faster than getting the modulus)
+        bge     .off
+        moveq.l #3, d0                          ; reset to 3 if d0 < 0
+.off:
+        move.w  d0, (piece+2)
+        poff    d0, d1
+
+        ; adjust new x,y offset
+        move.w  (a0,d0), d1                     ; get new x,y offset
+        sub.b   d1, (piece+1)                   ; add y offset
+        lsr.w   #8, d1
+        sub.b   d1, (piece)                     ; add x offset
+
+        movem.l (a7)+, d0-d1/a0
+        rts
 
 piececoll:
 ; result is stored in d0

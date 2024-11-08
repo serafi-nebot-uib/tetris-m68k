@@ -9,7 +9,7 @@ start:
         jsr     pieceinit
 
         jsr     piecerotr
-        jsr     piecerotr
+        jsr     piecerotl
 
         jsr     pieceplot
         jsr     piececoll
