@@ -40,7 +40,7 @@ board:
 ; \1 -> orientation index
 ; \2 -> result (width << 8 | height)
 pdim:   macro
-        btst    #1, \1
+        btst    #0, \1
         beq     .pdim_mult2
         move.w  #PHEIGHT<<8|PWIDTH, \2
         bra     .pdim_done
@@ -49,15 +49,15 @@ pdim:   macro
 .pdim_done:
         endm
 
-; get piece orientation offset for the piece orientation matrix (stored in lower order word)
+; get piece orientation offset for the piece orientation matrix
 ; \1 -> orientation index & result
 ; \2 -> accumulator to perform calculations
 poff:   macro
         ; multiply orientation index by PSIZE+2 to get array offset
-        move.w  \1, \2
-        lsl.w   #3, \1                          ; multiply by 8 (PSIZE)
-        lsl.w   #1, \2                          ; multiply by 2 (rx,ry offset)
-        add.w   \2, \1
+        move.l  \1, \2
+        lsl.l   #3, \1                          ; multiply by 8 (PSIZE)
+        lsl.l   #1, \2                          ; multiply by 2 (rx,ry offset)
+        add.l   \2, \1
         endm
 
 pieceinit:
@@ -121,6 +121,7 @@ piececoll:
         movem.l d1-d5/a0, -(a7)
 
         lea.l   board, a2
+        moveq.l #0, d0
         move.l  (piece+4), a0                   ; piece address
         move.w  (piece+2), d0                   ; orientation index
         pdim    d0, d4                          ; matrix dimensions (d3 width, d4 height)
@@ -132,6 +133,7 @@ piececoll:
 
         moveq.l #0, d0                          ; x index
         moveq.l #0, d1                          ; y index
+        moveq.l #0, d2                          ; accumulator
 .loop:
         ; check block bounds
         move.b  d1, d2                          ; y
@@ -143,18 +145,17 @@ piececoll:
         beq     .nitr
         ; check if current piece position is out of board bounds (for x & y)
 .chkx:
-        ; x idx + x coord - rx
+        ; x idx + x coord
         move.b  d0, d2                          ; x idx
         add.b   (piece), d2                     ; x idx + x coord
-        sub.b   -2(a0), d2                      ; x idx + x coord - rx
         bmi     .collision                      ; is current x < 0?
         cmp.b   #BOARDWIDTH, d2                 ; is current x > board width?
         bge     .collision
 .chky:
-        ; y idx + y coord - ry
+        ; y idx + y coord
         move.b  d1, d2                          ; y idx
         add.b   (piece+1), d2                   ; y idx + y coord
-        sub.b   -1(a0), d2                      ; y idx + y coord - ry
+        ; sub.b   -1(a0), d2                      ; y idx + y coord
         bmi     .collision                      ; is current y < 0?
         cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
         bge     .collision
@@ -279,7 +280,28 @@ pieceplot:
         move.w  #$ff00, d1
         trap    #15
 
+        ; draw board
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+
+        move.b  #80, d0
+        move.l  #$00ff0000, d1
+        trap    #15
+
+        ; draw rectangle
+        move.b  #87, d0
+        move.l  #0, d1
+        move.l  #0, d2
+        move.l  #10*20, d3
+        move.l  #20*20, d4
+        trap    #15
+
         ; draw current piece
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+
         move.b  #81, d0
         move.l  #$0000ff00, d1
         trap    #15
