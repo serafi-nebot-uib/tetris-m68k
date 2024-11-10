@@ -5,3 +5,8 @@
 # m68k assembly files
 *.L68
 *.S68
+
+# python files
+__pycache__
+.mypy_cache
+.ruff_cache
