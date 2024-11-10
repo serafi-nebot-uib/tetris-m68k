@@ -12,6 +12,12 @@ piece:
         ds.w    1                               ; orientation index
         ds.l    1                               ; piece address
 
+pieceprev:
+        ds.b    1                               ; x
+        ds.b    1                               ; y
+        ds.w    1                               ; orientation index
+        ds.l    1                               ; piece address
+
 board:
         ; ds.b    BOARDWIDTH*BOARDHEIGHT
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -60,6 +66,11 @@ poff:   macro
         add.l   \2, \1
         endm
 
+piecerollback: macro
+        move.l  (pieceprev), (piece)
+        move.l  (pieceprev+4), (piece+4)
+        endm
+
 pieceinit:
 ; d0 -> x << 8 | y (relative to the board)
 ; a0 -> piece matrix address
@@ -75,6 +86,10 @@ pieceinit:
         lsr.w   #8, d1
         sub.b   d1, d0
         move.b  d0, (piece)                     ; adjusted x
+
+        ; copy data to pieceprev
+        move.l  (piece), (pieceprev)
+        move.l  (piece+4), (pieceprev+4)
 
         move.w  (a7)+, d1
         rts
@@ -148,11 +163,27 @@ piecerotl:
         movem.l (a7)+, d0-d1/a0
         rts
 
+piecemovu: macro
+        subq.b  #\1, (piece+1)
+        endm
+
+piecemovd: macro
+        addq.b  #\1, (piece+1)
+        endm
+
+piecemovl: macro
+        subq.b  #\1, (piece)
+        endm
+
+piecemovr: macro
+        addq.b  #\1, (piece)
+        endm
+
 piececoll:
 ; result is stored in d0
-        movem.l d1-d5/a0, -(a7)
+        movem.l d1-d5/a0-a1, -(a7)
 
-        lea.l   board, a2
+        lea.l   board, a1
         moveq.l #0, d0
         move.l  (piece+4), a0                   ; piece address
         move.w  (piece+2), d0                   ; orientation index
@@ -201,7 +232,7 @@ piececoll:
         add.w   d5, d2                          ; (y + piece y) * BOARDWIDTH
         add.b   d0, d2                          ; (y + piece y) * BOARDWIDTH + x
         add.b   (piece), d2                     ; (y + piece y) * BOARDWIDTH + x + piece x
-        move.b  (a2,d2), d2                     ; get current piece block
+        move.b  (a1,d2), d2                     ; get current piece block
         bne     .collision                      ; check if current piece block is occupied
 .nitr:
         addq.b  #1, d0                          ; increment x index
@@ -216,71 +247,63 @@ piececoll:
 .collision:
         move.w  #1, d0                          ; store result
 .done:
-        movem.l (a7)+, d1-d5/a0
+        movem.l (a7)+, d1-d5/a0-a1
         rts
 
+pieceupd:
+; rollback piece if collision detected
+; otherwise, clear previous piece, plot current piece, and copy current piece to previous piece
+        jsr     piececoll
+        cmp     #0, d0
+        beq     .clear
+        piecerollback
+        bra     .done
+; --- clear previous piece -----------------------------------------------------
+.clear:
+        moveq.l #0, d0
+        move.l  (pieceprev+4), a0               ; piece address
+        move.w  (pieceprev+2), d0               ; orientation index
+        pdim    d0, d4                          ; matrix dimensions (d3 width, d4 height)
+        move.w  d4, d3
+        lsr.w   #8, d3
+        poff    d0, d1                          ; calculate array offset
+        add.l   d0, a0                          ; offset a0 to point to the correct matrix
+        add.l   #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
 
-; piececol:
-; ; --- COLLISION DETECTION ------------------------------------------------------
-; ; result is stored in d0
-;         movem.l d1-d4/a0-a2, -(a7)
-;
-;         lea.l   piece, a0                       ; piece address
-;         move.l  2(a0), a1                       ; current matrix address
-;         lea.l   board, a2                       ; board matrix address
-;
-;         clr.w   d0                              ; x
-;         clr.w   d1                              ; y
-;         clr.w   d2
-;         clr.w   d3
-;         move.b  -2(a1), d3                      ; piece width
-; .loop:
-;         ; check block bounds
-;         ; idx = x + y*width
-;         move.b  d1, d2                          ; y
-;         mulu    d3, d2                          ; y * width
-;         add.b   d0, d2                          ; y * width + x
-;         move.b  (a1,d2), d4                     ; get current piece block
-;         ; if current piece block is empty there's nothing else to check
-;         beq     .nitr
-;         ; check if current piece position is out of board bounds (for x & y)
-; .chkx:
-;         move.b  d0, d2                          ; x idx
-;         add.b   (a0), d2                        ; x idx + x piece coordinate
-;         bmi     .collision                      ; is current x < 0?
-;         cmp.b   #BOARDWIDTH, d2                 ; is current x > board width?
-;         bge     .collision
-; .chky:
-;         move.b  d1, d2                          ; y idx
-;         add.b   1(a0), d2                       ; y idx + y piece coordinate
-;         bmi     .collision                      ; is current y < 0?
-;         cmp.b   #BOARDHEIGHT, d2                ; is current y > board height?
-;         bge     .collision
-;         ; check block collision
-;         ; idx = x + piece x + (y + piece y)*BOARDWIDTH
-;         move.b  d1, d2                          ; y
-;         add.b   1(a0), d2                       ; y + piece y
-;         mulu    #BOARDWIDTH, d2                 ; (y + piece y) * width
-;         add.b   d0, d2                          ; (y + piece y) * width + x
-;         add.b   (a0), d2                        ; (y + piece y) * width + x + piece x
-;         move.b  (a2,d2), d2                     ; get current piece block
-;         and.b   d2, d4                          ; check if both are 1
-;         bne     .collision
-; .nitr:
-;         addq.b  #1, d0                          ; increment x index
-;         cmp.b   d3, d0                          ; compare with piece width
-;         blo     .loop
-;         clr.b   d0                              ; reset x index
-;         addq.b  #1, d1                          ; increment y index
-;         cmp.b   -1(a1), d1                      ; compare with piece height
-;         blo     .loop
-;         move.w  #0, d0                          ; store result
-;         bra     .done
-; .collision:
-;         move.w  #1, d0                          ; store result
-; .done:
-;         movem.l (a7)+, d1-d4/a0-a2
-;         rts
+        moveq.l #0, d0                          ; x index
+        moveq.l #0, d1                          ; y index
+        moveq.l #0, d2                          ; accumulator
+.clear_loop:
+        ; check block bounds
+        move.b  d1, d2                          ; y
+        ; TODO: optimize mulu (lsl?)
+        mulu    d3, d2                          ; y * width
+        add.b   d0, d2                          ; y * width + x
+        move.b  (a0,d2), d5                     ; get current piece block
+        ; if current piece block is empty there's nothing else to check
+        beq     .clear_nitr
+
+        ; set block fill & border color to black
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+
+        ; draw rectangle
+        move.b  #87, d0
+        trap    #15
+.clear_nitr:
+        addq.b  #1, d0                          ; increment x index
+        cmp.b   d3, d0                          ; compare with matrix width
+        blo     .clear_loop
+        moveq.l #0, d0                          ; reset x index
+        addq.b  #1, d1                          ; increment y index
+        cmp.b   d4, d1                          ; compare with matrix height
+        blo     .clear_loop
+.done:
+        rts
+
 
 
 

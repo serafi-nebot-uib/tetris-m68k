@@ -4,15 +4,14 @@
         include 'piece.x68'
 
 start:
+        jsr piececoll
+
         move.w  #1<<8|1, d0                     ; x << 8 | y
         lea.l   pieceT, a0
         jsr     pieceinit
 
-        jsr     piecerotr
-        jsr     piecerotl
-
         jsr     pieceplot
-        jsr     piececoll
+
         move.l  d0, d1
 
         ; stop simulator
