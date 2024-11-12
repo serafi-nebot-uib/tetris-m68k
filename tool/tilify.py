@@ -21,7 +21,7 @@ if __name__ == "__main__":
       if (r := tuple(mat_to_rec(t))) not in tilemap: tilemap.append(r)
 
     N = len(tilemap)
-    dst = Image.new("RGBA", (N*tsize, tsize))
+    dst = Image.new("RGB", (N*tsize, tsize))
     draw = ImageDraw.Draw(dst)
     for i, tile in enumerate(tilemap):
       xoff = i*tsize

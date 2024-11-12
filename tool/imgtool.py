@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 
 def tile_draw(mat: list, bsize: int, size: int):
   assert len(mat) == size and len(mat[0]) == size
-  img = Image.new("RGBA", (size, size))
+  img = Image.new("RGB", (size, size))
   draw = ImageDraw.Draw(img)
   for y in range(size):
     for x in range(size):
@@ -30,7 +30,7 @@ def mat_to_rec(mat: list):
   return rec
 
 def rec_to_img(rec: list, width: int, height: int):
-  img = Image.new("RGBA", (width, height))
+  img = Image.new("RGB", (width, height))
   draw = ImageDraw.Draw(img)
   for c, r in rec: draw.rectangle(r, fill=tuple(c))
   return img
