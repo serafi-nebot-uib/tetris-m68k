@@ -3,8 +3,8 @@
  <editorsettings>
   <export target="bg-game.csv" format="csv"/>
  </editorsettings>
- <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="204" columns="204">
-  <image source="../img/tiles-complete.png" width="3264" height="16"/>
+ <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="262" columns="262">
+  <image source="../img/tiles-complete.png" width="4192" height="16"/>
  </tileset>
  <imagelayer id="2" name="Image Layer 1" visible="0" locked="1" opacity="0.32" offsetx="0" offsety="32">
   <image source="../img/background-game.png" width="640" height="400"/>
