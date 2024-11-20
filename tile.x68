@@ -58,8 +58,8 @@ drawmap:
         moveq.l #0, d2                          ; y coord
 .loop:
         moveq.l #0, d0                          ; reset d0 to clear junk
-        move.b  (a0)+, d0
-        cmp.b   #$ff, d0                        ; $ff -> empty tile
+        move.w  (a0)+, d0
+        cmp.w   #$ffff, d0                      ; $ffff -> empty tile
         beq     .skip
 
         ; get current tile
