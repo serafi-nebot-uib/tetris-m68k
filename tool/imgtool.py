@@ -15,12 +15,13 @@ def flood_fill(mat, x, y):
   while max_y+1 < len(mat) and all(c == mat[y][x] for c in mat[max_y+1][min_x:max_x+1]): max_y += 1
   return min_x, min_y, max_x, max_y
 
-def mat_to_rec(mat: list):
+def mat_to_rec(mat: list, ignore_black: bool = False):
   rows, cols = len(mat), len(mat[0])
   vis = [[False for _ in range(cols)] for _ in range(rows)]
   rec = []
   for y in range(rows):
     for x in range(cols):
+      if ignore_black and all(c == 0 for c in mat[y][x]): continue
       if not vis[y][x]:
         r = flood_fill(mat, x, y)
         rec.append((mat[y][x], r))

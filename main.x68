@@ -5,7 +5,7 @@
         include 'tile-table.x68'
         include 'bg-home.x68'
         include 'bg-game.x68'
-        include 'bg-game-mode.x68'
+        include 'bg-score.x68'
         include 'tile.x68'
 
 ; TODO: move constants to dedicated file
@@ -15,7 +15,7 @@ SCRWIDTH: equ   640
 SCRHEIGHT: equ  480
 
 start:
-        lea.l   bggamemode, a0
+        lea.l   bgscore, a0
         jsr     drawmap
 
 ; --- collisions ---------------------------------------------------------------

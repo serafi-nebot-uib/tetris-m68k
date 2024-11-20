@@ -20,7 +20,7 @@ if __name__ == "__main__":
     idx = [0]
     lines = []
     for tile in tiles:
-      r = mat_to_rec(tile)
+      r = mat_to_rec(tile, ignore_black=True)
       idx.append((len(r)*3+1)*4+idx[-1])
       lines.append("\t" + "\n\t".join(rec_to_m68k(r)) + "\n\tdc.l    $ffffffff")
     with Path.open(sys.argv[3], "w") as dst:
