@@ -18,6 +18,25 @@ start:
         lea.l   bgscore, a0
         jsr     drawmap
 
+        move.b  #21, d0
+        move.l  #$00ffffff, d1
+        move.l  #$071b0001, d2
+        trap    #15
+
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+
+        move.b  #11, d0
+        move.w  #$0b08, d1
+        trap    #15
+
+        lea.l   .lvltext, a1
+        move.b  #14, d0
+        trap    #15
+
+.lvltext: dc.b  'LEVEL',0
+
 ; --- collisions ---------------------------------------------------------------
         ; move.l  #17, d0
         ; moveq.l #0, d3
