@@ -15,7 +15,36 @@ TILELEN: equ    TILESIZE*TILESIZE
 SCRWIDTH: equ   640
 SCRHEIGHT: equ  480
 
+txttest: dc.b   'This is Tetris M68K',0
+        ds.l    0
+
 start:
+        ; draw text
+        lea.l   txttest, a0                     ; string address
+        moveq.l #0, d1                          ; x coordinate
+        moveq.l #0, d2                          ; y coordinate
+        jsr     drawstr
+
+        ; draw text with color
+        lea.l   txttest, a0                     ; string address
+        moveq.l #0, d1                          ; x coordinate
+        moveq.l #1, d2                          ; y coordinate
+        move.l  #$000000ff, d3
+        jsr     drawstrcol
+
+        lea.l   txttest, a0                     ; string address
+        moveq.l #0, d1                          ; x coordinate
+        moveq.l #2, d2                          ; y coordinate
+        move.l  #$0000ff00, d3
+        jsr     drawstrcol
+
+        lea.l   txttest, a0                     ; string address
+        moveq.l #0, d1                          ; x coordinate
+        moveq.l #3, d2                          ; y coordinate
+        move.l  #$00ff0000, d3
+        jsr     drawstrcol
+        simhalt
+
         ; paint one tile
         lea.l   tiletable, a1
         move.w  #0, d0                          ; tile index
@@ -30,30 +59,33 @@ start:
         move.l  #$00ff0000, -(a7)               ; x pos
         jsr     drawtilecol
         addq.w  #8, a7
+        simhalt
 
-        ; lea.l   bghome, a0
-        ; jsr     drawmap
-        ; ; clear screen
-        ; move.b  #11, d0
-        ; move.w  #$ff00, d1
-        ; trap    #15
-        ;
-        ; lea.l   bgmode, a0
-        ; jsr     drawmap
-        ; ; clear screen
-        ; move.b  #11, d0
-        ; move.w  #$ff00, d1
-        ; trap    #15
-        ;
-        ; lea.l   bgscore, a0
-        ; jsr     drawmap
-        ; ; clear screen
-        ; move.b  #11, d0
-        ; move.w  #$ff00, d1
-        ; trap    #15
-        ;
-        ; lea.l   bggame, a0
-        ; jsr     drawmap
+        ; draw all screens
+        lea.l   bghome, a0
+        jsr     drawmap
+        ; clear screen
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        lea.l   bgmode, a0
+        jsr     drawmap
+        ; clear screen
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        lea.l   bgscore, a0
+        jsr     drawmap
+        ; clear screen
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        lea.l   bggame, a0
+        jsr     drawmap
+        simhalt
 
 ; --- collisions ---------------------------------------------------------------
         ; move.l  #17, d0

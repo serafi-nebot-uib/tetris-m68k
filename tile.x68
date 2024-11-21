@@ -4,11 +4,10 @@ drawtile:
 ;       sp+2 (y pos)                    -> d6
 ;       sp+4 (bitmap address high word) -> a0
 ;       sp+6 (bitmap address low word)  -> a0
-        movem.w d0-d6, -(a7)
-        move.l  a0, -(a7)
+        movem.l d0-d6/a0, -(a7)
 
-; 1*4 (PC) + 7*2=14 (dx save) + 1*4=4 (a0) = 22
-.base:  equ     22
+; 1*4=4 (PC) + 8*4=14 (dx/a0 save) = 36
+.base:  equ     36
 
         ; get subroutine arguments
         movem.w .base+0(a7), d5-d6
@@ -42,8 +41,7 @@ drawtile:
         trap    #15
         bra     .loop
 .done:
-        move.l  (a7)+, a0
-        movem.w (a7)+, d0-d6
+        movem.l (a7)+, d0-d6/a0
         rts
 
 drawtilecol:
@@ -53,11 +51,10 @@ drawtilecol:
 ;       sp+6 (y pos)                    -> d6
 ;       sp+8 (bitmap address high word) -> a0
 ;       sp+10 (bitmap address low word) -> a0
-        movem.w d0-d6, -(a7)
-        move.l  a0, -(a7)
+        movem.l d0-d6/a0, -(a7)
 
-; 1*4 (PC) + 7*2=14 (dx save) + 1*4=4 (a0) = 22
-.base:  equ     22
+; 1*4=4 (PC) + 8*4=14 (dx/a0 save) = 36
+.base:  equ     36
 
         ; get subroutine arguments
         move.l  .base+0(a7), d1
@@ -92,8 +89,7 @@ drawtilecol:
         trap    #15
         bra     .loop
 .done:
-        move.l  (a7)+, a0
-        movem.w (a7)+, d0-d6
+        movem.l (a7)+, d0-d6/a0
         rts
 
 drawmap:
@@ -134,4 +130,140 @@ drawmap:
         blo     .loop
 
         movem.l (a7)+, d0-d6/a1
+        rts
+
+ASCII_NUM_CNT: equ 10
+ASCII_CHR_CNT: equ 26
+ASCII_NUM_BASE: equ $30
+ASCII_UPR_BASE: equ $41
+ASCII_LWR_BASE: equ $61
+
+drawstr:
+; a0.l -> string address
+; d1.w -> x coordintate
+; d2.w -> y coordintate
+        movem.l d0/a1-a2, -(a7)
+
+        lea.l   tiletable, a1
+.loop:
+        move.l  #0, d0                          ; reset d0 to clear junk
+        move.b  (a0)+, d0
+        beq     .done                           ; end sequence
+
+        ; check for whitespace
+        cmp.b   #$20, d0
+        beq     .skip
+
+        ; check number
+        cmp.b   #ASCII_NUM_BASE, d0
+        blo     .done
+        cmp.b   #ASCII_NUM_BASE+ASCII_NUM_CNT, d0
+        blo     .num
+
+        ; check uppercase letter
+        cmp.b   #ASCII_UPR_BASE, d0
+        blo     .done
+        cmp.b   #ASCII_UPR_BASE+ASCII_CHR_CNT, d0
+        blo     .upr
+
+        ; check lowercase letter
+        cmp.b   #ASCII_LWR_BASE, d0
+        blo     .done
+        cmp.b   #ASCII_LWR_BASE+ASCII_CHR_CNT, d0
+        blo     .lwr
+
+        bra     .done                           ; invalid character
+.num:
+        sub.b   #ASCII_NUM_BASE, d0
+        bra     .draw
+.upr:
+        sub.b   #ASCII_UPR_BASE-ASCII_NUM_CNT, d0
+        bra     .draw
+.lwr:
+        sub.b   #ASCII_LWR_BASE-ASCII_NUM_CNT, d0
+        bra     .draw
+.draw:
+        ; get current tile
+        lsl.l   #2, d0
+        move.l  (a1,d0), d0
+        lea.l   tiles, a2
+        add.l   d0, a2
+
+        ; call drawtile
+        move.l  a2, -(a7)                       ; tile address
+        move.w  d2, -(a7)                       ; y pos
+        move.w  d1, -(a7)                       ; x pos
+        jsr     drawtile
+        addq.w  #8, a7                          ; pop arguments
+.skip:
+        addq.w  #1, d1                          ; increment x coordinate
+        bra     .loop
+.done:
+        movem.l (a7)+, d0/a1-a2
+        rts
+
+drawstrcol:
+; a0.l -> string address
+; d1.w -> x coordintate
+; d2.w -> y coordintate
+; d3.l -> color
+        movem.l d0/a1-a2, -(a7)
+
+        lea.l   tiletable, a1
+.loop:
+        move.l  #0, d0                          ; reset d0 to clear junk
+        move.b  (a0)+, d0
+        beq     .done                           ; end sequence
+
+        ; check for whitespace
+        cmp.b   #$20, d0
+        beq     .skip
+
+        ; check number
+        cmp.b   #ASCII_NUM_BASE, d0
+        blo     .done
+        cmp.b   #ASCII_NUM_BASE+ASCII_NUM_CNT, d0
+        blo     .num
+
+        ; check uppercase letter
+        cmp.b   #ASCII_UPR_BASE, d0
+        blo     .done
+        cmp.b   #ASCII_UPR_BASE+ASCII_CHR_CNT, d0
+        blo     .upr
+
+        ; check lowercase letter
+        cmp.b   #ASCII_LWR_BASE, d0
+        blo     .done
+        cmp.b   #ASCII_LWR_BASE+ASCII_CHR_CNT, d0
+        blo     .lwr
+
+        bra     .done                           ; invalid character
+.num:
+        sub.b   #ASCII_NUM_BASE, d0
+        bra     .draw
+.upr:
+        sub.b   #ASCII_UPR_BASE-ASCII_NUM_CNT, d0
+        bra     .draw
+.lwr:
+        sub.b   #ASCII_LWR_BASE-ASCII_NUM_CNT, d0
+        bra     .draw
+.draw:
+        ; get current tile
+        lsl.l   #2, d0
+        move.l  (a1,d0), d0
+        lea.l   tiles, a2
+        add.l   d0, a2
+
+        ; call drawtile
+        move.l  a2, -(a7)                       ; tile address
+        move.w  d2, -(a7)                       ; y pos
+        move.w  d1, -(a7)                       ; x pos
+        move.l  d3, -(a7)                       ; color
+        jsr     drawtilecol
+        add.w  #12, a7                          ; pop arguments
+.skip:
+        addq.w  #1, d1                          ; increment x coordinate
+        bra     .loop
+.done:
+        movem.l (a7)+, d0/a1-a2
         rts
