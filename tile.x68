@@ -1,7 +1,7 @@
 drawtile:
 ; arguments:
-;       sp+0 (x pos)                    -> d3
-;       sp+2 (y pos)                    -> d4
+;       sp+0 (x pos)                    -> d5
+;       sp+2 (y pos)                    -> d6
 ;       sp+4 (bitmap address high word) -> a0
 ;       sp+6 (bitmap address low word)  -> a0
         movem.w d0-d6, -(a7)
@@ -19,14 +19,63 @@ drawtile:
 .loop:
         ; set fill color
         move.l  (a0)+, d1
-        move.l  d1, d2
-        eor.l   #$ffffffff, d2                  ; detect end sequence
-        beq     .done
+        btst.l  #31, d1
+        bne     .done
         ; TODO: is setting the outline color necessary? can it be disabled?
         move.b  #80, d0
         trap    #15
         move.b  #81, d0
         trap    #15
+
+        ; get source coordinates
+        move.w  (a0)+, d1
+        move.w  (a0)+, d2
+        move.w  (a0)+, d3
+        move.w  (a0)+, d4
+
+        ; draw rectangle
+        move.b  #87, d0
+        add.w   d5, d1
+        add.w   d5, d3
+        add.w   d6, d2
+        add.w   d6, d4
+        trap    #15
+        bra     .loop
+.done:
+        move.l  (a7)+, a0
+        movem.w (a7)+, d0-d6
+        rts
+
+drawtilecol:
+; arguments:
+;       sp+0 (color)                    -> d1
+;       sp+4 (x pos)                    -> d5
+;       sp+6 (y pos)                    -> d6
+;       sp+8 (bitmap address high word) -> a0
+;       sp+10 (bitmap address low word) -> a0
+        movem.w d0-d6, -(a7)
+        move.l  a0, -(a7)
+
+; 1*4 (PC) + 7*2=14 (dx save) + 1*4=4 (a0) = 22
+.base:  equ     22
+
+        ; get subroutine arguments
+        move.l  .base+0(a7), d1
+        movem.w .base+4(a7), d5-d6
+        move.l  .base+8(a7), a0
+        ; multiply x/y coords by 16 (tile size)
+        lsl.l   #4, d5
+        lsl.l   #4, d6
+        ; TODO: is setting the outline color necessary? can it be disabled?
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+.loop:
+        ; set fill color
+        move.l  (a0)+, d1
+        btst.l  #31, d1
+        bne     .done
 
         ; get source coordinates
         move.w  (a0)+, d1

@@ -16,29 +16,44 @@ SCRWIDTH: equ   640
 SCRHEIGHT: equ  480
 
 start:
-        lea.l   bghome, a0
-        jsr     drawmap
-        ; clear screen
-        move.b  #11, d0
-        move.w  #$ff00, d1
-        trap    #15
+        ; paint one tile
+        lea.l   tiletable, a1
+        move.w  #0, d0                          ; tile index
+        lsl.l   #2, d0
+        move.l  (a1,d0), d0
+        lea.l   tiles, a2
+        add.l   d0, a2
 
-        lea.l   bgmode, a0
-        jsr     drawmap
-        ; clear screen
-        move.b  #11, d0
-        move.w  #$ff00, d1
-        trap    #15
+        move.l  a2, -(a7)
+        move.w  #0, -(a7)                       ; y pos
+        move.w  #0, -(a7)                       ; x pos
+        move.l  #$00ff0000, -(a7)               ; x pos
+        jsr     drawtilecol
+        addq.w  #8, a7
 
-        lea.l   bgscore, a0
-        jsr     drawmap
-        ; clear screen
-        move.b  #11, d0
-        move.w  #$ff00, d1
-        trap    #15
-
-        lea.l   bggame, a0
-        jsr     drawmap
+        ; lea.l   bghome, a0
+        ; jsr     drawmap
+        ; ; clear screen
+        ; move.b  #11, d0
+        ; move.w  #$ff00, d1
+        ; trap    #15
+        ;
+        ; lea.l   bgmode, a0
+        ; jsr     drawmap
+        ; ; clear screen
+        ; move.b  #11, d0
+        ; move.w  #$ff00, d1
+        ; trap    #15
+        ;
+        ; lea.l   bgscore, a0
+        ; jsr     drawmap
+        ; ; clear screen
+        ; move.b  #11, d0
+        ; move.w  #$ff00, d1
+        ; trap    #15
+        ;
+        ; lea.l   bggame, a0
+        ; jsr     drawmap
 
 ; --- collisions ---------------------------------------------------------------
         ; move.l  #17, d0
