@@ -1,5 +1,5 @@
 ; args: tile address, x coord, y coord, color
-drawtile: macro
+_drawtile: macro
         movem.l d0-d6/a0, -(a7)
         move.l  \1, a0
         move.w  \2, d5                          ; x coord
@@ -46,6 +46,100 @@ drawtile: macro
         movem.l (a7)+, d0-d6/a0
         endm
 
+drawtile:
+; arguments:
+;       sp+0 (x pos)                    -> d5
+;       sp+2 (y pos)                    -> d6
+;       sp+4 (bitmap address high word) -> a0
+;       sp+6 (bitmap address low word)  -> a0
+        movem.l d0-d6/a0, -(a7)
+
+; 1*4=4 (PC) + 8*4=14 (dx/a0 save) = 36
+.base:  equ     36
+
+        ; get subroutine arguments
+        movem.w .base+0(a7), d5-d6
+        move.l  .base+4(a7), a0
+        ; multiply x/y coords by 16 (tile size)
+        lsl.l   #4, d5
+        lsl.l   #4, d6
+.loop:
+        ; set fill color
+        move.l  (a0)+, d1
+        btst.l  #31, d1
+        bne     .done
+        ; TODO: is setting the outline color necessary? can it be disabled?
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+
+        ; get source coordinates
+        move.w  (a0)+, d1
+        move.w  (a0)+, d2
+        move.w  (a0)+, d3
+        move.w  (a0)+, d4
+
+        ; draw rectangle
+        move.b  #87, d0
+        add.w   d5, d1
+        add.w   d5, d3
+        add.w   d6, d2
+        add.w   d6, d4
+        trap    #15
+        bra     .loop
+.done:
+        movem.l (a7)+, d0-d6/a0
+        rts
+
+drawtilecol:
+; arguments:
+;       sp+0 (color)                    -> d1
+;       sp+4 (x pos)                    -> d5
+;       sp+6 (y pos)                    -> d6
+;       sp+8 (bitmap address high word) -> a0
+;       sp+10 (bitmap address low word) -> a0
+        movem.l d0-d6/a0, -(a7)
+
+; 1*4=4 (PC) + 8*4=14 (dx/a0 save) = 36
+.base:  equ     36
+
+        ; get subroutine arguments
+        move.l  .base+0(a7), d1
+        movem.w .base+4(a7), d5-d6
+        move.l  .base+8(a7), a0
+        ; multiply x/y coords by 16 (tile size)
+        lsl.l   #4, d5
+        lsl.l   #4, d6
+        ; TODO: is setting the outline color necessary? can it be disabled?
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+.loop:
+        ; set fill color
+        move.l  (a0)+, d1
+        btst.l  #31, d1
+        bne     .done
+
+        ; get source coordinates
+        move.w  (a0)+, d1
+        move.w  (a0)+, d2
+        move.w  (a0)+, d3
+        move.w  (a0)+, d4
+
+        ; draw rectangle
+        move.b  #87, d0
+        add.w   d5, d1
+        add.w   d5, d3
+        add.w   d6, d2
+        add.w   d6, d4
+        trap    #15
+        bra     .loop
+.done:
+        movem.l (a7)+, d0-d6/a0
+        rts
+
 drawmap:
 ; a0.l -> tile map address
         movem.l d0-d6/a1, -(a7)
@@ -66,7 +160,13 @@ drawmap:
         move.l  (a1,d0), d0
         lea.l   tiles, a2
         add.l   d0, a2                          ; offset a2
-        drawtile a2, d1, d2
+
+        ; call drawtile
+        move.l  a2, -(a7)                       ; tile address
+        move.w  d2, -(a7)                       ; y pos
+        move.w  d1, -(a7)                       ; x pos
+        jsr     drawtile
+        addq.w  #8, a7                          ; pop arguments
 .skip:
         addq.w  #1, d1
         cmp.w   d3, d1
@@ -133,7 +233,13 @@ drawstr:
         move.l  (a1,d0), d0
         lea.l   tiles, a2
         add.l   d0, a2
-        drawtile a2, d1, d2
+
+        ; call drawtile
+        move.l  a2, -(a7)                       ; tile address
+        move.w  d2, -(a7)                       ; y pos
+        move.w  d1, -(a7)                       ; x pos
+        jsr     drawtile
+        addq.w  #8, a7                          ; pop arguments
 .skip:
         addq.w  #1, d1                          ; increment x coordinate
         bra     .loop
@@ -155,7 +261,7 @@ drawstrcol:
         beq     .done                           ; end sequence
 
         ; check for whitespace
-        cmp.b   #' ', d0
+        cmp.b   #$20, d0
         beq     .skip
 
         ; check number
@@ -194,7 +300,12 @@ drawstrcol:
         add.l   d0, a2
 
         ; call drawtile
-        drawtile a2, d1, d2, d3
+        move.l  a2, -(a7)                       ; tile address
+        move.w  d2, -(a7)                       ; y pos
+        move.w  d1, -(a7)                       ; x pos
+        move.l  d3, -(a7)                       ; color
+        jsr     drawtilecol
+        add.w  #12, a7                          ; pop arguments
 .skip:
         addq.w  #1, d1                          ; increment x coordinate
         bra     .loop
