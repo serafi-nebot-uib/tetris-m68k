@@ -1,3 +1,4 @@
+        opt     mex
         org     $1000
 
         include 'board.x68'
@@ -8,12 +9,6 @@
         include 'bg-score.x68'
         include 'bg-game.x68'
         include 'tile.x68'
-
-; TODO: move constants to dedicated file
-TILESIZE: equ   16
-TILELEN: equ    TILESIZE*TILESIZE
-SCRWIDTH: equ   640
-SCRHEIGHT: equ  480
 
 txttest: dc.b   'This is Tetris M68K',0
         ds.l    0
