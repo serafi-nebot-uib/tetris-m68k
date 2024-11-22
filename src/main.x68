@@ -1,22 +1,33 @@
         opt     mex
         org     $1000
 
-        include "const.x68"
-        include "sysconst.x68"
-        include "vars.x68"
-        include "sysvars.x68"
-        include "system.x68"
+        include 'const.x68'
+        include 'sysconst.x68'
+        include 'vars.x68'
+        include 'sysvars.x68'
+        include 'system.x68'
 
-        include "bg/home.x68"
-        include "bg/mode.x68"
-        include "bg/score.x68"
-        include "bg/game.x68"
-        include "tile-table.x68"
-        include "tile.x68"
+        include 'bg/home.x68'
+        include 'bg/mode.x68'
+        include 'bg/score.x68'
+        include 'bg/game.x68'
+        include 'tile-table.x68'
+        include 'tile.x68'
+
+        include 'tile-plot.x68'
 
 start:
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
+
+        move.l  #0, d0
+        move.l  #0, d1
+        jsr     tileplot1
+        move.l  #0, d0
+        move.l  #32, d1
+        jsr     tileplot2
+        trap    #SCR_TRAP
+        simhalt
 
 ; TODO: remove this (for testing)
         lea.l   bggame, a0
