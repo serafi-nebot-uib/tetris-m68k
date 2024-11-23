@@ -20,18 +20,27 @@ start:
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 
-        move.l  #0, d0
-        move.l  #0, d1
-        jsr     tileplot1
-        move.l  #0, d0
-        move.l  #32, d1
-        jsr     tileplot2
-        trap    #SCR_TRAP
-        simhalt
-
 ; TODO: remove this (for testing)
         lea.l   bggame, a0
         jsr     drawmap
+        trap    #SCR_TRAP
+
+        move.l  #16, d0
+        move.l  #6, d1
+        jsr     tileplot1
+
+        move.l  #16, d0
+        move.l  #7, d1
+        jsr     tileplot1
+
+        move.l  #17, d0
+        move.l  #7, d1
+        jsr     tileplot1
+
+        move.l  #16, d0
+        move.l  #8, d1
+        jsr     tileplot1
+
         trap    #SCR_TRAP
 
         simhalt

@@ -1,6 +1,5 @@
 ; TODO: what the hell are these constants?
-PIXELSIZE equ   TILE_SIZE*14/100
-CONTOURSIZE equ 1
+CONTOUR_SIZE equ 2
 
 
 COLOR0  equ     $00000000                       ; black (border)
@@ -8,18 +7,19 @@ COLOR1  equ     $000038f8                       ; red
 COLOR2  equ     $00ffffff                       ; white
 
 pattern1:
-        dc.b    0, TILE_SIZE
-        dc.b    0, TILE_SIZE-2*PIXELSIZE+CONTOURSIZE
-        dc.b    CONTOURSIZE, 2*PIXELSIZE+3*CONTOURSIZE
-        dc.b    0, CONTOURSIZE
-        dc.b    PIXELSIZE+2*CONTOURSIZE, 2*PIXELSIZE+3*CONTOURSIZE
+        dc.b    0, TILE_SIZE                    ; black background
+        dc.b    0, TILE_SIZE-CONTOUR_SIZE       ; main block
+        dc.b    0, CONTOUR_SIZE                 ; small accent
+        dc.b    CONTOUR_SIZE, CONTOUR_SIZE+CONTOUR_SIZE*2 ; big accent
+        dc.b    CONTOUR_SIZE+CONTOUR_SIZE*2/2, CONTOUR_SIZE+CONTOUR_SIZE*2 ; remove big portion of accent
         ds.w    0
 
+
 pattern2:
-        dc.b    0, TILE_SIZE
-        dc.b    0, TILE_SIZE-PIXELSIZE
-        dc.b    0, PIXELSIZE
-        dc.b    PIXELSIZE+CONTOURSIZE, TILE_SIZE-2*PIXELSIZE
+        dc.b    0, TILE_SIZE                    ; black background
+        dc.b    0, TILE_SIZE-CONTOUR_SIZE       ; main block
+        dc.b    0, CONTOUR_SIZE                 ; small accent
+        dc.b    CONTOUR_SIZE, TILE_SIZE-CONTOUR_SIZE*2 ; big accent
         ds.w    0
 
 contourcol1: dc.l COLOR0, COLOR1, COLOR1, COLOR2, COLOR1 ;DEFAULT COLORS OF PATTERN1  
@@ -40,7 +40,6 @@ tileplotinit:
 ; output   : none
 ; modifies : none
 ; ------------------------------------------------------------------------------
-
         ;init this move.l sequence when starting a new level
         ;using the color associated with the level
         move.l  d2, tilecol2+$4
@@ -56,14 +55,19 @@ tileplotinit:
 
 tileplot1:
 ; plot pattern1 tile
-; input    : d0 (posx), d1 (posy) 
+; input    : d0 (x coord), d1 (y coord)
 ; output   : none
 ; modifies : none
 ; ------------------------------------------------------------------------------
         movem.l d0-d7/a0-a2, -(a7) 
 
+        ; TODO: change input to d5,d6 to avoid extra moves
         move.l  d0, d5
         move.l  d1, d6
+        ; multiply coordinates by tile size to get actual x/y positions
+        lsl.l   #4, d5
+        lsl.l   #4, d6
+
         lea     tilecol1, a0
         lea     pattern1, a1
         lea     contourcol1, a2
@@ -80,62 +84,69 @@ tileplot1:
         trap    #15
 
         clrreg
-
-        move.b  (a1), d1                        ; set coordinates
-        add.w   d5, d1
+        ; set coordinates
+        move.b  (a1), d1
+        add.w   d5, d1                          ; start x
         move.b  (a1)+, d2
-        add.w   d6, d2
+        add.w   d6, d2                          ; start y
 
         move.b  (a1), d3
-        add.w   d5, d3
+        add.w   d5, d3                          ; end x
         move.b  (a1)+, d4
-        add.w   d6, d4
+        add.w   d6, d4                          ; end y
 
-        moveq   #87, d0                         ; draw rectangle
+        ; draw rectangle
+        moveq   #87, d0
         trap    #15
 
-        dbra    d7, .loop  
+        dbra    d7, .loop
 
         movem.l (a7)+, d0-d7/a0-a2
         rts
 
 tileplot2:
 ; plot pattern2 tile
-; input    : d0 (posx), d1 (posy), d2 (color) 
+; input    : d0 (x coord), d1 (y coord)
 ; output   : none
 ; modifies : none
 ; ------------------------------------------------------------------------------     
 
         movem.l d0-d7/a0-a1, -(a7)
-            
+
+        ; TODO: change input to d5,d6 to avoid extra moves
         move.l  d0, d5
         move.l  d1, d6
+        ; multiply coordinates by tile size to get actual x/y positions
+        lsl.l   #4, d5
+        lsl.l   #4, d6
+
         lea     tilecol2, a0
         lea     pattern2, a1
         clrreg
 
         moveq   #3, d7
 .loop:
+        ; set rectangle color
         move.l  (a0)+, d1
-
         moveq   #80, d0                         ; set contour color
         trap    #15
         moveq   #81, d0                         ; set fill color
         trap    #15
 
         clrreg
-
-        move.b  (a1), d1                        ; set coordinates
-        add.w   d5, d1
+        ; set coordinates
+        move.b  (a1), d1
+        add.w   d5, d1                          ; start x
         move.b  (a1)+, d2
-        add.w   d6, d2
+        add.w   d6, d2                          ; start y
 
         move.b  (a1), d3
-        add.w   d5, d3
+        add.w   d5, d3                          ; end x
         move.b  (a1)+, d4
-        add.w   d6, d4
+        add.w   d6, d4                          ; end y
 
-        moveq   #87, d0                         ; draw rectangle
+        ; draw rectangle
+        moveq   #87, d0
         trap    #15
 
         dbra    d7, .loop
