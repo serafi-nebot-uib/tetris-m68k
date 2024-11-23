@@ -1,12 +1,9 @@
-; TODO: what the hell are these constants?
-CONTOUR_SIZE equ 2
-
-
 COLOR0  equ     $00000000                       ; black (border)
 COLOR1  equ     $000038f8                       ; red
 COLOR2  equ     $00ffffff                       ; white
+CONTOUR_SIZE equ 2
 
-pattern1:
+piece_pattern1:
         dc.b    0, TILE_SIZE                    ; black background
         dc.b    0, TILE_SIZE-CONTOUR_SIZE       ; main block
         dc.b    0, CONTOUR_SIZE                 ; small accent
@@ -15,7 +12,7 @@ pattern1:
         ds.w    0
 
 
-pattern2:
+piece_pattern2:
         dc.b    0, TILE_SIZE                    ; black background
         dc.b    0, TILE_SIZE-CONTOUR_SIZE       ; main block
         dc.b    0, CONTOUR_SIZE                 ; small accent
@@ -69,7 +66,7 @@ tileplot1:
         lsl.l   #4, d6
 
         lea     tilecol1, a0
-        lea     pattern1, a1
+        lea     piece_pattern1, a1
         lea     contourcol1, a2
         clrreg
 
@@ -121,7 +118,7 @@ tileplot2:
         lsl.l   #4, d6
 
         lea     tilecol2, a0
-        lea     pattern2, a1
+        lea     piece_pattern2, a1
         clrreg
 
         moveq   #3, d7

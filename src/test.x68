@@ -15,10 +15,11 @@ txttest: dc.b   'This is Tetris M68K',0
 
 start:
         ; draw text
-        lea.l   txttest, a0                     ; string address
-        moveq.l #0, d1                          ; x coordinate
-        moveq.l #0, d2                          ; y coordinate
+        lea.l   txttest, a1                     ; string address
+        moveq.l #0, d5                          ; x coordinate
+        moveq.l #0, d6                          ; y coordinate
         jsr     drawstr
+        simhalt
 
         ; draw text with color
         lea.l   txttest, a0                     ; string address
