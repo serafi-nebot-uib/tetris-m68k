@@ -104,8 +104,8 @@ pieceinit:
 
         ; TODO: autogenerate the levelnum and piecenum
         move.b  #8, (levelnum)
-        move.b  #1, (piecenum)
-        jsr     piecelvl
+        move.b  #1, (piecenum)                  ; TODO: is this needed? store in pieceX struct?
+        jsr     pieceupdcol
 
         ; copy data to pieceprev
         move.l  (piece), (pieceprev)
@@ -114,24 +114,47 @@ pieceinit:
         move.w  (a7)+, d1
         rts
 
-piecelvl:
+pieceupdcol:
 ; set the color profile for the selected level
 ; input   : none
 ; output  : none
 ; modifies: none
 ; ------------------------------------------------------------------------------
-        movem.l d1/a0, -(a7)
+        movem.l d1-d3/a0, -(a7)
 
         moveq.l #0, d1
+        moveq.l #0, d2
+        moveq.l #0, d3
+
+        ; d1 -> level
+        ; d2 -> piece color offset
+        ; d3 -> piece pattern offset
         move.b  (levelnum), d1
-        lsl.l   #2, d1
+        move.l  (piece+4), a0                   ; piece matrix
+        move.w  -2(a0), d2
+        move.b  d2, d3
+        bne     .pattern2
+        move.l  #piece_ptrn1, (piece_ptrn)
+        bra     .color
+.pattern2:
+        move.l  #piece_ptrn2, (piece_ptrn)
+.color:
+        lsr.w   #8, d2
 
-        lea.l   piece_colormap, a0
-        move.l  (a0,d1.w), piececol1
-        addq.l  #4, a0
-        move.l  (a0,d1.w), piececol2
+        ; a0 -> color map address
+        ; d1 -> piece color
+        lea.l   piece_colmap, a0
+        lsl.l   #1, d1                          ; level*2
+        add.l   d2, d1                          ; level*2 + color offset
+        lsl.l   #2, d1                          ; (level*2 + color offset)*4
+        move.l  (a0,d1.l), d1
 
-        movem.l (a7)+, d1/a0
+        ; copy current color to piece_ptrn
+        move.l  d1, (piece_ptrn1+(3*4))
+        move.l  d1, (piece_ptrn1+(12*4))
+        move.l  d1, (piece_ptrn2+(3*4))
+
+        movem.l (a7)+, d1-d3/a0
         rts
 
 piecerotr:
@@ -346,35 +369,9 @@ pieceupd:
 
 
 
-
-
 ; --- plotting -----------------------------------------------------------------
 
-COLOR0  equ     $00000000                       ; black (border)
-COLOR1  equ     $000038f8                       ; red
-COLOR2  equ     $00ffffff                       ; white
-CONTOUR_SIZE equ 2
-
-piece_pattern1:
-        dc.b    0, TILE_SIZE                    ; black background
-        dc.b    0, TILE_SIZE-CONTOUR_SIZE       ; main block
-        dc.b    0, CONTOUR_SIZE                 ; small accent
-        dc.b    CONTOUR_SIZE, CONTOUR_SIZE+CONTOUR_SIZE*2 ; big accent
-        dc.b    CONTOUR_SIZE+CONTOUR_SIZE*2/2, CONTOUR_SIZE+CONTOUR_SIZE*2 ; remove big portion of accent
-        ds.w    0
-
-piece_pattern2:
-        dc.b    0, TILE_SIZE                    ; black background
-        dc.b    0, TILE_SIZE-CONTOUR_SIZE       ; main block
-        dc.b    0, CONTOUR_SIZE                 ; small accent
-        dc.b    CONTOUR_SIZE, TILE_SIZE-CONTOUR_SIZE*2 ; big accent
-        ds.w    0
-
-contourcol1: dc.l COLOR0, COLOR1, COLOR1, COLOR2, COLOR1 ;DEFAULT COLORS OF PATTERN1  
-tilecol1: dc.l  COLOR0, COLOR1, COLOR2, COLOR2, COLOR1 ;DEFAULT COLORS OF PATTERN1
-tilecol2: dc.l  COLOR0, COLOR1, COLOR2, COLOR2  ;DEFAULT COLORS OF PATTERN2
-
-piece_colormap:
+piece_colmap:
         * ---    COLOR1   COLOR2     --- *
         dc.l    $ec3820, $fcbc3c                ; LEVEL0
         dc.l    $00a800, $10d080                ; LEVEL1
@@ -387,165 +384,23 @@ piece_colormap:
         dc.l    $f85800, $0038f8                ; LEVEL8
         dc.l    $0038f8, $44a0fc                ; LEVEL9
 
-piececol1: dc.l $ec3820                         ; color1 [pattern1: j,s / pattern2: t,o,i]
-piececol2: dc.l $fcbc3c                         ; color2 [pattern1: z,l]
-
-pltguide:
-        dc.l    pieceplot2                      ; T
-        dc.l    pieceplot1                      ; J
-        dc.l    pieceplot1                      ; Z
-        dc.l    pieceplot2                      ; O
-        dc.l    pieceplot1                      ; S
-        dc.l    pieceplot1                      ; L
-        dc.l    pieceplot2                      ; I
-
-clrguide:
-        dc.l    piececol1                       ; T
-        dc.l    piececol1                       ; J
-        dc.l    piececol2                       ; Z
-        dc.l    piececol1                       ; O
-        dc.l    piececol1                       ; S
-        dc.l    piececol2                       ; L
-        dc.l    piececol1                       ; I
-
-clrreg  macro
-        moveq.l #0, d0
-        moveq.l #0, d1
-        moveq.l #0, d2
-        moveq.l #0, d3
-        moveq.l #0, d4
-        endm
-
-pieceplot1:
-; plot pattern1 tile
-; input    : d0 (x coord), d1 (y coord)
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------
-        movem.l d0-d7/a0-a2, -(a7) 
-
-        ; TODO: change input to d5,d6 to avoid extra moves
-        move.l  d0, d5
-        move.l  d1, d6
-        ; multiply coordinates by tile size to get actual x/y positions
-        lsl.l   #4, d5
-        lsl.l   #4, d6
-
-        lea     tilecol1, a0
-        lea     piece_pattern1, a1
-        lea     contourcol1, a2
-        clrreg
-
-        moveq   #4, d7
-.loop:
-        move.l  (a2)+, d1
-        moveq   #80, d0                         ; set contour color
-        trap    #15
-
-        move.l  (a0)+, d1
-        moveq   #81, d0                         ; set fill color
-        trap    #15
-
-        clrreg
-        ; set coordinates
-        move.b  (a1), d1
-        add.w   d5, d1                          ; start x
-        move.b  (a1)+, d2
-        add.w   d6, d2                          ; start y
-
-        move.b  (a1), d3
-        add.w   d5, d3                          ; end x
-        move.b  (a1)+, d4
-        add.w   d6, d4                          ; end y
-
-        ; draw rectangle
-        moveq   #87, d0
-        trap    #15
-
-        dbra    d7, .loop
-
-        movem.l (a7)+, d0-d7/a0-a2
-        rts
-
-pieceplot2:
-; plot pattern2 tile
-; input    : d0 (x coord), d1 (y coord)
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------     
-
-        movem.l d0-d7/a0-a1, -(a7)
-
-        ; TODO: change input to d5,d6 to avoid extra moves
-        move.l  d0, d5
-        move.l  d1, d6
-        ; multiply coordinates by tile size to get actual x/y positions
-        lsl.l   #4, d5
-        lsl.l   #4, d6
-
-        lea     tilecol2, a0
-        lea     piece_pattern2, a1
-        clrreg
-
-        moveq   #3, d7
-.loop:
-        ; set rectangle color
-        move.l  (a0)+, d1
-        moveq   #80, d0                         ; set contour color
-        trap    #15
-        moveq   #81, d0                         ; set fill color
-        trap    #15
-
-        clrreg
-        ; set coordinates
-        move.b  (a1), d1
-        add.w   d5, d1                          ; start x
-        move.b  (a1)+, d2
-        add.w   d6, d2                          ; start y
-
-        move.b  (a1), d3
-        add.w   d5, d3                          ; end x
-        move.b  (a1)+, d4
-        add.w   d6, d4                          ; end y
-
-        ; draw rectangle
-        moveq   #87, d0
-        trap    #15
-
-        dbra    d7, .loop
-
-        movem.l (a7)+, d0-d7/a0-a1
-        rts
+piece_ptrn:
+        dc.l    $00000000
+piece_ptrn1:
+        dc.l    $00000000, $00000000, $00100010
+        dc.l    $000038f8, $00000000, $000e000e
+        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00020002, $00060006
+        dc.l    $000038f8, $00040004, $00060006
+        dc.l    $ffffffff
+piece_ptrn2:
+        dc.l    $00000000, $00000000, $00100010
+        dc.l    $000038f8, $00000000, $000e000e
+        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00020002, $000c000c
+        dc.l    $ffffffff
 
 pieceplot:
-        movem.l d0-d2/a0-a2, -(a7)
-
-        ; get color and pattern for current piece
-        moveq   #0, d1
-        move.b  (piecenum), d1
-        lsl.w   #2, d1
-        lea     clrguide, a0
-        movea.l (a0,d1.w), a1
-        move.l  (a1), d2
-        lea     pltguide, a0
-        movea.l (a0,d1.w), a1
-
-        ; update current piece color
-        ; TODO: only do this when there's a level change
-        move.l  d2, tilecol2+$4
-        move.l  d2, tilecol1+$4
-        move.l  d2, tilecol1+$10
-
-        ;if piece is T,O,I this is not needed:
-        move.l  d2, contourcol1+$4
-        move.l  d2, contourcol1+$10
-        move.l  d2, contourcol1+$8
-
-        moveq.l #0, d0                          ; tile x
-        moveq.l #0, d1                          ; tile y
-        jsr     (a1)                            ; jump to pattern plot subrouting
-
-        movem.l (a7)+, d0-d2/a0-a2
         rts
 
 

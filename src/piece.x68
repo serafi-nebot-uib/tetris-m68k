@@ -1,3 +1,5 @@
+        dc.b    0                               ; color
+        dc.b    1                               ; pattern
 pieceT:
         ; (1)
         dc.b    $01, $00                        ; x, y
@@ -23,6 +25,8 @@ pieceT:
         dc.b    $01, $00
         dc.b    $00, $00
 
+        dc.b    0                               ; color
+        dc.b    0                               ; pattern
 pieceJ:
         ; (1)
         dc.b    $02, $00                        ; x, y
@@ -48,6 +52,8 @@ pieceJ:
         dc.b    $01, $00
         dc.b    $00, $00
 
+        dc.b    1                               ; color
+        dc.b    0                               ; pattern
 pieceZ:
         ; (1)
         dc.b    $01, $00                        ; x, y
@@ -73,6 +79,8 @@ pieceZ:
         dc.b    $01, $00
         dc.b    $00, $00
 
+        dc.b    0                               ; color
+        dc.b    1                               ; pattern
 pieceO:
         ; (1)
         dc.b    $00, $00                        ; x, y
@@ -98,6 +106,8 @@ pieceO:
         dc.b    $00, $00
         dc.b    $00, $00
 
+        dc.b    0                               ; color
+        dc.b    0                               ; pattern
 pieceS:
         ; (1)
         dc.b    $01, $00                        ; x, y
@@ -123,6 +133,8 @@ pieceS:
         dc.b    $00, $01
         dc.b    $00, $00
 
+        dc.b    1                               ; color
+        dc.b    0                               ; pattern
 pieceL:
         ; (1)
         dc.b    $00, $00                        ; x, y
@@ -148,6 +160,8 @@ pieceL:
         dc.b    $01, $01
         dc.b    $00, $00
 
+        dc.b    0                               ; color
+        dc.b    1                               ; pattern
 pieceI:
         ; (1)
         dc.b    $02, $00                        ; x, y

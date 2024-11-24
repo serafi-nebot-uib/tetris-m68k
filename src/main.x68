@@ -17,42 +17,31 @@
         include 'piece.x68'
         include 'board.x68'
 
-block1:
-        dc.l    $00000000, $00000000, $00100010
-        dc.l    $000038f8, $00000000, $000e000e
-        dc.l    $00ffffff, $00000000, $00020002
-        dc.l    $00ffffff, $00020002, $00060006
-        dc.l    $000038f8, $00040004, $00060006
-        dc.l    $ffffffff
-
-block2:
-        dc.l    $00000000, $00000000, $00100010
-        dc.l    $000038f8, $00000000, $000e000e
-        dc.l    $00ffffff, $00000000, $00020002
-        dc.l    $00ffffff, $00020002, $000c000c
-        dc.l    $ffffffff
-
 txttest: dc.b   'This is Tetris M68k',0
         ds.w    0
 
 start:
-        lea.l   txttest, a1                     ; string address
-        moveq.l #0, d5                          ; x coordinate
-        moveq.l #0, d6                          ; y coordinate
-        jsr     drawstr
-
-        addq.l  #1, d6
-        move.l  #$000000ff, d1
-        jsr     drawstrcol
-
-        addq.l  #1, d6
-        move.l  #$0000ff00, d1
-        jsr     drawstrcol
-
-        addq.l  #1, d6
-        move.l  #$00ff0000, d1
-        jsr     drawstrcol
+        moveq.l #0, d0
+        lea.l   pieceT, a0
+        jsr     pieceinit
         simhalt
+        ; lea.l   txttest, a1                     ; string address
+        ; moveq.l #0, d5                          ; x coordinate
+        ; moveq.l #0, d6                          ; y coordinate
+        ; jsr     drawstr
+        ;
+        ; addq.l  #1, d6
+        ; move.l  #$000000ff, d1
+        ; jsr     drawstrcol
+        ;
+        ; addq.l  #1, d6
+        ; move.l  #$0000ff00, d1
+        ; jsr     drawstrcol
+        ;
+        ; addq.l  #1, d6
+        ; move.l  #$00ff0000, d1
+        ; jsr     drawstrcol
+        ; simhalt
 
 ; --- initialization -----------------------------------------------------------
         ; jsr     sysinit
