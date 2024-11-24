@@ -5,6 +5,8 @@ PIECE_SIZE: equ PIECE_WIDTH*PIECE_HEIGHT
 BOARD_WIDTH: equ 10
 BOARD_HEIGHT: equ 20
 BOARD_SIZE: equ BOARD_WIDTH*BOARD_HEIGHT
+BOARD_BASE_X: equ 16
+BOARD_BASE_Y: equ 6
 
 ; TODO: move variables to game vars
 levelnum: ds.b  1
@@ -401,120 +403,58 @@ piece_ptrn2:
         dc.l    $ffffffff
 
 pieceplot:
+        movem.l d0-d6/a0-a1, -(a7)
+        ; a0.l ->  piece tile pattern
+        move.l  (piece_ptrn), a0
+
+        ; a1.l -> piece matrix
+        move.l  (piece+4), a1
+        move.w  (piece+2), d0                   ; orientation index
+        ; d2.l -> piece matrix width
+        ; d3.l -> piece matrix height
+        moveq.l #0, d2
+        moveq.l #0, d3
+        pdim    d0, d2
+        move.b  d2, d3
+        lsr.l   #8, d2
+        poff    d0, d1                          ; calculate array offset
+        add.l   d0, a1                          ; offset a1 to point to current orientation matrix
+        addq.l  #2, a1                          ; offset a1 to point to piece matrix (skip rx, ry)
+
+        ; d4.l -> piece matrix index
+        moveq.l #0, d4
+        ; d5.l -> tile x coord (relative to screen)
+        move.l  #BOARD_BASE_X, d5
+        move.b  (piece), d1
+        ext.w   d1
+        add.w   d1, d5
+        ; d6.l -> tile y coord (relative to screen)
+        move.l  #BOARD_BASE_Y, d6
+        move.b  (piece+1), d1
+        ext.w   d1
+        add.w   d1, d6
+
+        ; d0.b -> matrix x index (only used as loop counter)
+        moveq.l #0, d0
+        ; d1.b -> matrix y index (only used as loop counter)
+        moveq.l #0, d1
+.loop:
+        btst    #0, (a1,d4)
+        beq     .nitr
+        jsr     drawtile
+.nitr:
+        addq.l  #1, d4                          ; increment matrix index
+        addq.l  #1, d5                          ; increment tile x coord
+        addq.l  #1, d0                          ; increment matrix x index
+        cmp.b   d2, d0                          ; compare matrix x index with matrix width
+        blo     .loop
+
+        moveq.l #0, d0                          ; reset matrix x index
+        sub.l   d2, d5                          ; reset tile x coord to start position
+        addq.l  #1, d6                          ; increment tile y coord
+        addq.l  #1, d1                          ; increment matrix y index
+        cmp.b   d3, d1                          ; compare matrix y index with matrix height
+        blo     .loop
+.done:
+        movem.l (a7)+, d0-d6/a0-a1
         rts
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-; ; TODO: delete this; only for testing
-; pieceplot:
-;         ; clear screen
-;         move.b  #11, d0
-;         move.w  #$ff00, d1
-;         trap    #15
-;
-;         ; draw board
-;         move.b  #81, d0
-;         move.l  #$00000000, d1
-;         trap    #15
-;
-;         move.b  #80, d0
-;         move.l  #$00ff0000, d1
-;         trap    #15
-;
-;         ; draw rectangle
-;         move.b  #87, d0
-;         move.l  #0, d1
-;         move.l  #0, d2
-;         move.l  #10*20, d3
-;         move.l  #20*20, d4
-;         trap    #15
-;
-;         ; draw current piece
-;         move.b  #80, d0
-;         move.l  #$00000000, d1
-;         trap    #15
-;
-;         move.b  #81, d0
-;         move.l  #$0000ff00, d1
-;         trap    #15
-;
-;         clr.l   d0
-;         lea.l   piece, a0                       ; piece address
-;         move.l  4(a0), a0                       ; piece matrix address
-;         move.w  (piece+2), d0                   ; piece orientation index
-;         mulu    #PIECE_SIZE+2, d0                    ; get current orientation offset
-;         addq.l  #2, a0                          ; offset x,y offsets
-;         add.l   d0, a0
-;
-;         clr.w   d5                              ; piece matrix index
-;
-;         ; get current piece width and height
-;         move.w  (piece+2), d0                   ; piece orientation index
-;         divu    #2, d0
-;         swap    d0
-;         cmp.w   #0, d0
-;         bne     .vert
-;         move.w  #PIECE_WIDTH, d6                     ; width
-;         bra     .loop
-; .vert:
-;         move.w  #PIECE_HEIGHT, d6                    ; width
-;
-; .loop:
-;         cmp.b   #0, (a0,d5)
-;         beq     .nitr
-;
-;         ; x = i mod w
-;         clr.l   d1
-;         move.w  d5, d1
-;         divu    d6, d1
-;         swap    d1
-;
-;         ; y = (i - x) / w
-;         move.w  d5, d2
-;         sub.w   d1, d2
-;         divu    d6, d2
-;
-;         clr.w   d3
-;         clr.w   d4
-;         move.b  (piece), d3
-;         move.b  (piece+1), d4
-;         add.w   d3, d1
-;         add.w   d4, d2
-;
-;         ; draw rectangle
-;         move.b  #87, d0
-;         mulu    #20, d1
-;         move.w  d1, d3
-;         add.w   #20, d3
-;         mulu    #20, d2
-;         move.w  d2, d4
-;         add.w   #20, d4
-;         trap    #15
-; .nitr:
-;         ; next iteration
-;         addq.w  #1, d5
-;         cmp     #PIECE_SIZE, d5
-;         blo     .loop
-;         rts

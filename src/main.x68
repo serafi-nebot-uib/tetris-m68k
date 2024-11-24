@@ -21,9 +21,13 @@ txttest: dc.b   'This is Tetris M68k',0
         ds.w    0
 
 start:
-        moveq.l #0, d0
-        lea.l   pieceT, a0
+        lea.l   bggame, a1
+        jsr     drawmap
+        move.l  #4<<8|4, d0
+        lea.l   pieceI, a0
         jsr     pieceinit
+        jsr     piecerotr
+        jsr     pieceplot
         simhalt
         ; lea.l   txttest, a1                     ; string address
         ; moveq.l #0, d5                          ; x coordinate

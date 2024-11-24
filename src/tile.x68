@@ -94,8 +94,8 @@ drawtilecol:
         movem.l d0-d6/a0, -(a7)
 
         ; multiply x/y coords by 16 (tile size)
-        lsl.l   #4, d5
-        lsl.l   #4, d6
+        lsl.w   #4, d5
+        lsl.w   #4, d6
         ; TODO: is setting the outline color necessary? can it be disabled?
         move.b  #80, d0
         trap    #15
