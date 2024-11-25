@@ -1,3 +1,6 @@
+piece_list:
+        dc.l    pieceT, pieceJ, pieceZ, pieceO, pieceS, pieceL, pieceI
+
         dc.b    0                               ; color
         dc.b    1                               ; pattern
 pieceT:

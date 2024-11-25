@@ -10,8 +10,6 @@ BOARD_BASE_Y: equ 6
 
 ; TODO: move variables to game vars
 levelnum: ds.b  1
-; TODO: move piecenum to piece data structure
-piecenum: ds.b  1
         ds.w    0
 
 ;--- logic ---------------------------------------------------------------------
@@ -81,6 +79,11 @@ piecerollback: macro
         move.l  (pieceprev+4), (piece+4)
         endm
 
+piecerollfwd: macro
+        move.l  (piece), (pieceprev)
+        move.l  (piece+4), (pieceprev+4)
+        endm
+
 pieceinit:
 ; d0 -> x << 8 | y (relative to the board)
 ; a0 -> piece matrix address
@@ -104,9 +107,8 @@ pieceinit:
         sub.b   d1, d0
         move.b  d0, (piece)                     ; adjusted x
 
-        ; TODO: autogenerate the levelnum and piecenum
-        move.b  #8, (levelnum)
-        move.b  #1, (piecenum)                  ; TODO: is this needed? store in pieceX struct?
+        ; TODO: autogenerate the levelnum
+        move.b  #0, (levelnum)
         jsr     pieceupdcol
 
         ; copy data to pieceprev
@@ -315,6 +317,59 @@ piececoll:
         movem.l (a7)+, d1-d5/a0-a1
         rts
 
+pieceupd:
+        movem.l d0-d1, -(a7)
+        ; d0.l -> kbdedge
+        moveq.l #0, d0
+        move.b  (KBD_EDGE), d0
+
+        ; check left
+        btst    #0, d0
+        beq     .chkright
+        piecemovl #1
+        bra     .chkcol
+.chkright:
+        btst    #2, d0
+        beq     .chkup
+        piecemovr #1
+        bra     .chkcol
+.chkup:
+        btst    #1, d0
+        beq     .chkdown
+        piecemovu #1
+        bra     .chkcol
+.chkdown:
+        btst    #3, d0
+        beq     .chkspbar
+        piecemovd #1
+        bra     .chkcol
+.chkspbar:
+        btst    #4, d0
+        beq     .chkshift
+        jsr     piecerotr
+        bra     .chkcol
+.chkshift:
+        btst    #7, d0
+        beq     .chkcol
+        ; TODO: remove lvl update (this is only for testing)
+        moveq.l #0, d1
+        move.b  (levelnum), d1
+        addq.b  #1, d1
+        divu    #9, d1
+        swap    d1
+        move.b  d1, (levelnum)
+        jsr     pieceupdcol
+.chkcol:
+        jsr     piececoll
+        cmp.b   #0, d0
+        bne     .rollback
+        piecerollfwd
+        bra     .done
+.rollback:
+        piecerollback
+.done:
+        movem.l (a7)+, d0-d1
+        rts
 
 ; --- plotting -----------------------------------------------------------------
 
@@ -334,7 +389,7 @@ piece_colmap:
 piece_ptrn:
         dc.l    $00000000
 piece_ptrn0:
-        dc.l    $00000000, $00000000, $00100010
+        dc.l    $00000000, $00000000, $000f000f
         dc.l    $ffffffff
 piece_ptrn1:
         dc.l    $00000000, $00000000, $00100010

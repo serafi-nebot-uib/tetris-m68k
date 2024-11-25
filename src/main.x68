@@ -21,70 +21,22 @@ txttest: dc.b   'This is Tetris M68k',0
         ds.w    0
 
 start:
+
+; --- initialization -----------------------------------------------------------
+        jsr     sysinit
+
         lea.l   bggame, a1
         jsr     drawmap
         move.l  #4<<8|4, d0
-        lea.l   pieceI, a0
+        lea.l   pieceT, a0
         jsr     pieceinit
-        jsr     pieceplot
-        jsr     piececlr
-        jsr     piecerotr
-        jsr     pieceplot
-        simhalt
-        ; lea.l   txttest, a1                     ; string address
-        ; moveq.l #0, d5                          ; x coordinate
-        ; moveq.l #0, d6                          ; y coordinate
-        ; jsr     drawstr
-        ;
-        ; addq.l  #1, d6
-        ; move.l  #$000000ff, d1
-        ; jsr     drawstrcol
-        ;
-        ; addq.l  #1, d6
-        ; move.l  #$0000ff00, d1
-        ; jsr     drawstrcol
-        ;
-        ; addq.l  #1, d6
-        ; move.l  #$00ff0000, d1
-        ; jsr     drawstrcol
-        ; simhalt
-
-; --- initialization -----------------------------------------------------------
-        ; jsr     sysinit
-
-; TODO: remove this (for testing)
-        ; ; versio drawtile
-        ; move.l  #block1, -(a7)
-        ; move.w  #0, -(a7)
-        ; move.w  #0, -(a7)
-        ; jsr     drawtile
-        ; addq.l  #8, a7
-        ;
-        ; move.l  #block2, -(a7)
-        ; move.w  #0, -(a7)
-        ; move.w  #1, -(a7)
-        ; jsr     drawtile
-        ; addq.l  #8, a7
-        ;
-        ; trap    #SCR_TRAP
-        ; simhalt
-        ;
-        ; ; versio jaume
-        ; moveq.l #0, d0
-        ; moveq.l #0, d1
-        ; jsr     pieceplot1
-        ; trap    #SCR_TRAP
-        ; simhalt
-
-        ; lea.l   bggame, a1
-        ; jsr     drawmap
-        ; trap    #SCR_TRAP
-
-        simhalt
 
 .loop:
 ; --- update -------------------------------------------------------------------
         trap    #KBD_TRAP                       ; update keyboard values
+        jsr     piececlr
+        jsr     pieceupd
+        jsr     pieceplot
 
 ; --- sync ---------------------------------------------------------------------
 ; TODO: implement sync
