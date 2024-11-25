@@ -9,7 +9,8 @@ BOARD_BASE_X: equ 16
 BOARD_BASE_Y: equ 6
 
 ; TODO: move variables to game vars
-levelnum: ds.b  1
+levelnum: dc.b  0
+piecenum: dc.b  0
         ds.w    0
 
 ;--- logic ---------------------------------------------------------------------
@@ -106,9 +107,6 @@ pieceinit:
         lsr.w   #8, d1
         sub.b   d1, d0
         move.b  d0, (piece)                     ; adjusted x
-
-        ; TODO: autogenerate the levelnum
-        move.b  #0, (levelnum)
         jsr     pieceupdcol
 
         ; copy data to pieceprev
@@ -350,7 +348,7 @@ pieceupd:
         bra     .chkcol
 .chkshift:
         btst    #7, d0
-        beq     .chkcol
+        beq     .chkctrl
         ; TODO: remove lvl update (this is only for testing)
         moveq.l #0, d1
         move.b  (levelnum), d1
@@ -359,6 +357,23 @@ pieceupd:
         swap    d1
         move.b  d1, (levelnum)
         jsr     pieceupdcol
+        bra     .chkcol
+.chkctrl:
+        btst    #6, d0
+        beq     .chkcol
+        ; TODO: remove piece change (this is only for testing)
+        moveq.l #0, d1
+        move.b  (piecenum), d1
+        addq.b  #1, d1
+        divu    #7, d1
+        swap    d1
+        andi.l  #$ffff, d1
+        move.b  d1, (piecenum)
+        lsl.l   #2, d1
+        lea.l   piece_list, a0
+        move.l  (a0,d1), a0
+        move.l  #5<<8|0, d0
+        jsr     pieceinit
 .chkcol:
         jsr     piececoll
         cmp.b   #0, d0

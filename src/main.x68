@@ -27,7 +27,7 @@ start:
 
         lea.l   bggame, a1
         jsr     drawmap
-        move.l  #4<<8|4, d0
+        move.l  #5<<8|0, d0
         lea.l   pieceT, a0
         jsr     pieceinit
 
