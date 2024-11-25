@@ -26,6 +26,8 @@ start:
         move.l  #4<<8|4, d0
         lea.l   pieceI, a0
         jsr     pieceinit
+        jsr     pieceplot
+        jsr     piececlr
         jsr     piecerotr
         jsr     pieceplot
         simhalt

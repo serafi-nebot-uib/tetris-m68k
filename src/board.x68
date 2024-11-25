@@ -315,61 +315,6 @@ piececoll:
         movem.l (a7)+, d1-d5/a0-a1
         rts
 
-pieceupd:
-; rollback piece if collision detected
-; otherwise, clear previous piece, plot current piece, and copy current piece to previous piece
-        jsr     piececoll
-        cmp     #0, d0
-        beq     .clear
-        piecerollback
-        bra     .done
-; --- clear previous piece -----------------------------------------------------
-.clear:
-        moveq.l #0, d0
-        move.l  (pieceprev+4), a0               ; piece address
-        move.w  (pieceprev+2), d0               ; orientation index
-        pdim    d0, d4                          ; matrix dimensions (d3 width, d4 height)
-        move.w  d4, d3
-        lsr.w   #8, d3
-        poff    d0, d1                          ; calculate array offset
-        add.l   d0, a0                          ; offset a0 to point to the correct matrix
-        add.l   #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
-
-        moveq.l #0, d0                          ; x index
-        moveq.l #0, d1                          ; y index
-        moveq.l #0, d2                          ; accumulator
-.clear_loop:
-        ; check block bounds
-        move.b  d1, d2                          ; y
-        ; TODO: optimize mulu (lsl?)
-        mulu    d3, d2                          ; y * width
-        add.b   d0, d2                          ; y * width + x
-        move.b  (a0,d2), d5                     ; get current piece block
-        ; if current piece block is empty there's nothing else to check
-        beq     .clear_nitr
-
-        ; set block fill & border color to black
-        move.l  #$00000000, d1
-        move.b  #80, d0
-        trap    #15
-        move.b  #81, d0
-        trap    #15
-
-        ; draw rectangle
-        move.b  #87, d0
-        trap    #15
-.clear_nitr:
-        addq.b  #1, d0                          ; increment x index
-        cmp.b   d3, d0                          ; compare with matrix width
-        blo     .clear_loop
-        moveq.l #0, d0                          ; reset x index
-        addq.b  #1, d1                          ; increment y index
-        cmp.b   d4, d1                          ; compare with matrix height
-        blo     .clear_loop
-.done:
-        rts
-
-
 
 ; --- plotting -----------------------------------------------------------------
 
@@ -388,6 +333,9 @@ piece_colmap:
 
 piece_ptrn:
         dc.l    $00000000
+piece_ptrn0:
+        dc.l    $00000000, $00000000, $00100010
+        dc.l    $ffffffff
 piece_ptrn1:
         dc.l    $00000000, $00000000, $00100010
         dc.l    $000038f8, $00000000, $000e000e
@@ -402,11 +350,16 @@ piece_ptrn2:
         dc.l    $00ffffff, $00020002, $000c000c
         dc.l    $ffffffff
 
+piececlr:
+        movem.l d0-d6/a0-a1, -(a7)
+        ; a0.l ->  piece tile pattern
+        lea.l   piece_ptrn0, a0
+        bra     _pieceplot
 pieceplot:
         movem.l d0-d6/a0-a1, -(a7)
         ; a0.l ->  piece tile pattern
         move.l  (piece_ptrn), a0
-
+_pieceplot:
         ; a1.l -> piece matrix
         move.l  (piece+4), a1
         move.w  (piece+2), d0                   ; orientation index
