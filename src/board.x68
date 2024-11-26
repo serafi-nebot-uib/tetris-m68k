@@ -8,7 +8,7 @@ BOARD_SIZE: equ BOARD_WIDTH*BOARD_HEIGHT
 BOARD_BASE_X: equ 16
 BOARD_BASE_Y: equ 6
 
-; TODO: move variables to game vars
+; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
 piecenum: dc.b  0
         ds.w    0
@@ -349,7 +349,40 @@ piececoll:
         movem.l (a7)+, d1-d5/a0-a1
         rts
 
-piecedrop:
+; ------------------------------------------------------------------------------
+; release current piece to the board
+;
+; input   : none
+; output  : none
+; modifies: none
+piecerelease:
+        ; a0.l -> piece matrix
+        move.l  (piece+4), a0
+        ; a1.l -> piece matrix
+        lea.l   board, a1
+
+        ; d0.l -> piece x coord (within board)
+        ; d1.l -> piece y coord (within board)
+        moveq.l #0, d0
+        moveq.l #0, d1
+        move.w  (piece), d0
+        move.b  d0, d1
+        lsr.l   #8, d0
+
+        ; d2.l -> piece matrix width
+        ; d3.l -> piece matrix height
+        move.w  (piece+2), d4                   ; orientation index
+        moveq.l #0, d2
+        moveq.l #0, d3
+        pdim    d4, d2
+        move.b  d2, d3
+        lsr.l   #8, d2
+        poff    d4, d1                          ; calculate array offset
+        add.l   d4, a0                          ; offset a0 to point to current orientation matrix
+        addq.l  #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
+.loop:
+.nitr:
+.done:
         rts
 
 ; ------------------------------------------------------------------------------
@@ -444,17 +477,17 @@ piece_colmap:
 piece_ptrn:
         dc.l    $00000000
 piece_ptrn0:
-        dc.l    $00000000, $00000000, $00100010
+        dc.l    $00000000, $00000000, $000f000f
         dc.l    $ffffffff
 piece_ptrn1:
-        dc.l    $00000000, $00000000, $00100010
+        dc.l    $00000000, $00000000, $000f000f
         dc.l    $000038f8, $00000000, $000e000e
         dc.l    $00ffffff, $00000000, $00020002
         dc.l    $00ffffff, $00020002, $00060006
         dc.l    $000038f8, $00040004, $00060006
         dc.l    $ffffffff
 piece_ptrn2:
-        dc.l    $00000000, $00000000, $00100010
+        dc.l    $00000000, $00000000, $000f000f
         dc.l    $000038f8, $00000000, $000e000e
         dc.l    $00ffffff, $00000000, $00020002
         dc.l    $00ffffff, $00020002, $000c000c
@@ -467,7 +500,7 @@ piece_ptrn2:
 ; output  : none
 ; modifies: none
 piececlr:
-        movem.l d0-d6/a0-a1, -(a7)
+        movem.l d0-d3/d5-d6/a0-a1, -(a7)
         ; a0.l ->  piece tile pattern
         lea.l   piece_ptrn0, a0
         bra     _pieceplot
@@ -478,15 +511,15 @@ piececlr:
 ; output  : none
 ; modifies: none
 pieceplot:
-        movem.l d0-d6/a0-a1, -(a7)
+        movem.l d0-d3/d5-d6/a0-a1, -(a7)
         ; a0.l ->  piece tile pattern
         move.l  (piece_ptrn), a0
 _pieceplot:
         ; a1.l -> piece matrix
         move.l  (piece+4), a1
-        move.w  (piece+2), d0                   ; orientation index
         ; d2.l -> piece matrix width
         ; d3.l -> piece matrix height
+        move.w  (piece+2), d0                   ; orientation index
         moveq.l #0, d2
         moveq.l #0, d3
         pdim    d0, d2
@@ -496,8 +529,6 @@ _pieceplot:
         add.l   d0, a1                          ; offset a1 to point to current orientation matrix
         addq.l  #2, a1                          ; offset a1 to point to piece matrix (skip rx, ry)
 
-        ; d4.l -> piece matrix index
-        moveq.l #0, d4
         ; d5.l -> tile x coord (relative to screen)
         move.l  #BOARD_BASE_X, d5
         move.b  (piece), d1
@@ -514,11 +545,10 @@ _pieceplot:
         ; d1.b -> matrix y index (only used as loop counter)
         moveq.l #0, d1
 .loop:
-        btst    #0, (a1,d4)
+        btst    #0, (a1)+
         beq     .nitr
         jsr     drawtile
 .nitr:
-        addq.l  #1, d4                          ; increment matrix index
         addq.l  #1, d5                          ; increment tile x coord
         addq.l  #1, d0                          ; increment matrix x index
         cmp.b   d2, d0                          ; compare matrix x index with matrix width
@@ -531,5 +561,5 @@ _pieceplot:
         cmp.b   d3, d1                          ; compare matrix y index with matrix height
         blo     .loop
 .done:
-        movem.l (a7)+, d0-d6/a0-a1
+        movem.l (a7)+, d0-d3/d5-d6/a0-a1
         rts

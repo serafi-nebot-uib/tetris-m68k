@@ -17,9 +17,6 @@
         include 'piece.x68'
         include 'board.x68'
 
-txttest: dc.b   'This is Tetris M68k',0
-        ds.w    0
-
 start:
 
 ; --- initialization -----------------------------------------------------------
