@@ -32,26 +32,26 @@ pieceprev:
 ; board representation as a matrix
 board:
         ; ds.b    BOARD_WIDTH*BOARD_HEIGHT
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         ds.w    0
 
 ; get piece matrix dimensions from an orientation index
@@ -122,7 +122,8 @@ pieceinit:
         lsr.w   #8, d2
         sub.b   d2, d0
         move.b  d0, (piece)                     ; adjusted x
-        jsr     pieceupdcol
+
+        jsr     boardplot
 
         ; copy data to pieceprev
         move.l  (piece), (pieceprev)
@@ -133,45 +134,37 @@ pieceinit:
 
 ; ------------------------------------------------------------------------------
 ; set the color profile for the current piece and level
-; input   : none
+; input   :
+;               d0.l -> color
+;               d1.l -> pattern
 ; output  : none
 ; modifies: none
 pieceupdcol:
-        movem.l d1-d3/a0, -(a7)
+        movem.l d0-d2/a0, -(a7)
 
-        moveq.l #0, d1
-        moveq.l #0, d2
-        moveq.l #0, d3
-
-        ; d1 -> level
-        ; d2 -> piece color offset
-        ; d3 -> piece pattern offset
-        move.b  (levelnum), d1
-        move.l  (piece+4), a0                   ; piece matrix
-        move.w  -2(a0), d2
-        move.b  d2, d3
+        cmp.b   #0, d1
         bne     .pattern2
         move.l  #piece_ptrn1, (piece_ptrn)
         bra     .color
 .pattern2:
         move.l  #piece_ptrn2, (piece_ptrn)
 .color:
-        lsr.w   #8, d2
-
         ; a0 -> color map address
-        ; d1 -> piece color
+        ; d2 -> current level
+        moveq.l #0, d2
+        move.b  (levelnum), d2
         lea.l   piece_colmap, a0
-        lsl.l   #1, d1                          ; level*2
-        add.l   d2, d1                          ; level*2 + color offset
-        lsl.l   #2, d1                          ; (level*2 + color offset)*4
-        move.l  (a0,d1.l), d1
+        lsl.l   #1, d2                          ; level*2
+        add.l   d0, d2                          ; level*2 + color offset
+        lsl.l   #2, d2                          ; (level*2 + color offset)*4
+        move.l  (a0,d2), d2
 
-        ; copy current color to piece_ptrn
-        move.l  d1, (piece_ptrn1+(3*4))
-        move.l  d1, (piece_ptrn1+(12*4))
-        move.l  d1, (piece_ptrn2+(3*4))
+        ; copy current color to piece_ptrnx
+        move.l  d2, (piece_ptrn1+(3*4))
+        move.l  d2, (piece_ptrn1+(12*4))
+        move.l  d2, (piece_ptrn2+(3*4))
 
-        movem.l (a7)+, d1-d3/a0
+        movem.l (a7)+, d0-d2/a0
         rts
 
 ; ------------------------------------------------------------------------------
@@ -317,7 +310,6 @@ piececoll:
         ; y idx + y coord
         move.b  d1, d2                          ; y idx
         add.b   (piece+1), d2                   ; y idx + y coord
-        ; sub.b   -1(a0), d2                      ; y idx + y coord
         bmi     .collision                      ; is current y < 0?
         cmp.b   #BOARD_HEIGHT, d2               ; is current y > board height?
         bge     .collision
@@ -332,6 +324,7 @@ piececoll:
         add.b   d0, d2                          ; (y + piece y) * BOARD_WIDTH + x
         add.b   (piece), d2                     ; (y + piece y) * BOARD_WIDTH + x + piece x
         move.b  (a1,d2), d2                     ; get current piece block
+        cmp.b   #$ff, d2
         bne     .collision                      ; check if current piece block is occupied
 .nitr:
         addq.b  #1, d0                          ; increment x index
@@ -432,7 +425,19 @@ pieceupd:
         divu    #9, d1
         swap    d1
         move.b  d1, (levelnum)
+
+        move.w  d0, -(a7)
+        ; update piece color & pattern
+        moveq.l #0, d0
+        moveq.l #0, d1
+        move.l  (piece+4), a0
+        move.w  -2(a0), d0
+        move.b  d0, d1
+        lsr.l   #8, d0
         jsr     pieceupdcol
+        move.w  (a7)+, d0
+        jsr     boardplot
+
         bra     .chkcol
 .chkctrl:
         btst    #6, d0
@@ -546,7 +551,7 @@ _pieceplot:
         moveq.l #0, d1
 .loop:
         btst    #0, (a1)+
-        beq     .nitr
+        beq     .nitr                           ; skip plot if empty cell
         jsr     drawtile
 .nitr:
         addq.l  #1, d5                          ; increment tile x coord
@@ -561,5 +566,59 @@ _pieceplot:
         cmp.b   d3, d1                          ; compare matrix y index with matrix height
         blo     .loop
 .done:
+        movem.l (a7)+, d0-d3/d5-d6/a0-a1
+        rts
+
+boardplot:
+        movem.l d0-d3/d5-d6/a0-a1, -(a7)
+        ; a1.l -> board address
+        ; d2.l -> board x index
+        ; d3.l -> board y index
+        ; d5.l -> board tile x coord
+        ; d6.l -> board tile y coord
+        lea.l   board, a1
+        moveq.l #0, d2
+        moveq.l #0, d3
+        move.l  #BOARD_BASE_X, d5
+        move.l  #BOARD_BASE_Y, d6
+
+        ; TODO: remove this
+        lea.l   piece_ptrn1, a0
+.loop:
+        move.b  (a1)+, d0
+        cmp.b   #$ff, d0
+        beq     .nitr                           ; skip plot if empty cell
+
+        ; d0.b -> color
+        ; d1.b -> pattern
+        move.b  d0, d1
+        lsr.b   #4, d0
+        andi.l  #$0000000f, d0
+        andi.l  #$0000000f, d1
+        jsr     pieceupdcol
+        move.l  (piece_ptrn), a0
+        jsr     drawtile
+.nitr:
+        addq.l  #1, d2                          ; increment x index
+        addq.l  #1, d5                          ; increment tile x coord
+        cmp.b   #BOARD_WIDTH, d2
+        blo     .loop
+
+        moveq.l #0, d2                          ; reset x index
+        move.l  #BOARD_BASE_X, d5               ; reset tile x coord
+        addq.l  #1, d3                          ; increment y coord
+        addq.l  #1, d6                          ; increment tile y coord
+        cmp.b   #BOARD_HEIGHT, d3
+        blo     .loop
+.done:
+        ; restore piece color & pattern
+        moveq.l #0, d0
+        moveq.l #0, d1
+        move.l  (piece+4), a0
+        move.w  -2(a0), d0
+        move.b  d0, d1
+        lsr.l   #8, d0
+        jsr     pieceupdcol
+
         movem.l (a7)+, d0-d3/d5-d6/a0-a1
         rts
