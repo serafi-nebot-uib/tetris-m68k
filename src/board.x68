@@ -15,18 +15,21 @@ piecenum: dc.b  0
 
 ;--- logic ---------------------------------------------------------------------
 
+; current (falling) piece data structure
 piece:
         ds.b    1                               ; x
         ds.b    1                               ; y
         ds.w    1                               ; orientation index
         ds.l    1                               ; piece address
 
+; copy of current piece data structure; allows to rollback any changes
 pieceprev:
         ds.b    1                               ; x
         ds.b    1                               ; y
         ds.w    1                               ; orientation index
         ds.l    1                               ; piece address
 
+; board representation as a matrix
 board:
         ; ds.b    BOARD_WIDTH*BOARD_HEIGHT
         dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
@@ -75,37 +78,49 @@ poff:   macro
         add.l   \2, \1
         endm
 
+; rollback any changes done to the piece data structure (copies pieceprev to piece)
 piecerollback: macro
         move.l  (pieceprev), (piece)
         move.l  (pieceprev+4), (piece+4)
         endm
 
-piecerollfwd: macro
+; commit any changes done to the piece data structure (copies piece to pieceprev)
+; must only be called after the proper checks have been made (e.g. check for collisions)
+piececommit: macro
         move.l  (piece), (pieceprev)
         move.l  (piece+4), (pieceprev+4)
         endm
 
-pieceinit:
-; d0 -> x << 8 | y (relative to the board)
-; a0 -> piece matrix address
+; ------------------------------------------------------------------------------
 ; initialize a new piece
 ; input   :
 ;               d0: x << 8 | y (coords relative to board)
-;               a0: piece matrix address
+;               d1: piece number lo load
 ; output  : none
-; modifies: d0
-; ------------------------------------------------------------------------------
-        move.w  d1, -(a7)
+; modifies: d0, d1
+pieceinit:
+        move.w  d2, -(a7)
 
         clr.w   (piece+2)                       ; reset orientation index to 0
+
+        ; get piece matrix data address with piece number
+        andi.l  #$000000ff, d1
+        divu    #7, d1
+        swap    d1
+        andi.l  #$ffff, d1
+        move.b  d1, (piecenum)                  ; store new piecenum
+        lsl.l   #2, d1
+        lea.l   piece_list, a0
+        move.l  (a0,d1), a0
+
         move.l  a0, (piece+4)                   ; copy piece matrix address
         ; adjust piece matrix x,y so that the orientation x,y offsets match
-        move.w  (a0), d1
-        sub.b   d1, d0
+        move.w  (a0), d2
+        sub.b   d2, d0
         move.b  d0, (piece+1)                   ; adjusted y
         lsr.w   #8, d0
-        lsr.w   #8, d1
-        sub.b   d1, d0
+        lsr.w   #8, d2
+        sub.b   d2, d0
         move.b  d0, (piece)                     ; adjusted x
         jsr     pieceupdcol
 
@@ -113,15 +128,15 @@ pieceinit:
         move.l  (piece), (pieceprev)
         move.l  (piece+4), (pieceprev+4)
 
-        move.w  (a7)+, d1
+        move.w  (a7)+, d2
         rts
 
-pieceupdcol:
-; set the color profile for the selected level
+; ------------------------------------------------------------------------------
+; set the color profile for the current piece and level
 ; input   : none
 ; output  : none
 ; modifies: none
-; ------------------------------------------------------------------------------
+pieceupdcol:
         movem.l d1-d3/a0, -(a7)
 
         moveq.l #0, d1
@@ -159,6 +174,11 @@ pieceupdcol:
         movem.l (a7)+, d1-d3/a0
         rts
 
+; ------------------------------------------------------------------------------
+; rotate piece right (decrease orientation index by 1)
+; input   : none
+; output  : none
+; modifies: none
 piecerotr:
         movem.l d0-d1/a0, -(a7)
 
@@ -194,6 +214,11 @@ piecerotr:
         movem.l (a7)+, d0-d1/a0
         rts
 
+; ------------------------------------------------------------------------------
+; rotate piece left (decrease orientation index by 1)
+; input   : none
+; output  : none
+; modifies: none
 piecerotl:
         movem.l d0-d1/a0, -(a7)
 
@@ -228,24 +253,33 @@ piecerotl:
         movem.l (a7)+, d0-d1/a0
         rts
 
+; move piece up by \1
 piecemovu: macro
         subq.b  \1, (piece+1)
         endm
 
+; move piece down by \1
 piecemovd: macro
         addq.b  \1, (piece+1)
         endm
 
+; move piece left by \1
 piecemovl: macro
         subq.b  \1, (piece)
         endm
 
+; move piece right by \1
 piecemovr: macro
         addq.b  \1, (piece)
         endm
 
+; ------------------------------------------------------------------------------
+; check for out of board bounds piece & collisions with other pieces
+;
+; input   : none
+; output  : d0 -> 1 if collision was detected, 0 otherwise
+; modifies: d0
 piececoll:
-; result is stored in d0
         movem.l d1-d5/a0-a1, -(a7)
 
         lea.l   board, a1
@@ -315,6 +349,15 @@ piececoll:
         movem.l (a7)+, d1-d5/a0-a1
         rts
 
+piecedrop:
+        rts
+
+; ------------------------------------------------------------------------------
+; piece update logic cycle; for now: change piece position according to keystrokes
+;
+; input   : none
+; output  : none
+; modifies: none
 pieceupd:
         movem.l d0-d1, -(a7)
         ; d0.l -> kbdedge
@@ -362,23 +405,18 @@ pieceupd:
         btst    #6, d0
         beq     .chkcol
         ; TODO: remove piece change (this is only for testing)
-        moveq.l #0, d1
         move.b  (piecenum), d1
-        addq.b  #1, d1
+        addq.l  #1, d1
         divu    #7, d1
         swap    d1
         andi.l  #$ffff, d1
-        move.b  d1, (piecenum)
-        lsl.l   #2, d1
-        lea.l   piece_list, a0
-        move.l  (a0,d1), a0
         move.l  #5<<8|0, d0
         jsr     pieceinit
 .chkcol:
         jsr     piececoll
         cmp.b   #0, d0
         bne     .rollback
-        piecerollfwd
+        piececommit
         bra     .done
 .rollback:
         piecerollback
@@ -388,6 +426,7 @@ pieceupd:
 
 ; --- plotting -----------------------------------------------------------------
 
+; piece color map by level
 piece_colmap:
         * ---    COLOR1   COLOR2     --- *
         dc.l    $ec3820, $fcbc3c                ; LEVEL0
@@ -401,10 +440,11 @@ piece_colmap:
         dc.l    $f85800, $0038f8                ; LEVEL8
         dc.l    $0038f8, $44a0fc                ; LEVEL9
 
+; current piece pattern address
 piece_ptrn:
         dc.l    $00000000
 piece_ptrn0:
-        dc.l    $00000000, $00000000, $000f000f
+        dc.l    $00000000, $00000000, $00100010
         dc.l    $ffffffff
 piece_ptrn1:
         dc.l    $00000000, $00000000, $00100010
@@ -420,11 +460,23 @@ piece_ptrn2:
         dc.l    $00ffffff, $00020002, $000c000c
         dc.l    $ffffffff
 
+; ------------------------------------------------------------------------------
+; clear current piece plot
+;
+; input   : none
+; output  : none
+; modifies: none
 piececlr:
         movem.l d0-d6/a0-a1, -(a7)
         ; a0.l ->  piece tile pattern
         lea.l   piece_ptrn0, a0
         bra     _pieceplot
+; ------------------------------------------------------------------------------
+; plot piece with the corresponding color & pattern
+;
+; input   : none
+; output  : none
+; modifies: none
 pieceplot:
         movem.l d0-d6/a0-a1, -(a7)
         ; a0.l ->  piece tile pattern
