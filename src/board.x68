@@ -349,10 +349,29 @@ piececoll:
 ; output  : none
 ; modifies: none
 piecerelease:
+        movem.l d0-d6/a0-a1, -(a7)
         ; a0.l -> piece matrix
+        ; d4.b -> piece color<<4|pattern
         move.l  (piece+4), a0
+        move.w  -2(a0), d4
+        move.b  d4, d0
+        lsr.w   #4, d4
+        or.b    d0, d4
+
         ; a1.l -> piece matrix
         lea.l   board, a1
+
+        ; d2.l -> piece matrix width
+        ; d3.l -> piece matrix height
+        move.w  (piece+2), d0                   ; orientation index
+        moveq.l #0, d2
+        moveq.l #0, d3
+        pdim    d0, d2
+        move.b  d2, d3
+        lsr.l   #8, d2
+        poff    d0, d1                          ; calculate array offset
+        add.l   d0, a0                          ; offset a0 to point to current orientation matrix
+        addq.l  #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
 
         ; d0.l -> piece x coord (within board)
         ; d1.l -> piece y coord (within board)
@@ -361,21 +380,31 @@ piecerelease:
         move.w  (piece), d0
         move.b  d0, d1
         lsr.l   #8, d0
+        ; i = y*width + x
+        move.l  d1, d5                          ; y
+        mulu    #BOARD_WIDTH, d5                ; y*width
+        add.l   d0, d5                          ; y*width + x
+        add.l   d5, a1
 
-        ; d2.l -> piece matrix width
-        ; d3.l -> piece matrix height
-        move.w  (piece+2), d4                   ; orientation index
-        moveq.l #0, d2
-        moveq.l #0, d3
-        pdim    d4, d2
-        move.b  d2, d3
-        lsr.l   #8, d2
-        poff    d4, d1                          ; calculate array offset
-        add.l   d4, a0                          ; offset a0 to point to current orientation matrix
-        addq.l  #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
+        move.l  d2, d5                          ; width loop counter
+        subq.l  #1, d5
+        subq.l  #1, d3
 .loop:
+        btst    #0, (a0)+
+        beq     .nitr
+        move.b  d4, (a1)
 .nitr:
+        addq.l  #1, a1
+        dbra    d5, .loop
+        move.l  d2, d5                          ; reset width counter
+        subq.l  #1, d5
+
+        add.l   #BOARD_WIDTH, a1                ; go down one row
+        sub.l   d2, a1
+
+        dbra    d3, .loop
 .done:
+        movem.l (a7)+, d0-d6/a0-a1
         rts
 
 ; ------------------------------------------------------------------------------
@@ -426,7 +455,6 @@ pieceupd:
         swap    d1
         move.b  d1, (levelnum)
 
-        move.w  d0, -(a7)
         ; update piece color & pattern
         moveq.l #0, d0
         moveq.l #0, d1
@@ -435,13 +463,12 @@ pieceupd:
         move.b  d0, d1
         lsr.l   #8, d0
         jsr     pieceupdcol
-        move.w  (a7)+, d0
         jsr     boardplot
-
         bra     .chkcol
 .chkctrl:
         btst    #6, d0
-        beq     .chkcol
+        beq     .chkesc
+.npiece:
         ; TODO: remove piece change (this is only for testing)
         move.b  (piecenum), d1
         addq.l  #1, d1
@@ -450,6 +477,12 @@ pieceupd:
         andi.l  #$ffff, d1
         move.l  #5<<8|0, d0
         jsr     pieceinit
+        bra     .chkcol
+.chkesc:
+        btst    #5, d0
+        beq     .chkcol
+        jsr     piecerelease
+        bra     .npiece
 .chkcol:
         jsr     piececoll
         cmp.b   #0, d0

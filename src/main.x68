@@ -18,7 +18,6 @@
         include 'board.x68'
 
 start:
-
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 
