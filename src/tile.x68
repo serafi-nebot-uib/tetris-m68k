@@ -1,13 +1,16 @@
+; draw tile at x, y coordinates
+;
+; input    : d5.w - tile x coordinate
+;            d6.w - tile y coordinate
+;            a0.l - tile address
+; output   :
+; modifies :
 drawtile:
-; arguments:
-; d5.w -> x tile coordinate
-; d6.w -> y tile coordinate
-; a0.l -> tile map address
         movem.l d0-d6/a0, -(a7)
 
-        ; multiply x/y coords by 32 (tile size)
-        lsl.l   #5, d5
-        lsl.l   #5, d6
+        ; multiply x/y coords by TILE_SIZE
+        lsl.l   #TILE_SHIFT, d5
+        lsl.l   #TILE_SHIFT, d6
 .loop:
         ; set fill color
         move.l  (a0)+, d1
@@ -37,6 +40,15 @@ drawtile:
         movem.l (a7)+, d0-d6/a0
         rts
 
+; draw tile at x, y coordinates with color override
+; (all rectangles will be drawn with the specified color)
+;
+; input    : d1.l - override color
+;            d5.w - tile x coordinate
+;            d6.w - tile y coordinate
+;            a0.l - tile address
+; output   :
+; modifies :
 drawtilecol:
 ; arguments:
 ; d1.l -> tile color
@@ -45,9 +57,9 @@ drawtilecol:
 ; a0.l -> tile map address
         movem.l d0-d6/a0, -(a7)
 
-        ; multiply x/y coords by 16 (tile size)
-        lsl.w   #4, d5
-        lsl.w   #4, d6
+        ; multiply x/y coords by TILE_SIZE
+        lsl.l   #TILE_SHIFT, d5
+        lsl.l   #TILE_SHIFT, d6
         ; TODO: is setting the outline color necessary? can it be disabled?
         move.b  #80, d0
         trap    #15
@@ -77,15 +89,19 @@ drawtilecol:
         movem.l (a7)+, d0-d6/a0
         rts
 
+; draw tile map
+;
+; input    : d1.l - tile map address
+;            d5.w - map start x coordinate
+;            d6.w - map start y coordinate
+; output   :
+; modifies :
 drawmap:
-; a1.l -> tile map address
-        movem.l d0-d6/a1, -(a7)
+        movem.l d0-d6/a0-a2, -(a7)
 
         lea.l   tiletable, a2
         move.w  -4(a1), d3                      ; map width
         move.w  -2(a1), d4                      ; map height
-        moveq.l #0, d5                          ; x coord
-        moveq.l #0, d6                          ; y coord
 .loop:
         moveq.l #0, d0                          ; reset d0 to clear junk
         move.w  (a1)+, d0
@@ -108,24 +124,32 @@ drawmap:
         cmp.w   d4, d6
         blo     .loop
 
-        movem.l (a7)+, d0-d6/a1
+        movem.l (a7)+, d0-d6/a0-a2
         rts
 
 ASCII_NUM_CNT: equ 10
 ASCII_CHR_CNT: equ 26
 
+; draw null terminated string with color override
+;
+; input    : d1.l - override color
+;            d5.w - string start x coordinate
+;            d6.w - string start y coordinate
+;            a1.l - string address
+; output   :
+; modifies :
 drawstrcol:
-; a1.l -> string address
-; d5.w -> x coordintate
-; d6.w -> y coordintate
-; d1.w -> color
         movem.l d4-d5/a0-a3, -(a7)
         lea.l   drawtilecol, a3
         bra     _drawstr
+; draw null terminated string with color override
+;
+; input    : d5.w - string start x coordinate
+;            d6.w - string start y coordinate
+;            a1.l - string address
+; output   :
+; modifies :
 drawstr:
-; a1.l -> string address
-; d5.w -> x coordintate
-; d6.w -> y coordintate
         movem.l d4-d5/a0-a3, -(a7)
         lea.l   drawtile, a3
 

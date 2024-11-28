@@ -6,7 +6,12 @@ BOARD_WIDTH: equ 10
 BOARD_HEIGHT: equ 20
 BOARD_SIZE: equ BOARD_WIDTH*BOARD_HEIGHT
 BOARD_BASE_X: equ 16
+        ifeq    GLB_SCALE-GLB_SCALE_SMALL
+BOARD_BASE_Y: equ 6
+        endc
+        ifeq    GLB_SCALE-GLB_SCALE_BIG
 BOARD_BASE_Y: equ 7
+        endc
 
 ; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
@@ -32,31 +37,33 @@ pieceprev:
 ; board representation as a matrix
 board:
         ; ds.b    BOARD_WIDTH*BOARD_HEIGHT
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
         ds.w    0
 
 ; get piece matrix dimensions from an orientation index
-; \1 -> orientation index
-; \2 -> result (width << 8 | height)
+;
+; input    : \1 - orientation index
+; output   : \2 - width << 8 | height
+; modifies : \1, \2
 pdim:   macro
         btst    #0, \1
         beq     .mult2\@
@@ -67,9 +74,12 @@ pdim:   macro
 .done\@:
         endm
 
-; get piece orientation offset for the piece orientation matrix
-; \1 -> orientation index & result
-; \2 -> accumulator to perform calculations
+; get piece orientation matrix offset for the piece orientation index
+;
+; input    : \1 - orientation index
+;           \2 - accumulator register
+; output   : \1 - orientation matrix offset
+; modifies : \1, \2
 poff:   macro
         ; multiply orientation index by PIECE_SIZE+2 to get array offset
         move.l  \1, \2
@@ -79,6 +89,10 @@ poff:   macro
         endm
 
 ; rollback any changes done to the piece data structure (copies pieceprev to piece)
+;
+; input    :
+; output   :
+; modifies :
 piecerollback: macro
         move.l  (pieceprev), (piece)
         move.l  (pieceprev+4), (piece+4)
@@ -86,17 +100,20 @@ piecerollback: macro
 
 ; commit any changes done to the piece data structure (copies piece to pieceprev)
 ; must only be called after the proper checks have been made (e.g. check for collisions)
+;
+; input    :
+; output   :
+; modifies :
 piececommit: macro
         move.l  (piece), (pieceprev)
         move.l  (piece+4), (pieceprev+4)
         endm
 
-; ------------------------------------------------------------------------------
 ; initialize a new piece
-; input   :
-;               d0: piece number lo load
-; output  : none
-; modifies: d0
+;
+; input    : d0.b - piece number lo load
+; output   :
+; modifies : d0.l
 pieceinit:
         move.w  d2, -(a7)
 
@@ -132,13 +149,12 @@ pieceinit:
         move.w  (a7)+, d2
         rts
 
-; ------------------------------------------------------------------------------
 ; set the color profile for the current piece and level
-; input   :
-;               d0.l -> color
-;               d1.l -> pattern
-; output  : none
-; modifies: none
+;
+; input    : d0.l - color
+;            d1.l - pattern
+; output   :
+; modifies :
 pieceupdcol:
         movem.l d0-d2/a0, -(a7)
 
@@ -167,11 +183,11 @@ pieceupdcol:
         movem.l (a7)+, d0-d2/a0
         rts
 
-; ------------------------------------------------------------------------------
 ; rotate piece right (decrease orientation index by 1)
-; input   : none
-; output  : none
-; modifies: none
+;
+; input    :
+; output   :
+; modifies :
 piecerotr:
         movem.l d0-d1/a0, -(a7)
 
@@ -207,11 +223,11 @@ piecerotr:
         movem.l (a7)+, d0-d1/a0
         rts
 
-; ------------------------------------------------------------------------------
 ; rotate piece left (decrease orientation index by 1)
-; input   : none
-; output  : none
-; modifies: none
+;
+; input    :
+; output   :
+; modifies :
 piecerotl:
         movem.l d0-d1/a0, -(a7)
 
@@ -247,31 +263,46 @@ piecerotl:
         rts
 
 ; move piece up by \1
+;
+; input    : \1 movement length
+; output   :
+; modifies :
 piecemovu: macro
         subq.b  \1, (piece+1)
         endm
 
 ; move piece down by \1
+;
+; input    : \1 movement length
+; output   :
+; modifies :
 piecemovd: macro
         addq.b  \1, (piece+1)
         endm
 
 ; move piece left by \1
+;
+; input    : \1 movement length
+; output   :
+; modifies :
 piecemovl: macro
         subq.b  \1, (piece)
         endm
 
 ; move piece right by \1
+;
+; input    : \1 movement length
+; output   :
+; modifies :
 piecemovr: macro
         addq.b  \1, (piece)
         endm
 
-; ------------------------------------------------------------------------------
 ; check for out of board bounds piece & collisions with other pieces
 ;
-; input   : none
-; output  : d0 -> 1 if collision was detected, 0 otherwise
-; modifies: d0
+; input    :
+; output   : d0.l -> 1 if collision was detected, 0 otherwise
+; modifies : d0.l
 piececoll:
         movem.l d1-d5/a0-a1, -(a7)
 
@@ -342,12 +373,11 @@ piececoll:
         movem.l (a7)+, d1-d5/a0-a1
         rts
 
-; ------------------------------------------------------------------------------
 ; release current piece to the board
 ;
-; input   : none
-; output  : none
-; modifies: none
+; input    :
+; output   :
+; modifies :
 piecerelease:
         movem.l d0-d6/a0-a1, -(a7)
         ; a0.l -> piece matrix
@@ -407,12 +437,11 @@ piecerelease:
         movem.l (a7)+, d0-d6/a0-a1
         rts
 
-; ------------------------------------------------------------------------------
 ; piece update logic cycle; for now: change piece position according to keystrokes
 ;
-; input   : none
-; output  : none
-; modifies: none
+; input    :
+; output   :
+; modifies :
 pieceupd:
         movem.l d0-d1, -(a7)
         ; d0.l -> kbdedge
@@ -510,9 +539,29 @@ piece_colmap:
         dc.l    $f85800, $0038f8                ; LEVEL8
         dc.l    $0038f8, $44a0fc                ; LEVEL9
 
-; current piece pattern address
 piece_ptrn:
-        dc.l    $00000000
+        dc.l    $00000000                       ; current piece pattern address
+
+        ifeq    GLB_SCALE-GLB_SCALE_SMALL
+piece_ptrn0:
+        dc.l    $00000000, $00000000, $000f000f
+        dc.l    $ffffffff
+piece_ptrn1:
+        dc.l    $00000000, $00000000, $000f000f
+        dc.l    $000038f8, $00000000, $000e000e
+        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00020002, $00060006
+        dc.l    $000038f8, $00040004, $00060006
+        dc.l    $ffffffff
+piece_ptrn2:
+        dc.l    $00000000, $00000000, $000f000f
+        dc.l    $000038f8, $00000000, $000e000e
+        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00020002, $000c000c
+        dc.l    $ffffffff
+        endc
+
+        ifeq    GLB_SCALE-GLB_SCALE_BIG
 piece_ptrn0:
         dc.l    $00000000, $00000000, $001e001e
         dc.l    $ffffffff
@@ -529,24 +578,23 @@ piece_ptrn2:
         dc.l    $00ffffff, $00000000, $00040004
         dc.l    $00ffffff, $00040004, $00180018
         dc.l    $ffffffff
+        endc
 
-; ------------------------------------------------------------------------------
 ; clear current piece plot
 ;
-; input   : none
-; output  : none
-; modifies: none
+; input    :
+; output   :
+; modifies :
 piececlr:
         movem.l d0-d3/d5-d6/a0-a1, -(a7)
         ; a0.l ->  piece tile pattern
         lea.l   piece_ptrn0, a0
         bra     _pieceplot
-; ------------------------------------------------------------------------------
 ; plot piece with the corresponding color & pattern
 ;
-; input   : none
-; output  : none
-; modifies: none
+; input    :
+; output   :
+; modifies :
 pieceplot:
         movem.l d0-d3/d5-d6/a0-a1, -(a7)
         ; a0.l ->  piece tile pattern
@@ -601,6 +649,11 @@ _pieceplot:
         movem.l (a7)+, d0-d3/d5-d6/a0-a1
         rts
 
+; plot current board pieces with their corresponding color & pattern
+;
+; input    :
+; output   :
+; modifies :
 boardplot:
         movem.l d0-d3/d5-d6/a0-a1, -(a7)
         ; a1.l -> board address
