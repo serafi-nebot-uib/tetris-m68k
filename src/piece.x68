@@ -1,6 +1,22 @@
 piece_list:
         dc.l    pieceT, pieceJ, pieceZ, pieceO, pieceS, pieceL, pieceI
 
+; NOTE: piece orientation matrices cannot permit the first cell to be out of
+; bounds. For example, the following matrix is not valid because it allows the
+; left column to be out of bounds:
+;       dc.b    $00, $01
+;       dc.b    $00, $01
+;       dc.b    $00, $01
+;       dc.b    $00, $01
+; while the following is correct:
+;       dc.b    $01, $00
+;       dc.b    $01, $00
+;       dc.b    $01, $00
+;       dc.b    $01, $00
+; This can be fixed in piecerelease but would decrease performance. The "fix" is
+; perfomed here as it doesn't affect code complexity and does not decrease
+; performance.
+
         dc.b    5                               ; start x
         dc.b    0                               ; start y
         dc.b    0                               ; color
@@ -186,16 +202,16 @@ pieceI:
         dc.b    $00, $00, $00, $00
 
         ; (2)
-        dc.b    $01, $01                        ; x, y
-        dc.b    $00, $01
-        dc.b    $00, $01
-        dc.b    $00, $01
-        dc.b    $00, $01
+        dc.b    $00, $01                        ; x, y
+        dc.b    $01, $00
+        dc.b    $01, $00
+        dc.b    $01, $00
+        dc.b    $01, $00
 
         ; (3)
-        dc.b    $02, $00                        ; x, y
-        dc.b    $00, $00, $00, $00
+        dc.b    $02, -$01                       ; x, y
         dc.b    $01, $01, $01, $01
+        dc.b    $00, $00, $00, $00
 
         ; (4)
         dc.b    $01, $01                        ; x, y

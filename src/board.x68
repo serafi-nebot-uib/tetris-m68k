@@ -37,26 +37,26 @@ pieceprev:
 ; board representation as a matrix
 board:
         ; ds.b    BOARD_WIDTH*BOARD_HEIGHT
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
-        dc.b    $11, $11, $11, $11, $11, $11, $11, $11, $11, $11
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         ds.w    0
 
 ; get piece matrix dimensions from an orientation index
@@ -409,12 +409,11 @@ piecerelease:
         moveq.l #0, d1
         move.w  (piece), d0
         move.b  d0, d1
-        lsr.l   #8, d0
+        lsr.w   #8, d0
         ; i = y*width + x
-        move.l  d1, d5                          ; y
-        mulu    #BOARD_WIDTH, d5                ; y*width
-        add.l   d0, d5                          ; y*width + x
-        add.l   d5, a1
+        muls    #BOARD_WIDTH, d1                ; y*width
+        add.l   d0, d1                          ; y*width + x
+        add.l   d1, a1
 
         move.l  d2, d5                          ; width loop counter
         subq.l  #1, d5
