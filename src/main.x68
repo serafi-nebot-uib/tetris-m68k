@@ -20,8 +20,7 @@ start:
 
         lea.l   game32, a1
         jsr     drawmap
-        move.l  #5<<8|0, d0
-        move.l  #0, d1
+        move.l  #0, d0                          ; piece number
         jsr     pieceinit
 
 .loop:

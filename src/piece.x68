@@ -1,6 +1,8 @@
 piece_list:
         dc.l    pieceT, pieceJ, pieceZ, pieceO, pieceS, pieceL, pieceI
 
+        dc.b    5                               ; start x
+        dc.b    0                               ; start y
         dc.b    0                               ; color
         dc.b    1                               ; pattern
 pieceT:
@@ -28,6 +30,8 @@ pieceT:
         dc.b    $01, $00
         dc.b    $00, $00
 
+        dc.b    5                               ; start x
+        dc.b    0                               ; start y
         dc.b    0                               ; color
         dc.b    0                               ; pattern
 pieceJ:
@@ -55,6 +59,8 @@ pieceJ:
         dc.b    $01, $00
         dc.b    $00, $00
 
+        dc.b    5                               ; start x
+        dc.b    1                               ; start y
         dc.b    1                               ; color
         dc.b    0                               ; pattern
 pieceZ:
@@ -82,6 +88,8 @@ pieceZ:
         dc.b    $01, $00
         dc.b    $00, $00
 
+        dc.b    4                               ; start x
+        dc.b    0                               ; start y
         dc.b    0                               ; color
         dc.b    1                               ; pattern
 pieceO:
@@ -109,6 +117,8 @@ pieceO:
         dc.b    $00, $00
         dc.b    $00, $00
 
+        dc.b    5                               ; start x
+        dc.b    1                               ; start y
         dc.b    0                               ; color
         dc.b    0                               ; pattern
 pieceS:
@@ -136,6 +146,8 @@ pieceS:
         dc.b    $00, $01
         dc.b    $00, $00
 
+        dc.b    5                               ; start x
+        dc.b    1                               ; start y
         dc.b    1                               ; color
         dc.b    0                               ; pattern
 pieceL:
@@ -163,6 +175,8 @@ pieceL:
         dc.b    $01, $01
         dc.b    $00, $00
 
+        dc.b    5                               ; start x
+        dc.b    0                               ; start y
         dc.b    0                               ; color
         dc.b    1                               ; pattern
 pieceI:

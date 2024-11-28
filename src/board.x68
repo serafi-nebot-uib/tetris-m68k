@@ -94,34 +94,34 @@ piececommit: macro
 ; ------------------------------------------------------------------------------
 ; initialize a new piece
 ; input   :
-;               d0: x << 8 | y (coords relative to board)
-;               d1: piece number lo load
+;               d0: piece number lo load
 ; output  : none
-; modifies: d0, d1
+; modifies: d0
 pieceinit:
         move.w  d2, -(a7)
 
         clr.w   (piece+2)                       ; reset orientation index to 0
 
         ; get piece matrix data address with piece number
-        andi.l  #$000000ff, d1
-        divu    #7, d1
-        swap    d1
-        andi.l  #$ffff, d1
-        move.b  d1, (piecenum)                  ; store new piecenum
-        lsl.l   #2, d1
+        andi.l  #$000000ff, d0
+        divu    #7, d0
+        swap    d0
+        andi.l  #$ffff, d0
+        move.b  d0, (piecenum)                  ; store new piecenum
+        lsl.l   #2, d0
         lea.l   piece_list, a0
-        move.l  (a0,d1), a0
+        move.l  (a0,d0), a0
 
         move.l  a0, (piece+4)                   ; copy piece matrix address
         ; adjust piece matrix x,y so that the orientation x,y offsets match
-        move.w  (a0), d2
-        sub.b   d2, d0
-        move.b  d0, (piece+1)                   ; adjusted y
-        lsr.w   #8, d0
+        move.w  -4(a0), d1                      ; start x,y
+        move.w  (a0), d2                        ; rx,ry
+        sub.b   d2, d1
+        move.b  d1, (piece+1)                   ; adjusted y
+        lsr.w   #8, d1
         lsr.w   #8, d2
-        sub.b   d2, d0
-        move.b  d0, (piece)                     ; adjusted x
+        sub.b   d2, d1
+        move.b  d1, (piece)                     ; adjusted x
 
         jsr     boardplot
 
@@ -470,12 +470,11 @@ pieceupd:
         beq     .chkesc
 .npiece:
         ; TODO: remove piece change (this is only for testing)
-        move.b  (piecenum), d1
-        addq.l  #1, d1
-        divu    #7, d1
-        swap    d1
-        andi.l  #$ffff, d1
-        move.l  #5<<8|0, d0
+        move.b  (piecenum), d0
+        addq.l  #1, d0
+        divu    #7, d0
+        swap    d0
+        andi.l  #$ffff, d0
         jsr     pieceinit
         bra     .chkcol
 .chkesc:
