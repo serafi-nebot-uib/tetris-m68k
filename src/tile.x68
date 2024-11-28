@@ -5,9 +5,9 @@ drawtile:
 ; a0.l -> tile map address
         movem.l d0-d6/a0, -(a7)
 
-        ; multiply x/y coords by 16 (tile size)
-        lsl.l   #4, d5
-        lsl.l   #4, d6
+        ; multiply x/y coords by 32 (tile size)
+        lsl.l   #5, d5
+        lsl.l   #5, d6
 .loop:
         ; set fill color
         move.l  (a0)+, d1

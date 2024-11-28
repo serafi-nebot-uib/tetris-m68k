@@ -1,6 +1,8 @@
 ; --- screen -------------------------------------------------------------------
-SCR_WIDTH: equ  640                             ; screen width in pixels
-SCR_HEIGHT: equ 480                             ; screen height in pixels
+; SCR_WIDTH: equ  640                             ; screen width in pixels
+; SCR_HEIGHT: equ 480                             ; screen height in pixels
+SCR_WIDTH: equ  1280                            ; screen width in pixels
+SCR_HEIGHT: equ 1024                            ; screen height in pixels
 SCR_TRAP: equ   0
 
 ; --- keyboard -----------------------------------------------------------------

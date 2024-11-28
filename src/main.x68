@@ -7,11 +7,8 @@
         include 'sysvars.x68'
         include 'system.x68'
 
-        include 'bg/home.x68'
-        include 'bg/mode.x68'
-        include 'bg/score.x68'
-        include 'bg/game.x68'
-        include 'tile-table.x68'
+        include 'bg/game-32.x68'
+        include 'tile-table-32.x68'
         include 'tile.x68'
 
         include 'piece.x68'
@@ -21,7 +18,7 @@ start:
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 
-        lea.l   bggame, a1
+        lea.l   game32, a1
         jsr     drawmap
         move.l  #5<<8|0, d0
         move.l  #0, d1
