@@ -402,6 +402,7 @@ piecerelease:
         poff    d0, d1                          ; calculate array offset
         add.l   d0, a0                          ; offset a0 to point to current orientation matrix
         addq.l  #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
+        move.l  d3, d6                          ; save matrix height for later
 
         ; d0.l -> piece x coord (within board)
         ; d1.l -> piece y coord (within board)
@@ -411,9 +412,11 @@ piecerelease:
         move.b  d0, d1
         lsr.w   #8, d0
         ; i = y*width + x
-        muls    #BOARD_WIDTH, d1                ; y*width
-        add.l   d0, d1                          ; y*width + x
-        add.l   d1, a1
+        move.l  d1, d5
+        ; TODO: can muls be optimized?
+        muls    #BOARD_WIDTH, d5                ; y*width
+        add.l   d0, d5                          ; y*width + x
+        add.l   d5, a1
 
         move.l  d2, d5                          ; width loop counter
         subq.l  #1, d5
@@ -432,8 +435,91 @@ piecerelease:
         sub.l   d2, a1
 
         dbra    d3, .loop
+
+        ; TODO: check for horizontal fill
+        move.l  d1, d0
+        move.l  d6, d1
+        jsr     boardchkfill
+
 .done:
         movem.l (a7)+, d0-d6/a0-a1
+        rts
+
+; check horizontal fill
+;
+; input    : d0.l -> start y board coordinate
+;            d1.b -> number of rows to check
+; output   :
+; modifies :
+boardchkfill:
+        movem.l d0-d3/a0, -(a7)
+
+        ; d2.b -> end y board coordinate
+        move.b  d0, d2
+        add.b   d1, d2
+        subq.b  #1, d2
+        cmp.b   #BOARD_HEIGHT, d2
+        blo     .loopy
+        move.b  #BOARD_HEIGHT-1, d2
+
+.loopy:
+        ; a0.l -> board start address
+        lea.l   board, a0
+        moveq.l #0, d1
+        move.b  d0, d1
+        mulu    #BOARD_WIDTH, d1                ; i = y*width
+        add.l   d1, a0
+
+        ; d1.w -> width loop counter
+        move.w  #BOARD_WIDTH-1, d1
+.loopx:
+        move.b  (a0)+, d3
+        cmp.b   #$ff, d3
+        beq     .nitr
+        dbra.w  d1, .loopx
+
+        ; TODO: is this the right place to do this
+        jsr     boardclrfill
+
+.nitr:
+        addq.b  #1, d0
+        cmp.b   d2, d0
+        bls     .loopy
+
+        movem.l (a7)+, d0-d3/a0
+        rts
+
+; clear horizontal fill
+;
+; input    : d0.l -> y board coordinate
+; output   :
+; modifies :
+boardclrfill:
+        movem.l d0-d1/d5-d6/a0-a1, -(a7)
+
+        ; a1.l -> tile clear pattern
+        lea.l   piece_ptrn0, a0
+
+        ; d5.l -> board x tile coord
+        ; d6.l -> board y tile coord
+        move.l  #BOARD_BASE_X, d5
+        move.l  d0, d6
+        add.l   #BOARD_BASE_Y, d6
+
+        ; a0.l -> board start address
+        lea.l   board, a1
+        mulu    #BOARD_WIDTH, d0                ; i = y*width
+        add.l   d0, a1
+
+        ; d1.w -> width loop counter
+        move.w  #BOARD_WIDTH-1, d1
+.loop:
+        move.b  #$ff, (a1)+
+        jsr     drawtile
+        addq.l  #1, d5
+        dbra.w  d1, .loop
+
+        movem.l (a7)+, d0-d1/d5-d6/a0-a1
         rts
 
 ; piece update logic cycle; for now: change piece position according to keystrokes
@@ -665,9 +751,6 @@ boardplot:
         moveq.l #0, d3
         move.l  #BOARD_BASE_X, d5
         move.l  #BOARD_BASE_Y, d6
-
-        ; TODO: remove this
-        lea.l   piece_ptrn1, a0
 .loop:
         move.b  (a1)+, d0
         cmp.b   #$ff, d0

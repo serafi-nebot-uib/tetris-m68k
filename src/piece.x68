@@ -163,29 +163,29 @@ pieceS:
         dc.b    $00, $00
 
         dc.b    5                               ; start x
-        dc.b    1                               ; start y
+        dc.b    0                               ; start y
         dc.b    1                               ; color
         dc.b    0                               ; pattern
 pieceL:
         ; (1)
-        dc.b    $01, $01                        ; x, y
+        dc.b    $01, $00                        ; x, y
         dc.b    $01, $01, $01, $00
         dc.b    $01, $00, $00, $00
 
         ; (2)
-        dc.b    $00, $01                        ; x, y
+        dc.b    $01, $01                        ; x, y
         dc.b    $01, $01
         dc.b    $00, $01
         dc.b    $00, $01
         dc.b    $00, $00
 
         ; (3)
-        dc.b    $01, $00                        ; x, y
+        dc.b    $01, $01                        ; x, y
         dc.b    $00, $00, $01, $00
         dc.b    $01, $01, $01, $00
 
         ; (4)
-        dc.b    $01, $01                        ; x, y
+        dc.b    $00, $01                        ; x, y
         dc.b    $01, $00
         dc.b    $01, $00
         dc.b    $01, $01
