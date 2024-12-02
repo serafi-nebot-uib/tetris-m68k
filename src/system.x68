@@ -5,11 +5,35 @@ sysinit:
 ; modifies: none
         jsr     scrinit
         jsr     kbdinit
-        move.l  #scrplot, ($80+SCR_TRAP*4)
-        move.l  #kbdupd, ($80+KBD_TRAP*4)
+        jsr     sncinit
+
         ; switch to user mode
         move.w  sr, -(a7)
         andi.w  #$d8ff, (a7)
+        rte
+
+sncinit:
+        clr.b   (SNC_PLOT)
+        ; clr.b   (SNC_PIECE)
+        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
+
+        move.l  #sncinc, ($60+SNC_EXC*4)
+
+        ; enable exceptions
+        move.b  #32, d0
+        move.b  #5, d1
+        trap    #15
+        ; create timer
+        move.b  #6, d1
+        move.b  #$80|SNC_EXC, d2
+        move.l  #20, d3
+        trap    #15
+
+        rts
+
+sncinc:
+        ; addq.b  #1, (SNC_PLOT)
+        subq.b  #1, (SNC_PIECE)
         rte
 
 scrinit:
@@ -36,16 +60,7 @@ scrinit:
         move.b  #17, d1
         trap    #15
 
-        ; TODO: implement sync
-        ; ; init synch
-        ; clr.b   (SCRINTCT)
-        ; move.l  #SCRISR, ($60+SCRINTNM*4)
-        ; ; create interrupt timer
-        ; move.b  #32, d0
-        ; move.b  #6, d1
-        ; move.b  #$80|SCRINTNM, d2
-        ; move.l  #20, d3
-        ; trap    #15
+        move.l  #scrplot, ($80+SCR_TRAP*4)
 
         movem.l (a7)+, d0-d1
         rts
@@ -71,10 +86,11 @@ kbdinit:
 ; ------------------------------------------------------------------------------
         clr.b   (KBD_VAL)
         clr.b   (KBD_EDGE)
+        move.l  #kbdupd, ($80+KBD_TRAP*4)
         rts
 
 kbdupd:
-; update keyboard info.  
+; update keyboard info.
 ; 7 -> shift
 ; 6 -> ctrl
 ; 5 -> esc
@@ -87,7 +103,6 @@ kbdupd:
 ; output   : none
 ; modifies : none
 ; ------------------------------------------------------------------------------
-
         movem.l d0-d3, -(a7)
 
         ; read first part

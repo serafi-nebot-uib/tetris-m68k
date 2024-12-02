@@ -436,7 +436,6 @@ piecerelease:
 
         dbra    d3, .loop
 
-        ; TODO: check for horizontal fill
         move.l  d1, d0
         move.l  d6, d1
         jsr     boardchkfill

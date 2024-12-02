@@ -28,6 +28,7 @@
 
 start:
 ; --- initialization -----------------------------------------------------------
+        ori.w   #$0700, sr                      ; disable interrupts
         jsr     sysinit
 
         lea.l   bggame, a1
@@ -37,15 +38,28 @@ start:
         move.l  #0, d0                          ; piece number
         jsr     pieceinit
 
+        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
 .loop:
 ; --- update -------------------------------------------------------------------
         trap    #KBD_TRAP                       ; update keyboard values
         jsr     piececlr
         jsr     pieceupd
-        jsr     pieceplot
 
 ; --- sync ---------------------------------------------------------------------
-; TODO: implement sync
+        ; move.b  (SNC_PLOT), d0
+        move.b  (SNC_PIECE), d0
+        bgt     .plot
+        piecemovd #1
+        jsr     piececoll
+        cmp.b   #0, d0
+        bne     .collision
+        piececommit
+        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
+        bra     .plot
+.collision:
+        piecerollback
+.plot:
+        jsr     pieceplot
 
 ; --- plot ---------------------------------------------------------------------
         trap    #SCR_TRAP

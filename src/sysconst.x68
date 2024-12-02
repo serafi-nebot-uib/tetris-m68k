@@ -1,14 +1,18 @@
 ; --- global -------------------------------------------------------------------
 GLB_SCALE_SMALL: equ 0
 GLB_SCALE_BIG: equ 1
-GLB_SCALE: equ  GLB_SCALE_BIG
+GLB_SCALE: equ  GLB_SCALE_SMALL
+
+; --- sync ---------------------------------------------------------------------
+SNC_EXC: equ    1
+SNC_PIECE_TIME: equ 10
 
 ; --- screen -------------------------------------------------------------------
-        ifeq GLB_SCALE-GLB_SCALE_SMALL
+        ifeq    GLB_SCALE-GLB_SCALE_SMALL
 SCR_WIDTH: equ  640                             ; screen width in pixels
 SCR_HEIGHT: equ 480                             ; screen height in pixels
         endc
-        ifeq GLB_SCALE-GLB_SCALE_BIG
+        ifeq    GLB_SCALE-GLB_SCALE_BIG
 SCR_WIDTH: equ  1280                            ; screen width in pixels
 SCR_HEIGHT: equ 1024                            ; screen height in pixels
         endc
