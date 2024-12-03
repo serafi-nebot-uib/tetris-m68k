@@ -14,7 +14,6 @@ sysinit:
 
 sncinit:
         clr.b   (SNC_PLOT)
-        ; clr.b   (SNC_PIECE)
         move.b  #SNC_PIECE_TIME, (SNC_PIECE)
 
         move.l  #sncinc, ($60+SNC_EXC*4)
@@ -32,7 +31,6 @@ sncinit:
         rts
 
 sncinc:
-        ; addq.b  #1, (SNC_PLOT)
         subq.b  #1, (SNC_PIECE)
         rte
 

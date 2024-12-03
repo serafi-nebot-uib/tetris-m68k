@@ -4,8 +4,8 @@ GLB_SCALE_BIG: equ 1
 GLB_SCALE: equ  GLB_SCALE_SMALL
 
 ; --- sync ---------------------------------------------------------------------
-SNC_EXC: equ    1
-SNC_PIECE_TIME: equ 10
+SNC_EXC: equ    7
+SNC_PIECE_TIME: equ 50
 
 ; --- screen -------------------------------------------------------------------
         ifeq    GLB_SCALE-GLB_SCALE_SMALL

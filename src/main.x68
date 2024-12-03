@@ -46,7 +46,6 @@ start:
         jsr     pieceupd
 
 ; --- sync ---------------------------------------------------------------------
-        ; move.b  (SNC_PLOT), d0
         move.b  (SNC_PIECE), d0
         bgt     .plot
         piecemovd #1
