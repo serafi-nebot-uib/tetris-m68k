@@ -47,11 +47,11 @@ board:
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
         ds.w    0
 
 ; get piece matrix dimensions from an orientation index
@@ -439,23 +439,25 @@ piecerelease:
         movem.l (a7)+, d0-d6/a0-a1
         rts
 
-; check horizontal fill
+; check horizontal fill for x consecutive rows
 ;
-; input    : d0.l -> start y board coordinate
-;            d1.b -> number of rows to check
-; output   :
+; input    : d0.l - start y board coordinate
+;            d1.l - number of rows to check
+; output   : d4.l - row shift status
 ; modifies :
 boardchkfill:
-        movem.l d0-d3/a0, -(a7)
+        movem.l d0-d3/a0-a1, -(a7)
 
         ; d2.b -> end y board coordinate
         move.b  d0, d2
         add.b   d1, d2
         subq.b  #1, d2
         cmp.b   #BOARD_HEIGHT, d2
-        blo     .loopy
+        blo     .chk
         move.b  #BOARD_HEIGHT-1, d2
-
+.chk:
+        ; d4.l -> row fill status
+        moveq.l #0, d4
 .loopy:
         ; a0.l -> board start address
         lea.l   board, a0
@@ -463,59 +465,31 @@ boardchkfill:
         move.b  d0, d1
         mulu    #BOARD_WIDTH, d1                ; i = y*width
         add.l   d1, a0
+        move.l  a0, a1
 
         ; d1.w -> width loop counter
         move.w  #BOARD_WIDTH-1, d1
+        lsl.l   #1, d4                          ; shift fill status
 .loopx:
         move.b  (a0)+, d3
         cmp.b   #$ff, d3
         beq     .nitr
         dbra.w  d1, .loopx
 
-        ; TODO: is this the right place to do this
-        jsr     boardclrfill
+        ori.l   #1, d4                          ; indicate fill
+
+        ; clear row
+        move.w  #BOARD_WIDTH-1, d1
+.loopclr:
+        move.b  #$ff, (a1)+
+        dbra.w  d1, .loopclr
 
 .nitr:
         addq.b  #1, d0
         cmp.b   d2, d0
         bls     .loopy
 
-        ; TODO: bring pieces down from d4 up
-
-        movem.l (a7)+, d0-d3/a0
-        rts
-
-; clear horizontal fill
-;
-; input    : d0.l -> y board coordinate
-; output   :
-; modifies :
-boardclrfill:
-        movem.l d0-d1/d5-d6/a0-a1, -(a7)
-
-        ; a1.l -> tile clear pattern
-        lea.l   piece_ptrn0, a0
-
-        ; d5.l -> board x tile coord
-        ; d6.l -> board y tile coord
-        move.l  #BOARD_BASE_X, d5
-        move.l  d0, d6
-        add.l   #BOARD_BASE_Y, d6
-
-        ; a0.l -> board start address
-        lea.l   board, a1
-        mulu    #BOARD_WIDTH, d0                ; i = y*width
-        add.l   d0, a1
-
-        ; d1.w -> width loop counter
-        move.w  #BOARD_WIDTH-1, d1
-.loop:
-        move.b  #$ff, (a1)+
-        jsr     drawtile
-        addq.l  #1, d5
-        dbra.w  d1, .loop
-
-        movem.l (a7)+, d0-d1/d5-d6/a0-a1
+        movem.l (a7)+, d0-d3/a0-a1
         rts
 
 ; piece update logic cycle; for now: change piece position according to keystrokes
@@ -732,6 +706,7 @@ _pieceplot:
         rts
 
 ; plot current board pieces with their corresponding color & pattern
+; (does not clear pieces; only draws existing ones)
 ;
 ; input    :
 ; output   :

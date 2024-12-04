@@ -3,14 +3,20 @@ sysinit:
 ; input   : none
 ; output  : none
 ; modifies: none
+        ori.w   #$0700, sr                      ; disable interrupts
         jsr     scrinit
         jsr     kbdinit
         jsr     sncinit
 
-        ; switch to user mode
-        move.w  sr, -(a7)
-        andi.w  #$d8ff, (a7)
-        rte
+        ; do not enter user because of Eeasy68k auto interrupt bug;
+        ; SR's interrupt mask block's SCN_EXC and superuser mode activated
+        ; again, so we'll end up in superuser mode anyway...
+
+        ; ; switch to user mode
+        ; move.w  sr, -(a7)
+        ; andi.w  #$d8ff, (a7)
+        ; rte
+        rts
 
 sncinit:
         move.b  #0, (SNC_PLOT)

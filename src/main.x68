@@ -24,8 +24,36 @@
         include 'board.x68'
 
 start:
+; --- tests --------------------------------------------------------------------
+        jsr     sysinit
+
+        move.l  #0, d0                          ; piece number
+        jsr     pieceinit
+        jsr     boardplot
+        trap    #SCR_TRAP
+
+        move.l  #BOARD_HEIGHT-5, d0
+        move.l  #5, d1
+        jsr     boardchkfill
+
+;         ; ----- clear rows -----------
+;
+;         ; a0.l -> tile clear pattern
+;         lea.l   piece_ptrn0, a0
+;         move.l  #BOARD_BASE_Y, d6
+;         add.l   d0, d6
+;         add.l   d1, d6
+;
+;         subq.l  #1, d1                          ; iteration counter (row count)
+; .clrloop:
+;         subq.l  #1, d6
+;         dbra.w  d1, .clrloop
+
+        simhalt
+
+
+
 ; --- initialization -----------------------------------------------------------
-        ori.w   #$0700, sr                      ; disable interrupts
         jsr     sysinit
 
         lea.l   bggame, a1
