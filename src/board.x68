@@ -480,6 +480,8 @@ boardchkfill:
         cmp.b   d2, d0
         bls     .loopy
 
+        ; TODO: bring pieces down from d4 up
+
         movem.l (a7)+, d0-d3/a0
         rts
 
@@ -526,6 +528,7 @@ pieceupd:
         ; d0.l -> kbdedge
         moveq.l #0, d0
         move.b  (KBD_EDGE), d0
+        move.b  (KBD_VAL), d1
 
         ; check left
         btst    #0, d0

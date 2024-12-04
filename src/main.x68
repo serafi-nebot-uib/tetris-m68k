@@ -39,13 +39,13 @@ start:
 .loop:
 ; --- update -------------------------------------------------------------------
         trap    #KBD_TRAP                       ; update keyboard values
+        jsr     piececlr
+        jsr     pieceupd
 
 ; --- sync ---------------------------------------------------------------------
 .sync:
-        move.b  (SNC_UPD), d0
+        move.b  (SNC_PLOT), d0
         beq     .sync
-        jsr     piececlr
-        jsr     pieceupd
 
         move.b  (SNC_PIECE), d0
         bgt     .plot
@@ -59,6 +59,7 @@ start:
 .collision:
         piecerollback
 .plot:
+        move.b  #0, (SNC_PLOT)
         jsr     pieceplot
 
 ; --- plot ---------------------------------------------------------------------

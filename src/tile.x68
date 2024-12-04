@@ -89,16 +89,30 @@ drawtilecol:
         movem.l (a7)+, d0-d6/a0
         rts
 
-; draw tile map
+; draw tile map with color override
 ;
-; input    : d1.l - tile map address
+; input    : d1.l - override color
 ;            d5.w - map start x coordinate
 ;            d6.w - map start y coordinate
+;            a1.l - tile map address
+; output   :
+; modifies :
+drawmapcol:
+        movem.l d0-d6/a0-a3, -(a7)
+        lea.l   drawtilecol, a3
+        bra     _drawmap
+; draw tile map
+;
+; input    : d5.w - map start x coordinate
+;            d6.w - map start y coordinate
+;            a1.l - tile map address
 ; output   :
 ; modifies :
 drawmap:
-        movem.l d0-d6/a0-a2, -(a7)
+        movem.l d0-d6/a0-a3, -(a7)
+        lea.l   drawtile, a3
 
+_drawmap:
         lea.l   tiletable, a2
         move.w  -4(a1), d3                      ; map width
         move.w  -2(a1), d4                      ; map height
@@ -113,7 +127,7 @@ drawmap:
         move.l  (a2,d0), d0
         lea.l   tiles, a0
         add.l   d0, a0                          ; offset a0
-        jsr     drawtile
+        jsr     (a3)
 .skip:
         addq.w  #1, d5
         cmp.w   d3, d5
@@ -124,7 +138,7 @@ drawmap:
         cmp.w   d4, d6
         blo     .loop
 
-        movem.l (a7)+, d0-d6/a0-a2
+        movem.l (a7)+, d0-d6/a0-a3
         rts
 
 ASCII_NUM_CNT: equ 10
