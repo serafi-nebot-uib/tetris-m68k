@@ -8,19 +8,16 @@
         include 'system.x68'
 
         ifeq    GLB_SCALE-GLB_SCALE_SMALL
-        include 'bg/game-16.x68'
-        include 'bg/home-16.x68'
-        include 'bg/mode-16.x68'
-        include 'bg/score-16.x68'
         include 'tile-table-16.x68'
         endc
         ifeq    GLB_SCALE-GLB_SCALE_BIG
-        include 'bg/game-32.x68'
-        ; include 'bg/home-16.x68'
-        ; include 'bg/mode-16.x68'
-        ; include 'bg/score-16.x68'
         include 'tile-table-32.x68'
         endc
+
+        include 'bg/home.x68'
+        include 'bg/mode.x68'
+        include 'bg/game.x68'
+        include 'bg/score.x68'
 
         include 'tile.x68'
         include 'piece.x68'
@@ -42,10 +39,14 @@ start:
 .loop:
 ; --- update -------------------------------------------------------------------
         trap    #KBD_TRAP                       ; update keyboard values
+
+; --- sync ---------------------------------------------------------------------
+.sync:
+        move.b  (SNC_UPD), d0
+        beq     .sync
         jsr     piececlr
         jsr     pieceupd
 
-; --- sync ---------------------------------------------------------------------
         move.b  (SNC_PIECE), d0
         bgt     .plot
         piecemovd #1

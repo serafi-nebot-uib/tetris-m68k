@@ -13,14 +13,7 @@ tile:
 
 # TODO: remove error ignore
 tilemap:
-	-./tool/tilemap.py map/bg-game-16.csv src/bg/game-16.x68 bggame
-	-./tool/tilemap.py map/bg-game-32.csv src/bg/game-32.x68 bggame
-
-	-./tool/tilemap.py map/bg-home-16.csv src/bg/home-16.x68 bghome
-	-./tool/tilemap.py map/bg-home-32.csv src/bg/home-32.x68 bghome
-
-	-./tool/tilemap.py map/bg-mode-16.csv src/bg/mode-16.x68 bgmode
-	-./tool/tilemap.py map/bg-mode-32.csv src/bg/mode-32.x68 bgmode
-
-	-./tool/tilemap.py map/bg-score-16.csv src/bg/score-16.x68 bgscore
-	-./tool/tilemap.py map/bg-score-32.csv src/bg/score-32.x68 bgscore
+	./tool/tilemap.py map/bg-game.csv src/bg/game.x68 bggame
+	./tool/tilemap.py map/bg-home.csv src/bg/home.x68 bghome
+	./tool/tilemap.py map/bg-mode.csv src/bg/mode.x68 bgmode
+	./tool/tilemap.py map/bg-score.csv src/bg/score.x68 bgscore

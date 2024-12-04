@@ -6,12 +6,7 @@ BOARD_WIDTH: equ 10
 BOARD_HEIGHT: equ 20
 BOARD_SIZE: equ BOARD_WIDTH*BOARD_HEIGHT
 BOARD_BASE_X: equ 16
-        ifeq    GLB_SCALE-GLB_SCALE_SMALL
 BOARD_BASE_Y: equ 6
-        endc
-        ifeq    GLB_SCALE-GLB_SCALE_BIG
-BOARD_BASE_Y: equ 7
-        endc
 
 ; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
@@ -77,7 +72,7 @@ pdim:   macro
 ; get piece orientation matrix offset for the piece orientation index
 ;
 ; input    : \1 - orientation index
-;           \2 - accumulator register
+;            \2 - accumulator register
 ; output   : \1 - orientation matrix offset
 ; modifies : \1, \2
 poff:   macro

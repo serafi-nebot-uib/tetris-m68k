@@ -1,9 +1,10 @@
 ; --- global -------------------------------------------------------------------
 GLB_SCALE_SMALL: equ 0
 GLB_SCALE_BIG: equ 1
-GLB_SCALE: equ  GLB_SCALE_SMALL
+GLB_SCALE: equ  GLB_SCALE_BIG
 
 ; --- sync ---------------------------------------------------------------------
+; configured to 7 to avoid Easy68K blocking the interrupt
 SNC_EXC: equ    7
 SNC_PIECE_TIME: equ 50
 
@@ -13,8 +14,8 @@ SCR_WIDTH: equ  640                             ; screen width in pixels
 SCR_HEIGHT: equ 480                             ; screen height in pixels
         endc
         ifeq    GLB_SCALE-GLB_SCALE_BIG
-SCR_WIDTH: equ  1280                            ; screen width in pixels
-SCR_HEIGHT: equ 1024                            ; screen height in pixels
+SCR_WIDTH: equ  640*2                           ; screen width in pixels
+SCR_HEIGHT: equ 480*2                           ; screen height in pixels
         endc
 SCR_TRAP: equ   0
 
