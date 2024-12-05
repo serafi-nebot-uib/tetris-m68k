@@ -447,9 +447,8 @@ piecerelease:
 
         ; TODO: move this to game loop
         move.l  d4, -(a7)
-        move.w  #BOARD_HEIGHT, d0
-        sub.w   d1, d0
-        lsl.w   #8, d0
+
+        lsl.l   #8, d0
         move.b  d1, d0
         move.w  d0, -(a7)
         move.w  #1, -(a7)
