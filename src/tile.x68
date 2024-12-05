@@ -16,7 +16,6 @@ drawtile:
         move.l  (a0)+, d1
         btst.l  #31, d1
         bne     .done
-        ; TODO: is setting the outline color necessary? can it be disabled?
         move.b  #80, d0
         trap    #15
         move.b  #81, d0
@@ -109,6 +108,7 @@ drawmapcol:
 ; output   :
 ; modifies :
 drawmap:
+; TODO: do the d5, d6 arguments make sense?
         movem.l d0-d6/a0-a3, -(a7)
         lea.l   drawtile, a3
 

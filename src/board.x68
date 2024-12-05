@@ -47,11 +47,11 @@ board:
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
+        dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         ds.w    0
 
 ; get piece matrix dimensions from an orientation index
@@ -434,7 +434,31 @@ piecerelease:
         move.l  d1, d0
         move.l  d6, d1
         jsr     boardchkfill
+        cmp     #0, d4
+        beq     .done
 
+        ; TODO: move this to game loop
+        move.l  d4, -(a7)
+        move.w  #BOARD_HEIGHT, d0
+        sub.w   d1, d0
+        lsl.w   #8, d0
+        move.b  d1, d0
+        move.w  d0, -(a7)
+        move.w  #1, -(a7)
+
+        move.w  #5-1, d0
+        move.b  #0, (SNC_PLOT)
+.clr:
+        jsr     boardclrfill
+        add.w   #1, (a7)
+.sync:
+        cmp.b   #4, (SNC_PLOT)
+        blo     .sync
+        trap    #SCR_TRAP
+        move.b  #0, (SNC_PLOT)
+
+        dbra.w  d0, .clr
+        addq.l  #8, a7
 .done:
         movem.l (a7)+, d0-d6/a0-a1
         rts
@@ -476,13 +500,12 @@ boardchkfill:
         beq     .nitr
         dbra.w  d1, .loopx
 
-        ori.l   #1, d4                          ; indicate fill
-
         ; clear row
         move.w  #BOARD_WIDTH-1, d1
 .loopclr:
         move.b  #$ff, (a1)+
         dbra.w  d1, .loopclr
+        ori.l   #1, d4                          ; indicate fill
 
 .nitr:
         addq.b  #1, d0
@@ -490,6 +513,63 @@ boardchkfill:
         bls     .loopy
 
         movem.l (a7)+, d0-d3/a0-a1
+        rts
+
+boardclrfill:
+; sp+0 -> column count [1, BOARD_WIDTH/2]
+; sp+2 -> board start y coord << 8 | row count
+; sp+4 -> row fill status higher word
+; sp+6 -> row fill status lower word
+        movem.l d0-d6, -(a7)
+
+.base:  equ     32                              ; pc + d0-d6 = 8*4 = 32
+
+        ; set color to black
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+
+        ; d1.w -> start x pixel
+        ; d3.w -> end x pixel
+        move.w  .base+0(a7), d0
+        move.w  #BOARD_WIDTH/2, d1
+        sub.w   d0, d1                          ; start count
+        lsl.w   #1, d0                          ; column count * 2
+        move.w  d1, d3
+        add.w   d0, d3                          ; end column
+        add.w   #BOARD_BASE_X, d1               ; tile start x
+        add.w   #BOARD_BASE_X, d3               ; tile end x
+        lsl.w   #TILE_SHIFT, d1                 ; pixel start x
+        lsl.w   #TILE_SHIFT, d3                 ; pixel end x
+        sub.w   #1, d3
+
+        ; d0.b -> trap 15 task number
+        move.b  #87, d0
+
+        ; d5.l -> row fill status
+        move.l  .base+4(a7), d6
+
+        ; d5.w -> y loop counter
+        move.b  .base+3(a7), d5                 ; row count
+        subq.b  #1, d5
+.loop:
+        btst    #0, d6
+        beq     .nitr
+        moveq.l #0, d2
+        move.b  .base+2(a7), d2                 ; board start y coord
+        add.b   d5, d2                          ; current board y coord
+        add.b   #BOARD_BASE_Y, d2               ; current tile y coord
+        lsl.w   #TILE_SHIFT, d2                 ; start y pixel
+        move.w  d2, d4
+        add.w   #TILE_SIZE-1, d4                ; end y pixel
+        trap    #15
+.nitr:
+        lsr.l   #1, d6
+        dbra.w  d5, .loop
+
+        movem.l (a7)+, d0-d6
         rts
 
 ; piece update logic cycle; for now: change piece position according to keystrokes
@@ -547,7 +627,6 @@ pieceupd:
         move.w  -2(a0), d0
         move.b  d0, d1
         lsr.l   #8, d0
-        jsr     pieceupdcol
         jsr     boardplot
         bra     .chkcol
 .chkctrl:
