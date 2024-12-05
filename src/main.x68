@@ -27,7 +27,6 @@
 start:
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
-
         jsr     game
 
         ; halt simulator

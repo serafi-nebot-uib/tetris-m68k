@@ -110,7 +110,7 @@ piececommit: macro
 ; output   :
 ; modifies : d0.l
 pieceinit:
-        move.w  d2, -(a7)
+        movem.w d0-d2/a0, -(a7)
 
         clr.w   (piece+2)                       ; reset orientation index to 0
 
@@ -134,14 +134,22 @@ pieceinit:
         lsr.w   #8, d2
         sub.b   d2, d1
         move.b  d1, (piece)                     ; adjusted x
+        piececommit
 
+        ; update color & pattern for current piece
+        move.w  -2(a0), d0
+        move.b  d0, d1
+        lsr.l   #8, d0
+        andi.l  #$0000000f, d0
+        andi.l  #$0000000f, d1
+        jsr     pieceupdcol
+        ; boardplot is called here so that when a piece is released into the
+        ; board it is automatically re-drawn (to avoid game loop complexity)
         jsr     boardplot
 
-        ; copy data to pieceprev
-        move.l  (piece), (pieceprev)
-        move.l  (piece+4), (pieceprev+4)
+        move.b  #SNC_PIECE_TIME, (SNC_PIECE)    ; reset piece sync counter
 
-        move.w  (a7)+, d2
+        movem.w (a7)+, d0-d2/a0
         rts
 
 ; set the color profile for the current piece and level
@@ -572,92 +580,6 @@ boardclrfill:
         movem.l (a7)+, d0-d6
         rts
 
-; piece update logic cycle; for now: change piece position according to keystrokes
-;
-; input    :
-; output   :
-; modifies :
-pieceupd:
-        movem.l d0-d1, -(a7)
-        ; d0.l -> kbdedge
-        moveq.l #0, d0
-        move.b  (KBD_EDGE), d0
-        move.b  (KBD_VAL), d1
-
-        ; check left
-        btst    #0, d0
-        beq     .chkright
-        piecemovl #1
-        bra     .chkcol
-.chkright:
-        btst    #2, d0
-        beq     .chkup
-        piecemovr #1
-        bra     .chkcol
-.chkup:
-        btst    #1, d0
-        beq     .chkdown
-        piecemovu #1
-        bra     .chkcol
-.chkdown:
-        btst    #3, d0
-        beq     .chkspbar
-        piecemovd #1
-        bra     .chkcol
-.chkspbar:
-        btst    #4, d0
-        beq     .chkshift
-        jsr     piecerotr
-        bra     .chkcol
-.chkshift:
-        btst    #7, d0
-        beq     .chkctrl
-        ; TODO: remove lvl update (this is only for testing)
-        moveq.l #0, d1
-        move.b  (levelnum), d1
-        addq.b  #1, d1
-        divu    #9, d1
-        swap    d1
-        move.b  d1, (levelnum)
-
-        ; update piece color & pattern
-        moveq.l #0, d0
-        moveq.l #0, d1
-        move.l  (piece+4), a0
-        move.w  -2(a0), d0
-        move.b  d0, d1
-        lsr.l   #8, d0
-        jsr     boardplot
-        bra     .chkcol
-.chkctrl:
-        btst    #6, d0
-        beq     .chkesc
-.npiece:
-        ; TODO: remove piece change (this is only for testing)
-        move.b  (piecenum), d0
-        addq.l  #1, d0
-        divu    #7, d0
-        swap    d0
-        andi.l  #$ffff, d0
-        jsr     pieceinit
-        bra     .chkcol
-.chkesc:
-        btst    #5, d0
-        beq     .chkcol
-        jsr     piecerelease
-        bra     .npiece
-.chkcol:
-        jsr     piececoll
-        cmp.b   #0, d0
-        bne     .rollback
-        piececommit
-        bra     .done
-.rollback:
-        piecerollback
-.done:
-        movem.l (a7)+, d0-d1
-        rts
-
 ; --- plotting -----------------------------------------------------------------
 
 ; piece color map by level
@@ -715,15 +637,17 @@ piece_ptrn2:
         dc.l    $ffffffff
         endc
 
-; clear current piece plot
+; clear previous piece plot
 ;
 ; input    :
 ; output   :
 ; modifies :
 piececlr:
-        movem.l d0-d3/d5-d6/a0-a1, -(a7)
+        movem.l d0-d3/d5-d6/a0-a2, -(a7)
         ; a0.l ->  piece tile pattern
         lea.l   piece_ptrn0, a0
+        ; a2.l -> piece address
+        lea.l   pieceprev, a2
         bra     _pieceplot
 ; plot piece with the corresponding color & pattern
 ;
@@ -731,15 +655,17 @@ piececlr:
 ; output   :
 ; modifies :
 pieceplot:
-        movem.l d0-d3/d5-d6/a0-a1, -(a7)
+        movem.l d0-d3/d5-d6/a0-a2, -(a7)
         ; a0.l ->  piece tile pattern
         move.l  (piece_ptrn), a0
+        ; a2.l -> piece address
+        lea.l   piece, a2
 _pieceplot:
         ; a1.l -> piece matrix
-        move.l  (piece+4), a1
+        move.l  4(a2), a1
         ; d2.l -> piece matrix width
         ; d3.l -> piece matrix height
-        move.w  (piece+2), d0                   ; orientation index
+        move.w  2(a2), d0                       ; orientation index
         moveq.l #0, d2
         moveq.l #0, d3
         pdim    d0, d2
@@ -751,12 +677,12 @@ _pieceplot:
 
         ; d5.l -> tile x coord (relative to screen)
         move.l  #BOARD_BASE_X, d5
-        move.b  (piece), d1
+        move.b  (a2), d1
         ext.w   d1
         add.w   d1, d5
         ; d6.l -> tile y coord (relative to screen)
         move.l  #BOARD_BASE_Y, d6
-        move.b  (piece+1), d1
+        move.b  1(a2), d1
         ext.w   d1
         add.w   d1, d6
 
@@ -781,7 +707,7 @@ _pieceplot:
         cmp.b   d3, d1                          ; compare matrix y index with matrix height
         blo     .loop
 .done:
-        movem.l (a7)+, d0-d3/d5-d6/a0-a1
+        movem.l (a7)+, d0-d3/d5-d6/a0-a2
         rts
 
 ; plot current board pieces with their corresponding color & pattern

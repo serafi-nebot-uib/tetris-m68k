@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="40" height="30" tilewidth="16" tileheight="16" infinite="0" nextlayerid="3" nextobjectid="1">
  <editorsettings>
-  <export target="bg-game-16.csv" format="csv"/>
+  <export target="bg-game.csv" format="csv"/>
  </editorsettings>
  <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="281" columns="281">
-  <image source="../img/tiles-16.png" width="4496" height="16"/>
+  <image source="../img/tiles.png" width="4496" height="16"/>
  </tileset>
  <imagelayer id="2" name="Image Layer 1" visible="0" locked="1" opacity="0.21" offsetx="0" offsety="32">
   <image source="../img/resources/background-game.png" width="640" height="400"/>
