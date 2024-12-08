@@ -4,7 +4,7 @@
   <export target="bg-game.csv" format="csv"/>
  </editorsettings>
  <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="281" columns="281">
-  <image source="../img/tiles.png" width="4496" height="16"/>
+  <image source="../img/tiles-16.png" width="4496" height="16"/>
  </tileset>
  <imagelayer id="2" name="Image Layer 1" visible="0" locked="1" opacity="0.21" offsetx="0" offsety="32">
   <image source="../img/resources/background-game.png" width="640" height="400"/>

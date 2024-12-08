@@ -441,19 +441,26 @@ piecerelease:
 
         move.l  d1, d0
         move.l  d6, d1
+
+        move.l  d0, d2
+        add.l   d1, d2
+        sub.l   #BOARD_HEIGHT, d2
+        ble     .chkfill
+        sub.l   d2, d1
+.chkfill:
         jsr     boardchkfill
         cmp     #0, d4
         beq     .done
+        jsr     boarddropdown
 
-        ; TODO: move this to game loop
         move.l  d4, -(a7)
-
         lsl.l   #8, d0
         move.b  d1, d0
         move.w  d0, -(a7)
         move.w  #1, -(a7)
 
-        move.w  #5-1, d0
+        ; TODO: move this to game loop?
+        move.w  #BOARD_WIDTH/2-1, d0
         move.b  #0, (SNC_PLOT)
 .clr:
         jsr     boardclrfill
@@ -483,10 +490,6 @@ boardchkfill:
         move.b  d0, d2
         add.b   d1, d2
         subq.b  #1, d2
-        cmp.b   #BOARD_HEIGHT, d2
-        blo     .chk
-        move.b  #BOARD_HEIGHT-1, d2
-.chk:
         ; d4.l -> row fill status
         moveq.l #0, d4
 .loopy:
@@ -520,6 +523,49 @@ boardchkfill:
         bls     .loopy
 
         movem.l (a7)+, d0-d3/a0-a1
+        rts
+
+; d0.l -> start y board coordinate
+; d1.l -> number of rows in row status
+; d4.l -> row fill status
+boarddropdown:
+        movem.l d0-d2/d4/a0-a1, -(a7)
+        ; d0.l -> board bottom row coordinate
+        add.l   d1, d0
+        subq.l  #1, d0
+        ; a0.l -> board dst row address
+        ; a1.l -> board src row address
+        lea.l   board, a0
+        move.l  d0, d1                          ; board base row
+        mulu    #BOARD_WIDTH, d1                ; board base row offset
+        add.l   d1, a0
+        move.l  a0, a1
+        ; d1.b -> empty row counter
+        moveq.l #0, d1
+.loop:
+        btst.l  #0, d4
+        beq     .drop                           ; check if row has to be dropped
+        addq.l  #1, d1                          ; increate row counter
+        bra     .nitr
+.drop:
+        tst.l   d1
+        beq     .skip
+        cmpa.l  a0, a1
+        beq     .nitr
+
+        move.l  #BOARD_WIDTH-1, d2              ; copy loop counter & offset
+.copy:
+        move.b  (a1,d2.l), (a0,d2.l)            ; copy src to dst row
+        move.b  #$ff, (a1,d2.l)                 ; clear src row
+        dbra    d2, .copy
+.skip:
+        sub.l   #BOARD_WIDTH, a0                ; move dst up one row
+.nitr:
+        sub.l   #BOARD_WIDTH, a1                ; move src up one row
+        lsr.l   #1, d4
+        dbra    d0, .loop
+.done:
+        movem.l (a7)+, d0-d2/d4/a0-a1
         rts
 
 boardclrfill:
@@ -717,6 +763,21 @@ _pieceplot:
 ; modifies :
 boardplot:
         movem.l d0-d3/d5-d6/a0-a1, -(a7)
+
+        ; clear board
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+
+        move.b  #87, d0
+        move.w  #BOARD_BASE_X<<TILE_SHIFT, d1
+        move.w  #BOARD_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BOARD_BASE_X+BOARD_WIDTH)<<TILE_SHIFT, d3
+        move.w  #(BOARD_BASE_Y+BOARD_HEIGHT)<<TILE_SHIFT, d4
+        trap    #15
+
         ; a1.l -> board address
         ; d2.l -> board x index
         ; d3.l -> board y index

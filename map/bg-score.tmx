@@ -4,7 +4,7 @@
   <export target="bg-score.csv" format="csv"/>
  </editorsettings>
  <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="281" columns="281">
-  <image source="../img/tiles.png" width="4496" height="16"/>
+  <image source="../img/tiles-16.png" width="4496" height="16"/>
  </tileset>
  <layer id="1" name="Tile Layer 1" width="40" height="30">
   <data encoding="csv">

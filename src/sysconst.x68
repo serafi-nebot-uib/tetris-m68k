@@ -27,5 +27,6 @@ KBD_RIGHT: equ  $27
 KBD_DOWN: equ   $28
 KBD_ESC: equ    $1b
 KBD_CTRL equ    $11
-KBD_SPBAR: equ  $20
+; KBD_SPBAR: equ  $20
+KBD_SPBAR: equ  'R'
 KBD_SHIFT: equ  $10

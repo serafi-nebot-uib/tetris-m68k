@@ -81,6 +81,25 @@ gameupd:
         rts
 
 game:
+; ; --- test ---------------------------------------------------------------------
+;         move.l  #0, d0                          ; piece number
+;         jsr     pieceinit
+;
+;         jsr     boardplot
+;         trap    #SCR_TRAP
+;
+;         move.l  #BOARD_HEIGHT-1, d0             ; board base y coord
+;         move.l  #%01111101110011100101, d4      ; row fill status
+;         jsr     boarddropdown
+;
+;         move.b  #11, d0
+;         move.l  #$ff00, d1
+;         trap    #15
+;         jsr     boardplot
+;         trap    #SCR_TRAP
+;
+;         simhalt
+
 ; --- init ---------------------------------------------------------------------
         lea.l   bggame, a1
         moveq.l #0, d5
