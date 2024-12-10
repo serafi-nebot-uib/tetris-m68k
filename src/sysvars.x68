@@ -7,4 +7,4 @@ SNC_PIECE: ds.b 1
 KBD_VAL: ds.b   1                               ; key state
 KBD_EDGE: ds.b  1                               ; key edge
 
-        ds.w 0
+        ds.w    0

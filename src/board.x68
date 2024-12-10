@@ -383,6 +383,15 @@ piececoll:
 ; modifies :
 piecerelease:
         movem.l d0-d6/a0-a1, -(a7)
+
+        ; bring peice down (no animation)
+.movd:
+        piecemovd #1
+        jsr     piececoll
+        tst.b   d0
+        beq     .movd
+        piecemovu #1
+
         ; a0.l -> piece matrix
         ; d4.b -> piece color<<4|pattern
         move.l  (piece+4), a0

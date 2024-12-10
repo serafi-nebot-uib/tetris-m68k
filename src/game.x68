@@ -4,6 +4,12 @@ gameupd:
         moveq.l #0, d0
         move.b  (KBD_EDGE), d0
         move.b  (KBD_VAL), d1
+.chkdown:
+        btst    #3, d0
+        beq     .chkleft
+        piecemovd #1
+        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
+        bra     .chkcol
 .chkleft:
         btst    #0, d0
         beq     .chkright
@@ -14,25 +20,18 @@ gameupd:
         beq     .chkup
         piecemovr #1
         bra     .chkcol
-        ; TODO: disable up
 .chkup:
         btst    #1, d0
-        beq     .chkdown
-        piecemovu #1
-        bra     .chkcol
-.chkdown:
-        btst    #3, d0
         beq     .chkspbar
-        piecemovd #1
-        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
-        bra     .chkcol
-.chkspbar:
-        btst    #4, d0
-        beq     .chkshift
         jsr     piecerotr
         bra     .chkcol
 ; -----------------------------
 ; TODO: remove this as it is only for testing
+.chkspbar:
+        btst    #4, d0
+        beq     .chkshift
+        piecemovu #1
+        bra     .chkcol
 .chkshift:
         btst    #7, d0
         beq     .chkctrl
@@ -51,7 +50,7 @@ gameupd:
         move.b  d0, d1
         lsr.l   #8, d0
         jsr     boardplot
-        bra     .chkcol
+        bra     .done
 .chkctrl:
         btst    #6, d0
         beq     .chkesc
@@ -63,10 +62,10 @@ gameupd:
         swap    d0
         andi.l  #$ffff, d0
         jsr     pieceinit
-        bra     .chkcol
+        bra     .done
 .chkesc:
         btst    #5, d0
-        beq     .chkcol
+        beq     .done
         jsr     piecerelease
         bra     .npiece
 ; -----------------------------
@@ -81,25 +80,6 @@ gameupd:
         rts
 
 game:
-; ; --- test ---------------------------------------------------------------------
-;         move.l  #0, d0                          ; piece number
-;         jsr     pieceinit
-;
-;         jsr     boardplot
-;         trap    #SCR_TRAP
-;
-;         move.l  #BOARD_HEIGHT-1, d0             ; board base y coord
-;         move.l  #%01111101110011100101, d4      ; row fill status
-;         jsr     boarddropdown
-;
-;         move.b  #11, d0
-;         move.l  #$ff00, d1
-;         trap    #15
-;         jsr     boardplot
-;         trap    #SCR_TRAP
-;
-;         simhalt
-
 ; --- init ---------------------------------------------------------------------
         lea.l   bggame, a1
         moveq.l #0, d5
@@ -133,8 +113,9 @@ game:
         jsr     piececlr
         jsr     pieceplot
         piececommit
+.sync:
         move.b  (SNC_PLOT), d0
-        beq     .plot
+        beq     .sync
         move.b  #0, (SNC_PLOT)
 
 ; --- plot ---------------------------------------------------------------------
