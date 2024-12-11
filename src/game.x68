@@ -123,3 +123,5 @@ game:
 
         bra     .loop
         rts
+
+_game:
