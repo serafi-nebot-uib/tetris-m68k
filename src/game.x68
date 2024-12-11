@@ -8,7 +8,7 @@ gameupd:
         btst    #3, d0
         beq     .chkleft
         piecemovd #1
-        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
+        move.b  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
         bra     .chkcol
 .chkleft:
         btst    #0, d0
@@ -29,10 +29,10 @@ gameupd:
 ; TODO: remove this as it is only for testing
 .chkspbar:
         btst    #4, d0
-        beq     .chkshift
+        beq     .chkenter
         piecemovu #1
         bra     .chkcol
-.chkshift:
+.chkenter:
         btst    #7, d0
         beq     .chkctrl
         moveq.l #0, d1
@@ -88,15 +88,15 @@ game:
         move.l  #0, d0                          ; piece number
         jsr     pieceinit
 
-        move.b  #SNC_PIECE_TIME, (SNC_PIECE)    ; reset piece sync counter
+        move.b  #SNC_PIECE_TIME, (SNC_CNT_DOWN)    ; reset piece sync counter
 .loop:
 ; --- update -------------------------------------------------------------------
         trap    #KBD_TRAP                       ; update keyboard values
 
         ; check if piece should be moved down
-        move.b  (SNC_PIECE), d0
+        move.b  (SNC_CNT_DOWN), d0
         bgt     .upd
-        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
+        move.b  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
         piecemovd #1
         jsr     piececoll
         cmp.b   #0, d0

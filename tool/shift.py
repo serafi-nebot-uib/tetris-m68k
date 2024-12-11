@@ -9,5 +9,5 @@ if __name__ == "__main__":
   assert all(len(x) == w for x in tmap), "map width mismatch"
   for y in range(h):
     for x in range(w):
-      if tmap[y][x] > 37: tmap[y][x] += 4
+      if tmap[y][x] > 37: tmap[y][x] += 2
     print(",".join(map(str, tmap[y])) + ",")

@@ -23,11 +23,29 @@
         include 'piece.x68'
         include 'board.x68'
         include 'game.x68'
+        include 'screens.x68'
+
+screens:
+        dc.l    screen_legal
+        dc.l    screen1
+;         dc.l    screen2
+;         dc.l    screen3
+;         dc.l    screen4
+;         dc.l    screen5
 
 start:
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
-        jsr     game
+
+        move.b  #0, (SCR_NUM)
+.loop:
+        moveq.l #0, d1
+        move.b  (SCR_NUM), d1
+        lsl.w   #2, d1
+        lea.l   screens, a0
+        movea.l (a0,d1.w), a1
+        jsr     (a1)
+        bra     .loop
 
         ; halt simulator
         move.b  #9, d0

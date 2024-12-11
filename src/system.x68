@@ -6,6 +6,7 @@ sysinit:
         ori.w   #$0700, sr                      ; disable interrupts
         jsr     scrinit
         jsr     kbdinit
+        jsr     mouseinit
         jsr     sncinit
 
         ; do not enter user because of Eeasy68k auto interrupt bug;
@@ -20,7 +21,7 @@ sysinit:
 
 sncinit:
         move.b  #0, (SNC_PLOT)
-        move.b  #SNC_PIECE_TIME, (SNC_PIECE)
+        move.b  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
 
         move.l  #sncinc, ($60+SNC_EXC*4)
 
@@ -38,7 +39,7 @@ sncinit:
 
 sncinc:
         addq.b  #1, (SNC_PLOT)
-        subq.b  #1, (SNC_PIECE)
+        subq.b  #1, (SNC_CNT_DOWN)
         rte
 
 scrinit:
@@ -112,7 +113,7 @@ kbdupd:
 
         ; read first part
         move.b  #19, d0
-        move.l  #KBD_SHIFT<<24|KBD_CTRL<<16|KBD_ESC<<8|KBD_SPBAR, d1
+        move.l  #KBD_ENTER<<24|KBD_CTRL<<16|KBD_ESC<<8|KBD_SPBAR, d1
         trap    #15
 
         ; convert to desired format
@@ -142,3 +143,58 @@ kbdupd:
         roxl.b  #1, d2
         dbra.w  d3, .loop
         rts
+
+mouseinit:
+        move.b  #0, (MOUSE_VAL)
+        move.l  #mouseupd, ($80+MOUSE_TRAP*4)
+        rts
+
+mouseupd:
+        movem.l d0-d3, -(a7)
+
+        ; read current state of mouse and change mouse coordinates
+        move.b  #61, d0
+        move.b  #00, d1
+        trap    #15
+
+        ; store mouse x coordinate
+        move.w  d1, (MOUSE_POS_X)
+
+        move.w  #15, d3
+.loop:  lsl.l   #1, d1
+        addx.w  d2, d2
+        dbra.w  d3, .loop
+
+        ; store mouse y coordinate
+        move.w  d2, (MOUSE_POS_Y)
+
+        ; if left click pressed and it's inside the button add 1
+        btst    #0, d0
+        bne     .lclick
+        bra     .noclick
+.lclick:
+        move.w  #BUTT_POS_X-BUTT_WIDTH/2, d1
+        cmp.w   (MOUSE_POS_X), d1
+        bge     .noclick
+
+        move.w  #BUTT_POS_Y-BUTT_HEIGHT/2, d1
+        cmp.w   (MOUSE_POS_Y), d1
+        bge     .noclick
+
+        move.w  #BUTT_POS_X+BUTT_WIDTH/2, d1
+        cmp.w   (MOUSE_POS_X), d1
+        ble     .noclick
+
+        move.w  #BUTT_POS_Y+BUTT_HEIGHT/2, d1
+        cmp.w   (MOUSE_POS_Y), d1
+        ble     .noclick
+
+        btst.b  #0, (MOUSE_VAL)
+        bne     .noclick
+        addq.w  #1, (BUTT_PRESS)
+        move.b  #1, (MOUSE_VAL)
+
+        bra     .noclick
+.noclick:
+        movem.l (a7)+, d0-d3
+        rte
