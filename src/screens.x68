@@ -1,5 +1,25 @@
-; --- screen 0: pantalla terminos y condiciones ------------------------------
 screen_legal:
+        ; clear screen
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        rts
+
+.txt1:  dc.b    'TM AND',0
+.txt2:  dc.b    'V/O ELECTRONORGTECHNICA',0
+.txt3:  dc.b    '("ELORG")',0
+.txt4:  dc.b    'TETRIS',0
+.txt5: dc.b    'LICENSED TO ',0
+.txt6: dc.b    'NINTENDO',0
+.txt8: dc.b    'ALL RIGHTS RESERVED ',0
+.txt9: dc.b   'ORIGINAL CONCEPT,DESIGN',0
+.txt10: dc.b   'AND PROGRAM ',0
+.txt11: dc.b   'BY',0
+.txt12: dc.b   'ALEXEY PAZHITNOV',0
+
+; --- screen 0: pantalla terminos y condiciones ------------------------------
+screen0:
         ; --- PAINT SCREEN TO BLACK ---
         move.b  #11, d0
         move.w  #$ff00, d1

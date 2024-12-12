@@ -34,6 +34,10 @@ screens:
 ;         dc.l    screen5
 
 start:
+        jsr     sysinit
+        jsr     screen_legal
+        simhalt
+
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 

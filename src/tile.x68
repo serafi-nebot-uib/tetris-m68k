@@ -153,7 +153,7 @@ ASCII_CHR_CNT: equ 26
 ; output   :
 ; modifies :
 drawstrcol:
-        movem.l d4-d5/a0-a3, -(a7)
+        movem.l d3-d5/a0-a3, -(a7)
         lea.l   drawtilecol, a3
         bra     _drawstr
 ; draw null terminated string with color override
@@ -164,7 +164,7 @@ drawstrcol:
 ; output   :
 ; modifies :
 drawstr:
-        movem.l d4-d5/a0-a3, -(a7)
+        movem.l d3-d5/a0-a3, -(a7)
         lea.l   drawtile, a3
 
 _drawstr:
@@ -173,30 +173,34 @@ _drawstr:
         move.l  #0, d4                          ; reset d4 to clear junk
         move.b  (a1)+, d4
         beq     .done                           ; end sequence
-
         ; check for whitespace
         cmp.b   #$20, d4
         beq     .skip
-
         ; check number
         cmp.b   #'0', d4
-        blo     .done
+        blo     .sym
         cmp.b   #'0'+ASCII_NUM_CNT, d4
         blo     .num
-
         ; check uppercase letter
         cmp.b   #'A', d4
-        blo     .done
+        blo     .sym
         cmp.b   #'A'+ASCII_CHR_CNT, d4
         blo     .upr
-
         ; check lowercase letter
         cmp.b   #'a', d4
-        blo     .done
+        blo     .sym
         cmp.b   #'a'+ASCII_CHR_CNT, d4
         blo     .lwr
-
-        bra     .done                           ; invalid character
+.sym:
+        lea.l   .symtable, a0
+.symloop:
+        move.w  (a0)+, d3
+        beq     .done                           ; symtable end -> invalid character
+        cmp.b   d4, d3
+        bne     .symloop
+        lsr.w   #8, d3
+        move.b  d3, d4
+        bra     .draw
 .num:
         sub.b   #'0', d4
         bra     .draw
@@ -217,5 +221,16 @@ _drawstr:
         addq.w  #1, d5                          ; increment x coordinate
         bra     .loop
 .done:
-        movem.l (a7)+, d4-d5/a0-a3
+        movem.l (a7)+, d3-d5/a0-a3
         rts
+.symtable:
+        dc.b    37, '-'
+        dc.b    40, ','
+        dc.b    41, '/'
+        dc.b    42, '('
+        dc.b    43, ')'
+        dc.b    44, '"'
+        dc.b    45, '!'
+        dc.b    46, '>'
+        dc.b    47, '<'
+        dc.b    0, 0
