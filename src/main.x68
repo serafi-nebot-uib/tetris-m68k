@@ -27,17 +27,13 @@
 
 screens:
         dc.l    screen_legal
-        dc.l    screen1
+        dc.l    screen_start
 ;         dc.l    screen2
 ;         dc.l    screen3
 ;         dc.l    screen4
 ;         dc.l    screen5
 
 start:
-        jsr     sysinit
-        jsr     screen_legal
-        simhalt
-
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 

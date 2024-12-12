@@ -4,196 +4,126 @@ screen_legal:
         move.w  #$ff00, d1
         trap    #15
 
-        rts
-
-.txt1:  dc.b    'TM AND',0
-.txt2:  dc.b    'V/O ELECTRONORGTECHNICA',0
-.txt3:  dc.b    '("ELORG")',0
-.txt4:  dc.b    'TETRIS',0
-.txt5: dc.b    'LICENSED TO ',0
-.txt6: dc.b    'NINTENDO',0
-.txt8: dc.b    'ALL RIGHTS RESERVED ',0
-.txt9: dc.b   'ORIGINAL CONCEPT,DESIGN',0
-.txt10: dc.b   'AND PROGRAM ',0
-.txt11: dc.b   'BY',0
-.txt12: dc.b   'ALEXEY PAZHITNOV',0
-
-; --- screen 0: pantalla terminos y condiciones ------------------------------
-screen0:
-        ; --- PAINT SCREEN TO BLACK ---
-        move.b  #11, d0
-        move.w  #$ff00, d1
-        trap    #15
-
-        lea     .TEXT1, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X, d5                    ; X POS
-        move.w  #.LINE1Y, d6                    ; Y POS
+        lea.l   .txt1, a1
+        move.w  #.basex, d5
+        move.w  #.basey, d6
         jsr     drawstr
 
-        ; paint one tile
-        lea.l   tiletable, a1
-        move.l  #45, d0                         ; tile index
-        lsl.l   #2, d0
-        move.l  (a1,d0), d0
-        lea.l   tiles, a0
-        add.l   d0, a0
+        lea.l   .txt2, a2
+        move.w  #.basex+9, d5
+        jsr     drawstr
 
-        move.w  #.LINE1X+7, d5
-        move.w  #.LINE1Y, d6
-        move.l  #$00ff0000, d1
-        jsr     drawtilecol
-
-        lea     .TEXT2, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X+9, d5                  ; X POS
-        move.w  #.LINE1Y, d6                    ; Y POS
-        move.l  #$00ffff00, d1                  ; COLOUR
-        jsr     drawstrcol
-
-        lea     .TEXT3, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X-4, d5                  ; X POS
-        move.w  #.LINE1Y+2, d6                  ; Y POS
+        lea.l   .txt3, a1
+        move.w  #.basex-4, d5
+        move.w  #.basey+2, d6
         move.l  #LVL_SEL_COL, d1
         jsr     drawstrcol
 
-        lea     .TEXT4, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X-2, d5                  ; X POS
-        move.w  #.LINE1Y+2, d6                  ; Y POS
-        move.l  #LVL_SEL_COL, d1                ; COLOUR
+        lea.l   .txt4, a1
+        move.w  #.basex+2, d5
+        move.w  #.basey+4, d6
         jsr     drawstrcol
 
-        lea     .TEXT5, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X+4, d5                  ; X POS
-        move.w  #.LINE1Y+4, d6                  ; Y POS
-        move.l  #LVL_SEL_COL, d1                ; COLOUR
+        lea.l   .txt5, a1
+        move.w  #.basex-6, d5
+        move.w  #.basey+6, d6
+        move.l  #.colblue, d1
         jsr     drawstrcol
 
-        lea     .TEXT6, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X-6, d5                  ; X POS
-        move.w  #.LINE1Y+6, d6                  ; Y POS
-        move.l  #$00ffff00, d1                  ; COLOUR
-        jsr     drawstrcol
-
-        lea     .TEXT7, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X+1, d5                  ; X POS
-        move.w  #.LINE1Y+6, d6                  ; Y POS
+        lea.l   .txt6, a1
+        move.w  #.basex+1, d5
         jsr     drawstr
 
-        lea     .TEXT8, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X+13, d5                 ; X POS
-        move.w  #.LINE1Y+6, d6                  ; Y POS
-        move.l  #LVL_SEL_COL, d1                ; COLOUR
+        lea.l   .txt7, a1
+        move.w  #.basex+13, d5
+        move.l  #LVL_SEL_COL, d1
+        jsr     drawstrcol
+        move.w  #.basex+5, d5
+        move.w  #.basey+8, d6
         jsr     drawstrcol
 
-        ; paint one tile
-        lea.l   tiletable, a1
-        move.l  #45, d0                         ; tile index
-        lsl.l   #2, d0
-        move.l  (a1,d0), d0
-        lea.l   tiles, a0
-        add.l   d0, a0
+        lea.l   .txt8, a1
+        move.w  #.basex, d5
+        move.l  #.colblue, d1
+        jsr     drawstrcol
 
-        move.w  #.LINE1Y+8, d6
-        move.w  #.LINE1X-2, d5
-        move.l  #$00ff0000, d1
+        lea.l   .txt9, a1
+        move.w  #.basex-3, d5
+        move.w  #.basey+10, d6
+        jsr     drawstr
+
+        lea.l   .txt10, a1
+        move.w  #.basex-5, d5
+        move.w  #.basey+12, d6
+        jsr     drawstr
+
+        lea.l   .txt11, a1
+        move.w  #.basex+2, d5
+        move.w  #.basey+14, d6
+        jsr     drawstr
+
+        lea.l   .txt12, a1
+        move.w  #.basex-2, d5
+        move.w  #.basey+16, d6
+        jsr     drawstr
+
+        lea.l   .txt13, a1
+        move.w  #.basex+1, d5
+        move.l  #LVL_SEL_COL, d1
+        jsr     drawstrcol
+
+        move.l  (tiletable+(47<<2)), a0
+        add.l   #tiles, a0
+        move.l  #.coldarkblue, d1
+
+        move.w  #.basex+7, d5
+        move.w  #.basey, d6
         jsr     drawtilecol
 
-        lea     .TEXT2, a1
-        move.w  #.LINE1X, d5
-        move.w  #.LINE1Y+8, d6
-        move.l  #$00ffff00, d1
-        jsr     drawstrcol
+        move.w  #.basex-2, d5
+        move.w  #.basey+8, d6
+        jsr     drawtilecol
 
-        lea     .TEXT8, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X+5, d5                  ; X POS
-        move.w  #.LINE1Y+8, d6                  ; Y POS
-        move.l  #LVL_SEL_COL, d1                ; COLOUR
-        jsr     drawstrcol
+        jsr     scrplot
 
-        lea     .TEXT9, a1                      ; TEXT ADDRESS
-        move.w  #.LINE1X-3, d5                  ; X POS
-        move.w  #.LINE1Y+10, d6                 ; Y POS
-        jsr     drawstr
-
-        lea     .TEXT10, a1                     ; TEXT ADDRESS
-        move.w  #.LINE1X-5, d5                  ; X POS
-        move.w  #.LINE1Y+12, d6                 ; Y POS
-        jsr     drawstr
-
-        lea     .TEXT11, a1                     ; TEXT ADDRESS
-        move.w  #.LINE1X+12, d5                 ; X POS
-        move.w  #.LINE1Y+12, d6                 ; Y POS
-        jsr     drawstr
-
-        lea     .TEXT12, a1                     ; TEXT ADDRESS
-        move.w  #.LINE1X+2, d5                  ; X POS
-        move.w  #.LINE1Y+14, d6                 ; Y POS
-        jsr     drawstr
-
-        lea     .TEXT13, a1                     ; TEXT ADDRESS
-        move.w  #.LINE1X-2, d5                  ; X POS
-        move.w  #.LINE1Y+16, d6                 ; Y POS
-        jsr     drawstr
-
-        lea     .TEXT14, a1                     ; TEXT ADDRESS
-        move.w  #.LINE1X+1, d5                  ; X POS
-        move.w  #.LINE1Y+16, d6                 ; Y POS
-        move.l  #LVL_SEL_COL, d1                ; COLOUR
-        jsr     drawstrcol
-
-        trap    #SCR_TRAP
-
-        move.b  #50, (SNC_CNT_DOWN)
+        move.l  #50*5, (SNC_CNT_DOWN)           ; 5 second timer
 .loop:
-; --- UPDATE -----------------------------------------------------------------
-        ; READ INPPUT DEVICES
-        trap    #KBD_TRAP
-        ; CHECK FOR ENTER
+        jsr     kbdupd
         btst.b  #7, (KBD_EDGE)
         bne     .done
-        bra     .loop
-        tst.b   (SNC_CNT_DOWN)
+        tst.l   (SNC_CNT_DOWN)
         bgt     .loop
 .done:
         move.b  #1, (SCR_NUM)
 
         rts
 
-.LINE1Y equ     6
-.LINE1X equ     13
+.basex: equ     13
+.basey: equ     6
+.colblue: equ   $00f6fdb3
+.coldarkblue: equ $00f89568
+.txt1:  dc.b    'TM AND',0
+.txt2:  dc.b    '1987',0
+.txt3:  dc.b    'V/O ELECTRONORGTECHNICA',0
+.txt4:  dc.b    '("ELORG")',0
+.txt5:  dc.b    'TETRIS',0
+.txt6:  dc.b    'LICENSED TO ',0
+.txt7:  dc.b    'NINTENDO',0
+.txt8:  dc.b    '1989',0
+.txt9:  dc.b    'ALL RIGHTS RESERVED ',0
+.txt10: dc.b    'ORIGINAL CONCEPT,DESIGN',0
+.txt11: dc.b    'AND PROGRAM ',0
+.txt12: dc.b    'BY',0
+.txt13: dc.b    'ALEXEY PAZHITNOV',0
 
-.TEXT1: dc.b    'TM AND',0
-.TEXT2: dc.b    '1987',0
-.TEXT3: dc.b    'V ',0
-.TEXT4: dc.b    'O ELECTRONORGTECHNICA ',0
-.TEXT5: dc.b    'ELORG ',0
-.TEXT6: dc.b    'TETRIS',0
-.TEXT7: dc.b    'LICENSED TO ',0
-.TEXT8: dc.b    'NINTENDO',0
-.TEXT9: dc.b    'ALL RIGHTS RESERVED ',0
-.TEXT10: dc.b   'ORIGINAL CONCEPT',0
-.TEXT11: dc.b   'DESIGN',0
-.TEXT12: dc.b   'AND PROGRAM ',0
-.TEXT13: dc.b   'BY',0
-.TEXT14: dc.b   'ALEXEY PAZHITNOV',0
-
-
-; ; --- SCREEN 1: Pantalla Logo Intro Tetris -----------------------------------
-screen1:
-; ----------------------------------------------------------------------------
-; INITIALIZE SCREEN 1
-; INPUT    : NONE 
-; OUTPUT   : NONE
-; MODIFIES : NONE
-; ----------------------------------------------------------------------------
+screen_start:
         clr.w   (BUTT_PRESS)
         clr.w   (MOUSE_POS_X)
         clr.w   (MOUSE_POS_Y)
         clr.b   (MOUSE_VAL)
 
         ; --- PAINT SCREEN TO BLACK ---
-        move.b  #11, d0
-        move.w  #$ff00, d1
-        trap    #15
+        jsr     scrclr
 
         ; --- PAINTING BITMAP ---
         moveq.l #0, d5
@@ -201,7 +131,7 @@ screen1:
         lea.l   bghome, a1
         jsr     drawmap
 
-        trap    #SCR_TRAP
+        jsr     scrplot
         simhalt
 ;             
 ; .LOOP:

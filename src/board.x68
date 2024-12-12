@@ -147,7 +147,7 @@ pieceinit:
         ; board it is automatically re-drawn (to avoid game loop complexity)
         jsr     boardplot
 
-        move.b  #SNC_PIECE_TIME, (SNC_CNT_DOWN)    ; reset piece sync counter
+        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)    ; reset piece sync counter
 
         movem.w (a7)+, d0-d2/a0
         rts

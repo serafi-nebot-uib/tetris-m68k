@@ -21,7 +21,7 @@ sysinit:
 
 sncinit:
         move.b  #0, (SNC_PLOT)
-        move.b  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
+        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
 
         move.l  #sncinc, ($60+SNC_EXC*4)
 
@@ -39,7 +39,7 @@ sncinit:
 
 sncinc:
         addq.b  #1, (SNC_PLOT)
-        subq.b  #1, (SNC_CNT_DOWN)
+        subq.l  #1, (SNC_CNT_DOWN)
         rte
 
 scrinit:
@@ -66,9 +66,17 @@ scrinit:
         move.b  #17, d1
         trap    #15
 
-        move.l  #scrplot, ($80+SCR_TRAP*4)
+        ; move.l  #scrplot, ($80+SCR_TRAP*4)
 
         movem.l (a7)+, d0-d1
+        rts
+
+scrclr:
+        movem.w d0-d1, -(a7)
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+        movem.w (a7)+, d0-d1
         rts
 
 scrplot:
@@ -82,7 +90,7 @@ scrplot:
         move.b  #94, d0
         trap    #15
         move.w  (a7)+, d0
-        rte
+        rts
 
 kbdinit:
 ; init keyboard
@@ -92,7 +100,7 @@ kbdinit:
 ; ------------------------------------------------------------------------------
         clr.b   (KBD_VAL)
         clr.b   (KBD_EDGE)
-        move.l  #kbdupd, ($80+KBD_TRAP*4)
+        ; move.l  #kbdupd, ($80+KBD_TRAP*4)
         rts
 
 kbdupd:
@@ -136,7 +144,7 @@ kbdupd:
         move.b  d2, (KBD_VAL)
 
         movem.l (a7)+, d0-d3
-        rte
+        rts
 
 .pack:  move.w  #3, d3
 .loop:  lsl.l   #8, d1
@@ -146,7 +154,7 @@ kbdupd:
 
 mouseinit:
         move.b  #0, (MOUSE_VAL)
-        move.l  #mouseupd, ($80+MOUSE_TRAP*4)
+        ; move.l  #mouseupd, ($80+MOUSE_TRAP*4)
         rts
 
 mouseupd:
@@ -197,4 +205,4 @@ mouseupd:
         bra     .noclick
 .noclick:
         movem.l (a7)+, d0-d3
-        rte
+        rts
