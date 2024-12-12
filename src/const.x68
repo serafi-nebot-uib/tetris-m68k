@@ -28,8 +28,8 @@ MSG_LINE3: equ  $1702                           ; third line coordinates
 MSG_FONT: equ   $00000000                       ; default font
 
 ; --- level selection ----------------------------------------------------------
-LVL_SEL_POS_X: equ 183
-LVL_SEL_POS_Y: equ 183
+LVL_SEL_BASE_X: equ 183
+LVL_SEL_BASE_Y: equ 183
 LVL_SEL_COL: equ $003b99f5                      ; fill color of the selection square
 LVL_SEL_SIDE: equ 29                            ; side length of the selection square
 LVL_SEL_SIDEM: equ 32                           ; number of pixels square is moved to the side

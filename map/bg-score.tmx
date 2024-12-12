@@ -3,10 +3,10 @@
  <editorsettings>
   <export target="bg-score.csv" format="csv"/>
  </editorsettings>
- <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="281" columns="281">
-  <image source="../img/tiles-16.png" width="4496" height="16"/>
+ <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="305" columns="305">
+  <image source="../img/tiles-16.png" width="4880" height="16"/>
  </tileset>
- <layer id="1" name="Tile Layer 1" width="40" height="30">
+ <layer id="1" name="Tile Layer 1" width="40" height="30" locked="1">
   <data encoding="csv">
 96,97,103,92,93,98,92,93,96,97,95,90,91,99,90,105,95,98,92,94,95,93,90,99,90,99,93,90,101,92,90,91,91,92,93,93,90,99,93,93,
 102,85,90,99,94,94,98,104,102,85,90,101,92,95,93,95,90,104,90,104,90,88,92,103,92,94,100,92,95,90,91,99,96,97,94,103,99,94,94,103,

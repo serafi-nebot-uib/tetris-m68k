@@ -79,8 +79,9 @@ gameupd:
         movem.l (a7)+, d0-d1
         rts
 
-game:
+screen_game:
 ; --- init ---------------------------------------------------------------------
+        jsr     scrclr
         lea.l   bggame, a1
         moveq.l #0, d5
         moveq.l #0, d6
@@ -88,10 +89,10 @@ game:
         move.l  #0, d0                          ; piece number
         jsr     pieceinit
 
-        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)    ; reset piece sync counter
+        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN) ; reset piece sync counter
 .loop:
 ; --- update -------------------------------------------------------------------
-        trap    #KBD_TRAP                       ; update keyboard values
+        jsr     kbdupd                          ; update keyboard values
 
         ; check if piece should be moved down
         move.l  (SNC_CNT_DOWN), d0
@@ -119,7 +120,7 @@ game:
         move.b  #0, (SNC_PLOT)
 
 ; --- plot ---------------------------------------------------------------------
-        trap    #SCR_TRAP
+        jsr     scrplot
 
         bra     .loop
         rts

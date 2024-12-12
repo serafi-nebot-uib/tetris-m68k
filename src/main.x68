@@ -28,8 +28,9 @@
 screens:
         dc.l    screen_legal
         dc.l    screen_start
-;         dc.l    screen2
-;         dc.l    screen3
+        dc.l    screen_2
+        dc.l    screen_level
+        dc.l    screen_game
 ;         dc.l    screen4
 ;         dc.l    screen5
 
