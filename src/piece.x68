@@ -1,4 +1,4 @@
-piece_list:
+piece_table:
         dc.l    pieceT, pieceJ, pieceZ, pieceO, pieceS, pieceL, pieceI
 
 ; NOTE: piece orientation matrices cannot permit the first cell to be out of

@@ -59,7 +59,6 @@ drawtilecol:
         ; multiply x/y coords by TILE_SIZE
         lsl.l   #TILE_SHIFT, d5
         lsl.l   #TILE_SHIFT, d6
-        ; TODO: is setting the outline color necessary? can it be disabled?
         move.b  #80, d0
         trap    #15
         move.b  #81, d0

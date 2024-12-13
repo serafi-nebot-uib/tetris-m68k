@@ -11,7 +11,6 @@ tile:
 	./tool/tile.py 16 img/tiles-16.png src/tile-table-16.x68
 	./tool/tile.py 32 img/tiles-32.png src/tile-table-32.x68
 
-# TODO: remove error ignore
 tilemap:
 	./tool/tilemap.py map/bg-game.csv src/bg/game.x68 bggame
 	./tool/tilemap.py map/bg-home.csv src/bg/home.x68 bghome

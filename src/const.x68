@@ -7,6 +7,8 @@ TILE_SHIFT: equ 4
 TILE_SIZE: equ  32
 TILE_SHIFT: equ 5
         endc
+TILE_ROW_CNT: equ (SCR_WIDTH/TILE_SIZE)
+TILE_COL_CNT: equ (SCR_HEIGHT/TILE_SIZE)
 
 ; --- board --------------------------------------------------------------------
 BRD_COLS: equ   10                              ; number of horizontal tiles

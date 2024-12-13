@@ -26,6 +26,9 @@
         include 'game.x68'
 
 screens:
+        ; test
+        dc.l    screen_game
+
         dc.l    screen_legal
         dc.l    screen_start
         dc.l    screen_2
@@ -35,6 +38,52 @@ screens:
 ;         dc.l    screen5
 
 start:
+        ; draw bg
+        moveq.l #0, d5
+        moveq.l #0, d6
+        lea.l   bggame, a1
+        jsr     drawmap
+
+        moveq.l #0, d0
+        jsr     pieceinit
+
+        moveq.l #6, d7
+.plotloop:
+        moveq.l #4, d2
+        moveq.l #2, d3
+        move.l  #28, d5
+        move.l  #15, d6
+
+        ; moveq.l #0, d0
+        move.l  d7, d0
+        lsl.l   #2, d0
+        move.l  (piece_ptrn), a0
+        lea.l   piece_table, a1
+        move.l  (a1,d0), a1
+        add.b   (a1)+, d5
+        addq.l  #1, a1
+        ; add.b   (a1)+, d6
+
+        jsr     piecematplot
+
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #28<<TILE_SHIFT, d1
+        move.w  #15<<TILE_SHIFT, d2
+        move.w  #(28+4)<<TILE_SHIFT-1, d3
+        move.w  #(15+2)<<TILE_SHIFT-1, d4
+        trap    #15
+
+        dbra    d7, .plotloop
+
+        simhalt
+
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 

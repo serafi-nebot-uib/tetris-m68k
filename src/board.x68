@@ -121,7 +121,7 @@ pieceinit:
         andi.l  #$ffff, d0
         move.b  d0, (piecenum)                  ; store new piecenum
         lsl.l   #2, d0
-        lea.l   piece_list, a0
+        lea.l   piece_table, a0
         move.l  (a0,d0), a0
 
         move.l  a0, (piece+4)                   ; copy piece matrix address
@@ -440,42 +440,6 @@ piecerelease:
         sub.l   d2, a1
 
         dbra    d3, .loop
-
-;         move.l  d1, d0
-;         move.l  d6, d1
-;
-;         move.l  d0, d2
-;         add.l   d1, d2
-;         sub.l   #BOARD_HEIGHT, d2
-;         ble     .chkfill
-;         sub.l   d2, d1
-;
-; .chkfill:
-;         jsr     boardchkfill
-;         cmp     #0, d4
-;         beq     .done
-;         jsr     boarddropdown
-;
-;         move.l  d4, -(a7)
-;         lsl.l   #8, d0
-;         move.b  d1, d0
-;         move.w  d0, -(a7)
-;         move.w  #1, -(a7)
-;
-;         ; TODO: move this to game loop?
-;         move.w  #BOARD_WIDTH/2-1, d0
-;         move.b  #0, (SNC_PLOT)
-; .clr:
-;         jsr     boardclrfill
-;         add.w   #1, (a7)
-; .sync:
-;         cmp.b   #4, (SNC_PLOT)
-;         blo     .sync
-;         jsr     scrplot
-;         move.b  #0, (SNC_PLOT)
-;
-;         dbra.w  d0, .clr
-;         addq.l  #8, a7
 .done:
         movem.l (a7)+, d0-d6/a0-a1
         rts
@@ -734,6 +698,23 @@ _pieceplot:
         ext.w   d1
         add.w   d1, d6
 
+        jsr     piecematplot
+
+        movem.l (a7)+, d0-d3/d5-d6/a0-a2
+        rts
+
+; plot piece matrix
+;
+; input    : d2.l - piece matrix width
+;            d3.l - piece matrix height
+;            d5.l - tile x coord
+;            d6.l - tile y coord
+;            a0.l - piece pattern address
+;            a1.l - piece matrix address
+; output   :
+; modifies :
+piecematplot:
+        movem.l d0-d1/d5-d6/a1, -(a7)
         ; d0.b -> matrix x index (only used as loop counter)
         moveq.l #0, d0
         ; d1.b -> matrix y index (only used as loop counter)
@@ -755,7 +736,7 @@ _pieceplot:
         cmp.b   d3, d1                          ; compare matrix y index with matrix height
         blo     .loop
 .done:
-        movem.l (a7)+, d0-d3/d5-d6/a0-a2
+        movem.l (a7)+, d0-d1/d5-d6/a1
         rts
 
 ; clear plotted pieces from board
