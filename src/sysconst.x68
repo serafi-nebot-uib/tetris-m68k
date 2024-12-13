@@ -1,12 +1,14 @@
 ; --- global -------------------------------------------------------------------
 GLB_SCALE_SMALL: equ 0
 GLB_SCALE_BIG: equ 1
-GLB_SCALE: equ  GLB_SCALE_BIG
+GLB_SCALE: equ  GLB_SCALE_SMALL
 
 ; --- sync ---------------------------------------------------------------------
 ; configured to 7 to avoid Easy68K blocking the interrupt
 SNC_EXC: equ    7
-SNC_PIECE_TIME: equ 50
+SNC_TIME: equ   10                              ; 10 milliseconds -> 100 times/second
+SNC_TIME_TO_S: equ 1000/SNC_TIME
+SNC_PIECE_TIME: equ SNC_TIME_TO_S*1
 
 ; --- screen -------------------------------------------------------------------
         ifeq    GLB_SCALE-GLB_SCALE_SMALL

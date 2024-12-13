@@ -146,6 +146,7 @@ pieceinit:
         ; boardplot is called here so that when a piece is released into the
         ; board it is automatically re-drawn (to avoid game loop complexity)
         jsr     boardplot
+        jsr     pieceplot
 
         move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN) ; reset piece sync counter
 
@@ -384,14 +385,6 @@ piececoll:
 piecerelease:
         movem.l d0-d6/a0-a1, -(a7)
 
-        ; bring peice down (no animation)
-.movd:
-        piecemovd #1
-        jsr     piececoll
-        tst.b   d0
-        beq     .movd
-        piecemovu #1
-
         ; a0.l -> piece matrix
         ; d4.b -> piece color<<4|pattern
         move.l  (piece+4), a0
@@ -448,40 +441,41 @@ piecerelease:
 
         dbra    d3, .loop
 
-        move.l  d1, d0
-        move.l  d6, d1
-
-        move.l  d0, d2
-        add.l   d1, d2
-        sub.l   #BOARD_HEIGHT, d2
-        ble     .chkfill
-        sub.l   d2, d1
-.chkfill:
-        jsr     boardchkfill
-        cmp     #0, d4
-        beq     .done
-        jsr     boarddropdown
-
-        move.l  d4, -(a7)
-        lsl.l   #8, d0
-        move.b  d1, d0
-        move.w  d0, -(a7)
-        move.w  #1, -(a7)
-
-        ; TODO: move this to game loop?
-        move.w  #BOARD_WIDTH/2-1, d0
-        move.b  #0, (SNC_PLOT)
-.clr:
-        jsr     boardclrfill
-        add.w   #1, (a7)
-.sync:
-        cmp.b   #4, (SNC_PLOT)
-        blo     .sync
-        jsr     scrplot
-        move.b  #0, (SNC_PLOT)
-
-        dbra.w  d0, .clr
-        addq.l  #8, a7
+;         move.l  d1, d0
+;         move.l  d6, d1
+;
+;         move.l  d0, d2
+;         add.l   d1, d2
+;         sub.l   #BOARD_HEIGHT, d2
+;         ble     .chkfill
+;         sub.l   d2, d1
+;
+; .chkfill:
+;         jsr     boardchkfill
+;         cmp     #0, d4
+;         beq     .done
+;         jsr     boarddropdown
+;
+;         move.l  d4, -(a7)
+;         lsl.l   #8, d0
+;         move.b  d1, d0
+;         move.w  d0, -(a7)
+;         move.w  #1, -(a7)
+;
+;         ; TODO: move this to game loop?
+;         move.w  #BOARD_WIDTH/2-1, d0
+;         move.b  #0, (SNC_PLOT)
+; .clr:
+;         jsr     boardclrfill
+;         add.w   #1, (a7)
+; .sync:
+;         cmp.b   #4, (SNC_PLOT)
+;         blo     .sync
+;         jsr     scrplot
+;         move.b  #0, (SNC_PLOT)
+;
+;         dbra.w  d0, .clr
+;         addq.l  #8, a7
 .done:
         movem.l (a7)+, d0-d6/a0-a1
         rts
@@ -764,6 +758,29 @@ _pieceplot:
         movem.l (a7)+, d0-d3/d5-d6/a0-a2
         rts
 
+; clear plotted pieces from board
+;
+; input    :
+; output   :
+; modifies :
+boardclr:
+        movem.l d0-d4, -(a7)
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #BOARD_BASE_X<<TILE_SHIFT, d1
+        move.w  #BOARD_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BOARD_BASE_X+BOARD_WIDTH)<<TILE_SHIFT, d3
+        move.w  #(BOARD_BASE_Y+BOARD_HEIGHT)<<TILE_SHIFT, d4
+        trap    #15
+        movem.l (a7)+, d0-d4
+        rts
+
 ; plot current board pieces with their corresponding color & pattern
 ; (does not clear pieces; only draws existing ones)
 ;
@@ -772,21 +789,7 @@ _pieceplot:
 ; modifies :
 boardplot:
         movem.l d0-d3/d5-d6/a0-a1, -(a7)
-
-        ; clear board
-        move.l  #$00000000, d1
-        move.b  #80, d0
-        trap    #15
-        move.b  #81, d0
-        trap    #15
-
-        move.b  #87, d0
-        move.w  #BOARD_BASE_X<<TILE_SHIFT, d1
-        move.w  #BOARD_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BOARD_BASE_X+BOARD_WIDTH)<<TILE_SHIFT, d3
-        move.w  #(BOARD_BASE_Y+BOARD_HEIGHT)<<TILE_SHIFT, d4
-        trap    #15
-
+        jsr     boardclr
         ; a1.l -> board address
         ; d2.l -> board x index
         ; d3.l -> board y index

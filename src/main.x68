@@ -22,10 +22,11 @@
         include 'tile.x68'
         include 'piece.x68'
         include 'board.x68'
-        include 'game.x68'
         include 'screens.x68'
+        include 'game.x68'
 
 screens:
+        dc.l    screen_game
         dc.l    screen_legal
         dc.l    screen_start
         dc.l    screen_2

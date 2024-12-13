@@ -19,12 +19,26 @@ sysinit:
         ; rte
         rts
 
+sncenable: macro
+        move.l  #sncinc, ($60+SNC_EXC*4)
+        endm
+
+sncdisable: macro
+        move.l  #sncskip, ($60+SNC_EXC*4)
+        endm
+
+sncskip:
+        rte
+
+sncinc:
+        addq.b  #1, (SNC_PLOT)
+        subq.l  #1, (SNC_CNT_DOWN)
+        rte
+
 sncinit:
         move.b  #0, (SNC_PLOT)
         move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
-
-        move.l  #sncinc, ($60+SNC_EXC*4)
-
+        sncenable
         ; enable exceptions
         move.b  #32, d0
         move.b  #5, d1
@@ -32,15 +46,9 @@ sncinit:
         ; create timer
         move.b  #6, d1
         move.b  #$80|SNC_EXC, d2
-        move.l  #20, d3
+        move.l  #SNC_TIME, d3
         trap    #15
-
         rts
-
-sncinc:
-        addq.b  #1, (SNC_PLOT)
-        subq.l  #1, (SNC_CNT_DOWN)
-        rte
 
 scrinit:
 ; init screen. set screen resolution, set windowed mode, clear screen,
