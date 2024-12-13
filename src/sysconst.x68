@@ -33,5 +33,14 @@ KBD_SPBAR: equ  $20
 KBD_SHIFT: equ  $10
 KBD_ENTER: equ  $0d
 
+KBD_LEFT_POS: equ 0
+KBD_UP_POS: equ 1
+KBD_RIGHT_POS: equ 2
+KBD_DOWN_POS: equ 3
+KBD_SPBAR_POS: equ 4
+KBD_ESC_POS: equ 5
+KBD_CTRL_POS: equ 6
+KBD_ENTER_POS: equ 7
+
 ; --- mouse --------------------------------------------------------------------
 MOUSE_TRAP: equ 2

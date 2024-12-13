@@ -89,10 +89,10 @@ screen_legal:
 
         jsr     scrplot
 
-        move.l  #SNC_TIME_TO_S*5, (SNC_CNT_DOWN)           ; 5 second timer
+        move.l  #SNC_TIME_TO_S*5, (SNC_CNT_DOWN) ; 5 second timer
 .loop:
         jsr     kbdupd
-        btst.b  #7, (KBD_EDGE)
+        btst.b  #KBD_ENTER_POS, (KBD_EDGE)
         bne     .done
         tst.l   (SNC_CNT_DOWN)
         bgt     .loop
@@ -135,11 +135,11 @@ screen_start:
         jsr     scrplot
 .loop:
         jsr     kbdupd
-        btst.b  #7, (KBD_EDGE)
+        btst.b  #KBD_ENTER_POS, (KBD_EDGE)
         beq     .loop
 .done:
         ; TODO: change to #2 when screen_2 is done
-        move.b  #4, (SCR_NUM)
+        move.b  #3, (SCR_NUM)
         rts
 
 ; --- screen 2: ??????????????????????????????? ------------------------------
@@ -148,260 +148,275 @@ screen_2:
         jsr     scrplot
         rts
 
+
+
+
+
+
+
+
 ; --- screen 3: pantalla selecció nivell a-type ------------------------------
 screen_level:
+; ----------------------------------------------------------------------------
+; INITIALIZE LEVEL SELECTION WINDOW.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+        move.w  #LVL_SEL_BASE_X, (LVL_SEL_POS_X)
+        move.w  #LVL_SEL_BASE_Y, (LVL_SEL_POS_Y)
+        move.w  #LVL_SEL_NUM_POS1, (LVL_SEL_NUM_POS)
+        move.w  #0, (LVL_SEL_NUM)
+        move.w  #-1, (LVL_SEL_FNUM)
+        move.w  #0, (KBD_ENTER_PRESS)
+
+        ; --- PAINT BLACK SCREEN ---
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        ; --- PAINTING BITMAP ---
+        lea.l   bgscore, a1
+        moveq.l #0, d5
+        moveq.l #0, d6
+        jsr     drawmap
+        jsr     scrplot
+
+.LOOP3:
+; --- UPDATE -----------------------------------------------------------------
+
+; READ INPPUT DEVICES
+
+        jsr     kbdupd
+            
+; ----------------------------------------------------------------------------
+; UPDATE LEVEL SELECTION SQUARE POSITION.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+
+        movem.l d0-d1, -(a7)
+            
+        ; UPDATE COORDINATE X
+        move.w  (LVL_SEL_POS_X), d0
+        btst.b  #KBD_LEFT_POS, (KBD_EDGE)
+        beq     .CHKLFT
+        sub.w   #LVL_SEL_SIDEM, d0
+        sub.w   #1, (LVL_SEL_NUM)
+.CHKLFT:
+        btst.b  #KBD_RIGHT_POS, (KBD_EDGE)
+        beq     .CONT
+        add.w   #LVL_SEL_SIDEM, d0
+        add.w   #1, (LVL_SEL_NUM)
+            
+        ; CHECK COLLISIONS
+.CONT:  cmp.w   #LVL_SEL_BASE_X, d0
+        bge     .CONT2
+        move.w  #LVL_SEL_BASE_X, d0
+        add.w   #1, (LVL_SEL_NUM)
+        bra     .DONE1
+.CONT2: cmp.w   #LVL_SEL_BASE_X+LVL_SEL_SIDEM*4, d0
+        ble     .DONE1
+        move.w  #LVL_SEL_BASE_X+LVL_SEL_SIDEM*4, d0
+        sub.w   #1, (LVL_SEL_NUM)
+
+        ; UPDATE VARIABLE
+.DONE1: move.w  d0, (LVL_SEL_POS_X)
+
+        ; UPDATE COORDINATE Y
+        move.w  (LVL_SEL_POS_Y), d1
+        btst.b  #KBD_UP_POS, (KBD_EDGE)
+        beq     .CHKUP
+        sub.w   #LVL_SEL_SIDEM, d1
+        sub.w   #5, (LVL_SEL_NUM)
+.CHKUP: btst.b  #KBD_DOWN_POS, (KBD_EDGE)
+        beq     .CONT3
+        add.w   #LVL_SEL_SIDEM, d1
+        add.w   #5, (LVL_SEL_NUM)
+            
+        ; CHECK COLLISIONS
+.CONT3: cmp.w   #LVL_SEL_BASE_Y, d1
+        bge     .CONT4
+        move.w  #LVL_SEL_BASE_Y, d1
+        add.w   #5, (LVL_SEL_NUM)
+        bra     .DONE2
+.CONT4: cmp.w   #LVL_SEL_BASE_Y+LVL_SEL_SIDEM, d1
+        ble     .DONE2
+        move.w  #LVL_SEL_BASE_Y+LVL_SEL_SIDEM, d1
+        sub.w   #5, (LVL_SEL_NUM)
+
+        ; UPDATE VARIABLE
+.DONE2: move.w  d1, (LVL_SEL_POS_Y)
+
+        ; CHECK FOR ENTER
+        btst.b  #KBD_ENTER_POS, (KBD_EDGE)
+        beq     .END
+        move.b  #1, (KBD_ENTER_PRESS)
+        move.w  (LVL_SEL_NUM), (LVL_SEL_FNUM)
+.END:
+
+        movem.l (a7)+, d0-d1
+
+; ----------------------------------------------------------------------------
+; PLOT LEVEL SELECTION WINDOW.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+
+        movem.l d0-d5, -(a7)
+            
+        ; --- PAINTING BLACK SQUARES FOR BACKGROUND ----------------------
+            
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE INITIAL COORDINATES
+            
+        move.w  #LVL_SEL_BASE_X, d1
+        move.w  #4, d5
+.LOOP:
+        move.w  #LVL_SEL_BASE_Y, d2
+        ; DEFINE COORDINATES
+        sub.w   #LVL_SEL_SIDE/2, d1
+        move.w  d1, d3
+        add.w   #LVL_SEL_SIDE, d3
+
+        sub.w   #LVL_SEL_SIDE/2, d2
+        move.w  d2, d4
+        add.w   #LVL_SEL_SIDE, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+            
+        add.w   #LVL_SEL_BLACK_X, d1
+        dbra    d5, .LOOP
+            
+        move.w  #LVL_SEL_BASE_X, d1
+        move.w  #4, d5
+.LOOP2:
+        move.w  #LVL_SEL_BASE_Y+32, d2
+        ; DEFINE COORDINATES
+        sub.w   #LVL_SEL_SIDE/2, d1
+        move.w  d1, d3
+        add.w   #LVL_SEL_SIDE, d3
+
+        sub.w   #LVL_SEL_SIDE/2, d2
+        move.w  d2, d4
+        add.w   #LVL_SEL_SIDE, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+            
+        add.w   #LVL_SEL_BLACK_X, d1
+        dbra    d5, .LOOP2
+
+
+
+        ; --- PAINTING SQUARE FOR LEVEL SELECTION ------------------------
+            
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #LVL_SEL_COL, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #LVL_SEL_COL, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  (LVL_SEL_POS_X), d1
+        sub.w   #LVL_SEL_SIDE/2, d1
+        move.w  d1, d3
+        add.w   #LVL_SEL_SIDE, d3
+
+        move.w  (LVL_SEL_POS_Y), d2
+        sub.w   #LVL_SEL_SIDE/2, d2
+        move.w  d2, d4
+        add.w   #LVL_SEL_SIDE, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+
+        movem.l (a7)+, d0-d5
+
+        ; --- PAINTING NUMBERS FOR LEVEL SELECTION ---------------------------
+        ; a1.l -> tiletable address
+        lea.l   tiletable, a1
+
+        ; d0.l -> x index
+        moveq.l #0, d0
+        ; d2.l -> y index
+        moveq.l #0, d2
+        ; d3.l -> current number
+        moveq.l #0, d3
+
+        ; a0.l -> tile address
+        ; d1.l -> tile color
+        ; d5.l -> tile x coord
+        ; d6.l -> tile y coord
+        move.l  #$000000ff, d1
+.LOOPT:
+        move.l  d3, d7
+        lsl.l   #2, d7
+        move.l  (a1,d7), a0
+        add.l   #tiles, a0
+
+        move.l  d0, d5
+        lsl.l   #1, d5
+        add.l   #11, d5
+
+        move.l  d2, d6
+        lsl.l   #1, d6
+        add.l   #11, d6
+        jsr     drawtilecol
+
+        addq.l  #1, d3                          ; increase current number
+        addq.l  #1, d0                          ; increase x index
+        cmp.l   #5, d0
+        blo     .LOOPT
+        moveq.l #0, d0                          ; reset x index
+        addq.l  #1, d2                          ; increase y index
+        cmp.l   #2, d2
+        blo     .LOOPT
+
+        jsr     scrplot
+
+        ; --- CHECKING IF ENTER BUTTON IS PRESSED ------------------------
+        move.b  (KBD_ENTER_PRESS), d0
+        cmp.b   #1, d0
+        beq     .FIN3
+        bra     .LOOP3
+
+.FIN3:  move.b  #4, (SCR_NUM)
+        jsr     scrplot
         rts
-;         move.w  #LVL_SEL_BASE_X, (LVL_SEL_POS_X)
-;         move.w  #LVL_SEL_BASE_Y, (LVL_SEL_POS_Y)
-;         move.w  #LVL_SEL_NUM_POS1, (LVL_SEL_NUM_POS)
-;         move.w  #0, (LVL_SEL_NUM)
-;         move.w  #-1, (LVL_SEL_FNUM)
-;         move.w  #0, (KBD_ENTR_PRESS)
-;
-;         jsr     scrclr
-;         lea.l   bgscore, a0
-;         moveq.l #0, d5
-;         moveq.l #0, d6
-;         jsr     drawmap
-;         jsr     scrplot
-; .LOOP3:
-;         jsr     kbdupd
-;
-;         movem.l d0-d1, -(a7)
-;         ; UPDATE COORDINATE X
-;         move.w  (LVL_SEL_POS_X), d0
-;         btst.b  #0, (KBD_EDGE)
-;         beq     .CHKLFT
-;         sub.w   #SQRSIDEM, d0
-;         sub.w   #1, (LVL_SEL_NUM)
-; .CHKLFT: btst.b #2, (KBD_EDGE)
-;         beq     .CONT
-;         add.w   #SQRSIDEM, d0
-;         add.w   #1, (LVL_SEL_NUM)
-;             
-;         ; CHECK COLLISIONS
-; .CONT:  cmp.w   #LVL_SEL_BASE_X, d0
-;         bge     .CONT2
-;         move.w  #LVL_SEL_BASE_X, d0
-;         add.w   #1, (LVL_SEL_NUM)
-;         bra     .DONE1
-; .CONT2: cmp.w   #LVL_SEL_BASE_X+SQRSIDEM*4, d0
-;         ble     .DONE1
-;         move.w  #LVL_SEL_BASE_X+SQRSIDEM*4, d0
-;         sub.w   #1, (LVL_SEL_NUM)
-;
-;         ; UPDATE VARIABLE
-; .DONE1: move.w  d0, (LVL_SEL_POS_X)
-;
-;         ; UPDATE COORDINATE Y
-;         move.w  (SQRPOSY), d1
-;         btst.b  #1, (KBD_EDGE)
-;         beq     .CHKUP
-;         sub.w   #SQRSIDEM, d1
-;         sub.w   #5, (LVL_SEL_NUM)
-; .CHKUP: btst.b  #3, (KBD_EDGE)
-;         beq     .CONT3
-;         add.w   #SQRSIDEM, d1
-;         add.w   #5, (LVL_SEL_NUM)
-;             
-;         ; CHECK COLLISIONS
-; .CONT3: cmp.w   #SQRIPOSY, d1
-;         bge     .CONT4
-;         move.w  #SQRIPOSY, d1
-;         add.w   #5, (LVL_SEL_NUM)
-;         bra     .DONE2
-; .CONT4: cmp.w   #SQRIPOSY+SQRSIDEM, d1
-;         ble     .DONE2
-;         move.w  #SQRIPOSY+SQRSIDEM, d1
-;         sub.w   #5, (LVL_SEL_NUM)
-;
-;         ; UPDATE VARIABLE
-; .DONE2: move.w  d1, (SQRPOSY)
-;
-;         ; CHECK FOR ENTER
-;         btst.b  #4, (KBD_EDGE)
-;         beq     .END
-;         move.b  #1, (ENTRPRESS)
-;         move.w  (LVL_SEL_NUM), (NUMFSEL)
-; .END:
-;
-;         movem.l (a7)+, d0-d1
-;
-; ; ----------------------------------------------------------------------------
-; ; PLOT LEVEL SELECTION WINDOW.
-; ; INPUT    : NONE 
-; ; OUTPUT   : NONE
-; ; MODIFIES : NONE
-; ; ----------------------------------------------------------------------------
-;
-;         movem.l d0-d5, -(a7)
-;             
-;         ; --- PAINTING BLACK SQUARES FOR BACKGROUND ----------------------
-;             
-;         ; SET CONTOUR COLOUR
-;         move.b  #80, d0
-;         move.l  #BLACK, d1
-;         trap    #15
-;             
-;         ; SET FILL COLOUR
-;         move.b  #81, d0
-;         move.l  #BLACK, d1
-;         trap    #15
-;             
-;         ; DEFINE INITIAL COORDINATES
-;             
-;         move.w  #LVL_SEL_BASE_X, d1
-;         move.w  #4, d5
-; .LOOP:
-;         move.w  #SQRIPOSY, d2
-;         ; DEFINE COORDINATES
-;         sub.w   #SQRSIDE/2, d1
-;         move.w  d1, d3
-;         add.w   #SQRSIDE, d3
-;
-;         sub.w   #SQRSIDE/2, d2
-;         move.w  d2, d4
-;         add.w   #SQRSIDE, d4
-;             
-;         ; DRAW SQUARE
-;         move.b  #87, d0
-;         trap    #15
-;             
-;         add.w   #SQRMBLACKX, d1
-;         dbra    d5, .LOOP
-;             
-;         move.w  #LVL_SEL_BASE_X, d1
-;         move.w  #4, d5
-; .LOOP2:
-;         move.w  #SQRIPOSY+32, d2
-;         ; DEFINE COORDINATES
-;         sub.w   #SQRSIDE/2, d1
-;         move.w  d1, d3
-;         add.w   #SQRSIDE, d3
-;
-;         sub.w   #SQRSIDE/2, d2
-;         move.w  d2, d4
-;         add.w   #SQRSIDE, d4
-;             
-;         ; DRAW SQUARE
-;         move.b  #87, d0
-;         trap    #15
-;             
-;         add.w   #SQRMBLACKX, d1
-;         dbra    d5, .LOOP2
-;
-;             
-;             
-;         ; --- PAINTING SQUARE FOR LEVEL SELECTION ------------------------
-;             
-;         ; SET CONTOUR COLOUR
-;         move.b  #80, d0
-;         move.l  #LVL_SEL_COL, d1
-;         trap    #15
-;             
-;         ; SET FILL COLOUR
-;         move.b  #81, d0
-;         move.l  #LVL_SEL_COL, d1
-;         trap    #15
-;             
-;         ; DEFINE COORDINATES
-;         move.w  (LVL_SEL_POS_X), d1
-;         sub.w   #SQRSIDE/2, d1
-;         move.w  d1, d3
-;         add.w   #SQRSIDE, d3
-;
-;         move.w  (SQRPOSY), d2
-;         sub.w   #SQRSIDE/2, d2
-;         move.w  d2, d4
-;         add.w   #SQRSIDE, d4
-;             
-;         ; DRAW SQUARE
-;         move.b  #87, d0
-;         trap    #15
-;             
-;         movem.l (a7)+, d0-d5
-;             
-;             
-;             
-;         ; --- PAINTING NUMBERS FOR LEVEL SELECTION (0-4) -----------------
-;         move.w  #4, d1
-;             
-;         move.w  #-1, d2
-;         move.w  #9, d3
-; .LOOPT:
-;         ; paint one tile
-;         lea.l   tiletable, a1
-;         add.w   #1, d2
-;         move.w  d2, d0                          ; tile index
-;         lsl.l   #2, d0
-;         move.l  (a1,d0), d0
-;         lea.l   tiles, a2
-;         add.l   d0, a2
-;
-;         move.l  a2, -(a7)
-;         move.w  #11, -(a7)                      ; y pos
-;         add.w   #2, d3
-;         move.w  d3, -(a7)                       ; x pos
-;         move.l  #$000000ff, -(a7)               ; HEX COLOUR
-;         jsr     drawtilecol
-;         add.w   #12, a7
-;
-;             
-;         dbra    d1, .LOOPT
-;             
-;             
-;         ; --- PAINTING NUMBERS FOR LEVEL SELECTION -----------------------
-;         move.w  #4, d1
-;             
-;         move.w  #4, d2
-;         move.w  #9, d3
-; .LOOPT2:
-;         ; paint one tile
-;         lea.l   tiletable, a1
-;         add.w   #1, d2
-;         move.w  d2, d0                          ; tile index
-;         lsl.l   #2, d0
-;         move.l  (a1,d0), d0
-;         lea.l   tiles, a2
-;         add.l   d0, a2
-;
-;         move.l  a2, -(a7)
-;         move.w  #13, -(a7)                      ; y pos
-;         add.w   #2, d3
-;         move.w  d3, -(a7)                       ; x pos
-;         move.l  #$000000ff, -(a7)               ; HEX COLOUR
-;         jsr     drawtilecol
-;         add.w   #12, a7
-;
-;             
-;         dbra    d1, .LOOPT2
-;             
-;         ; --- CHECKING IF ENTER BUTTON IS PRESSED ------------------------
-;             
-;         move.b  (ENTRPRESS), d0
-;         cmp.b   #1, d0
-;         beq     .FIN31
-;             
-;         btst.b  #6, (KBD_EDGE)
-;         bne     .FIN32
-;             
-;         trap    #2
-;
-;         bra     .LOOP3
-;             
-; .FIN32: move.w  #1, (SCREENNUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
-;             
-;         rts
-;             
-; .FIN31: move.w  #5, (SCREENNUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
-;             
-;         rts
-;
-;
-;
-;
-;
-;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ; ; ; ----------------------------------------------------------------------------
 ; ; ; ----------------------------------------------------------------------------
 ; ; ; --- SCREEN 4: Pantalla Selecció Nivell B-Type ------------------------------
@@ -439,7 +454,7 @@ screen_level:
 ; ; ; OUTPUT   : NONE
 ; ; ; MODIFIES : NONE
 ; ; ; ----------------------------------------------------------------------------
-; ;         move.w  #0, (ENTRPRESS)
+; ;         move.w  #0, (KBD_ENTER_PRESS)
 ; ;         move.w  #USRIPOSX, (LETPOSX)
 ; ;         move.w  #USRIPOSY, (LETPOSY)
 ; ;         lea     USR, a0
@@ -447,7 +462,7 @@ screen_level:
 ; ;         move.w  #USRMAXSIZE-1, d0
 ; ; .LOOP:
 ; ;         move.w  #36, (a0)+
-; ;         dbra    d0, .LOOP
+; ;         dbra.w    d0, .LOOP
 ; ;             
 ; ;         ; --- PAINT SCREEN TO BLACK ---
 ; ;             
@@ -459,7 +474,7 @@ screen_level:
 ; ;         lea.l   bgscore, a0
 ; ;         jsr     drawmap
 ; ;             
-; ;         trap    #2                              ; DOUBLE BUFFER
+; ;         jsr scrplot
 ; ;
 ; ;             
 ; ;
@@ -468,7 +483,7 @@ screen_level:
 ; ;
 ; ; ; READ INPPUT DEVICES
 ; ;
-; ;         trap    #1                              ; KEYBOARD
+; ;         jsr kbdupd
 ; ;             
 ; ; ; ----------------------------------------------------------------------------
 ; ; ; UPDATE HIGHSCORE USER SCREEN.
@@ -485,11 +500,11 @@ screen_level:
 ; ;           
 ; ;         ; UPDATE COORDINATE X
 ; ;         move.l  (USRLTRPOS), d0
-; ;         btst.b  #0, (KBD_EDGE)
+; ;         btst.b  #KBD_LEFT_POS, (KBD_EDGE)
 ; ;         beq     .CHKLFT
 ; ;         sub.l   #2, d0
 ; ;         move.l  d0, (USRLTRPOS)
-; ; .CHKLFT: btst.b #2, (KBD_EDGE)
+; ; .CHKLFT: btst.b #KBD_RIGHT_POS, (KBD_EDGE)
 ; ;         beq     .CONT
 ; ;         add.l   #2, d0
 ; ;         move.l  d0, (USRLTRPOS)
@@ -508,12 +523,12 @@ screen_level:
 ; ; .DONE1:
 ; ;         move.l  USRLTRPOS, a1
 ; ;         ; UPDATE COORDINATE Y
-; ;         btst.b  #1, (KBD_EDGE)
+; ;         btst.b  #KBD_UP_POS, (KBD_EDGE)
 ; ;         beq     .CHKUP
 ; ;         move.w  (a1), d0
 ; ;         add.w   #1, d0
 ; ;         move.w  d0, (a1)
-; ; .CHKUP: btst.b  #3, (KBD_EDGE)
+; ; .CHKUP: btst.b  #KBD_DOWN_POS, (KBD_EDGE)
 ; ;         beq     .CONT3
 ; ;         move.w  (a1), d0
 ; ;         sub.w   #1, d0
@@ -533,9 +548,9 @@ screen_level:
 ; ; .DONE2:
 ; ;
 ; ;         ; CHECK FOR ENTER
-; ;         btst.b  #4, (KBD_EDGE)
+; ;         btst.b  #KBD_SPBAR_POS, (KBD_EDGE)
 ; ;         beq     .END
-; ;         move.b  #1, (ENTRPRESS)
+; ;         move.b  #1, (KBD_ENTER_PRESS)
 ; ; .END:
 ; ;
 ; ;         movem.l (a7)+, d0-d1
@@ -570,7 +585,7 @@ screen_level:
 ; ;         movem.l d0-d4, -(a7)
 ; ;             
 ; ;         move.b  #80, d0
-; ;         move.l  #BLACK, d1
+; ;         move.l  #$00000000, d1
 ; ;         trap    #15
 ; ;             
 ; ;         move.b  #81, d0
@@ -594,7 +609,7 @@ screen_level:
 ; ;             
 ; ;         trap    #15
 ; ;             
-; ;         trap    #2                              ; IF NOT COMMENTED, THE LETTER BLINKS
+; ;         jsr scrplot ; IF NOT COMMENTED, THE LETTER BLINKS
 ; ;
 ; ;         movem.l (a7)+, d0-d4
 ; ;             
@@ -604,11 +619,11 @@ screen_level:
 ; ;         movem.l d0-d4, -(a7)
 ; ;             
 ; ;         move.b  #80, d0
-; ;         move.l  #BLACK, d1
+; ;         move.l  #$00000000, d1
 ; ;         trap    #15
 ; ;             
 ; ;         move.b  #81, d0
-; ;         move.l  #BLACK, d1
+; ;         move.l  #$00000000, d1
 ; ;         trap    #15
 ; ;             
 ; ;         move.b  #87, d0
@@ -645,22 +660,22 @@ screen_level:
 ; ;             
 ; ;
 ; ;             
-; ;         move.b  (ENTRPRESS), d0
+; ;         move.b  (KBD_ENTER_PRESS), d0
 ; ;         cmp.b   #1, d0
 ; ;         beq     .FIN51
 ; ;             
-; ;         btst.b  #6, (KBD_EDGE)
+; ;         btst.b  #KBD_CTRL_POS, (KBD_EDGE)
 ; ;         bne     .FIN52
 ; ;             
-; ;         trap    #2
+; ;         jsr scrplot
 ; ;
 ; ;         bra     .LOOP5
 ; ;             
-; ; .FIN52: move.w  #3, (SCREENNUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
+; ; .FIN52: move.b  #3, (SCR_NUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
 ; ;
 ; ;         rts
 ; ;             
 ; ;             
-; ; .FIN51: move.w  #1, (SCREENNUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
+; ; .FIN51: move.b  #1, (SCR_NUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
 ; ;
 ; ;         rts

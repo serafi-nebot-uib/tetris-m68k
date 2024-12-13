@@ -14,7 +14,7 @@ screen_game:
         move.l  #game_spawn, (GAME_STATE)
 .loop:
 ; --- update -------------------------------------------------------------------
-        jsr     kbdupd                          ; update keyboard values
+        jsr     kbdupd
         move.l  (GAME_STATE), a0
         jsr     (a0)
 ; --- sync ---------------------------------------------------------------------
@@ -59,33 +59,33 @@ game_player:
         move.b  (KBD_EDGE), d0
         move.b  (KBD_VAL), d1
 .chkdown:
-        btst    #3, d0
+        btst    #KBD_DOWN_POS, d0
         beq     .chkleft
         piecemovd #1
         move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
         bra     .chkcol
 .chkleft:
-        btst    #0, d0
+        btst    #KBD_LEFT_POS, d0
         beq     .chkright
         piecemovl #1
         bra     .chkcol
 .chkright:
-        btst    #2, d0
+        btst    #KBD_RIGHT_POS, d0
         beq     .chkup
         piecemovr #1
         bra     .chkcol
 .chkup:
-        btst    #1, d0
+        btst    #KBD_UP_POS, d0
         beq     .chkspbar
         jsr     piecerotr
         bra     .chkcol
 .chkspbar:
-        btst    #4, d0
+        btst    #KBD_SPBAR_POS, d0
         beq     .chkesc
         move.l  #game_drop, (GAME_STATE)
         bra     .done
 .chkesc:
-        btst    #5, d0
+        btst    #KBD_ESC_POS, d0
         beq     .chkenter
         move.l  #game_pause, (GAME_STATE)
         bra     .done
@@ -93,7 +93,7 @@ game_player:
 ; -----------------------------
 ; TODO: remove this as it is only for testing
 .chkenter:
-        btst    #7, d0
+        btst    #KBD_ENTER_POS, d0
         beq     .chkctrl
         moveq.l #0, d1
         move.b  (levelnum), d1
@@ -112,7 +112,7 @@ game_player:
         jsr     boardplot
         bra     .done
 .chkctrl:
-        btst    #6, d0
+        btst    #KBD_CTRL_POS, d0
         beq     .done
         move.l  #game_spawn, (GAME_STATE)
         bra     .done
@@ -199,18 +199,23 @@ game_pause:
         movem.l d1-d2/d5-d6, -(a7)
 
         sncdisable
-        jsr     boardclr
-        move.l  #$00ffff00, d1
-        move.w  #BOARD_BASE_X+2, d5
-        move.w  #BOARD_BASE_Y+(BOARD_HEIGHT/2)-1, d6
+        jsr     scrclr
+        move.l  #$00f89568, d1
+        move.w  #SCR_WIDTH/2/TILE_SIZE-3, d5
+        move.w  #SCR_HEIGHT/2/TILE_SIZE-1, d6
         lea.l   .pause_str, a1
         jsr     drawstrcol
         jsr     scrplot
 .chk:
         jsr     kbdupd
-        btst    #5, (KBD_EDGE)
+        btst    #KBD_ESC_POS, (KBD_EDGE)
         beq     .chk
 .done:
+        jsr     scrclr
+        lea.l   bggame, a1
+        moveq.l #0, d5
+        moveq.l #0, d6
+        jsr     drawmap
         jsr     boardplot
         jsr     pieceplot
         jsr     scrplot

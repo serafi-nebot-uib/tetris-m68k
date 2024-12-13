@@ -7,7 +7,7 @@ BUTT_PRESS: ds.w 1                              ; 1 if screen button has been pr
 
 
 ; --- keyboard -----------------------------------------------------------------
-KBD_ENTR_PRESS: ds.w 1                          ; holds 1 if enter has been pressed
+KBD_ENTER_PRESS: ds.w 1                          ; holds 1 if enter has been pressed
 
 ; --- level selection ----------------------------------------------------------
 LVL_SEL_POS_X: ds.w 1                           ; x pos of the selected level square
