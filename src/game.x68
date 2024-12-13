@@ -154,14 +154,14 @@ game_clr_rows:
         moveq.l #0, d0
         move.b  (piece+1), d0
 
-        ; d1.l -> piece height (capped so that: y coord + height < BOARD_HEIGHT)
+        ; d1.l -> piece height (capped so that: y coord + height < BRD_HEIGHT)
         moveq.l #0, d1
         move.w  (piece+2), d1
         pdim    d1, d1
         andi.w  #$00ff, d1
         move.l  d1, d2
         add.l   d0, d2
-        sub.l   #BOARD_HEIGHT, d2
+        sub.l   #BRD_HEIGHT, d2
         ble     .chkfill
         sub.l   d2, d1
 .chkfill:
@@ -177,7 +177,7 @@ game_clr_rows:
         move.w  d0, -(a7)
         move.w  #1, -(a7)
 
-        move.w  #BOARD_WIDTH/2-1, d0
+        move.w  #BRD_WIDTH/2-1, d0
         move.b  #0, (SNC_PLOT)
 .clr:
         jsr     boardclrfill

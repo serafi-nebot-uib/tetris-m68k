@@ -7,12 +7,19 @@ TILE_SHIFT: equ 4
 TILE_SIZE: equ  32
 TILE_SHIFT: equ 5
         endc
-TILE_ROW_CNT: equ (SCR_WIDTH/TILE_SIZE)
-TILE_COL_CNT: equ (SCR_HEIGHT/TILE_SIZE)
 
 ; --- board --------------------------------------------------------------------
 BRD_COLS: equ   10                              ; number of horizontal tiles
 BRD_ROWS: equ   20                              ; number of vertical tiles
+BRD_WIDTH: equ 10
+BRD_HEIGHT: equ 20
+BRD_SIZE: equ BRD_WIDTH*BRD_HEIGHT
+BRD_BASE_X: equ 17
+BRD_BASE_Y: equ 6
+BRD_NEXT_BASE_X: equ 30
+BRD_NEXT_BASE_Y: equ 15
+BRD_STAT_BASE_X: equ 6
+BRD_STAT_BASE_Y: equ 8
 
 ; --- button -------------------------------------------------------------------
 BUTT_POS_X: equ 320

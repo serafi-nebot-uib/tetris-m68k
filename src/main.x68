@@ -6,6 +6,7 @@
         include 'const.x68'
         include 'vars.x68'
         include 'system.x68'
+        include 'util.x68'
 
         ifeq    GLB_SCALE-GLB_SCALE_SMALL
         include 'tile-table-16.x68'
@@ -44,43 +45,18 @@ start:
         lea.l   bggame, a1
         jsr     drawmap
 
-        moveq.l #0, d0
-        jsr     pieceinit
+        move.l  #999, d0
+        move.l  #6, d2
+.pltloop:
+        jsr     boardstatupd
+        sub.l   #69, d0
+        dbra    d2, .pltloop
+        simhalt
 
-        moveq.l #6, d7
+        moveq.l #6, d0
 .plotloop:
-        moveq.l #4, d2
-        moveq.l #2, d3
-        move.l  #28, d5
-        move.l  #15, d6
-
-        ; moveq.l #0, d0
-        move.l  d7, d0
-        lsl.l   #2, d0
-        move.l  (piece_ptrn), a0
-        lea.l   piece_table, a1
-        move.l  (a1,d0), a1
-        add.b   (a1)+, d5
-        addq.l  #1, a1
-        ; add.b   (a1)+, d6
-
-        jsr     piecematplot
-
-        ; set color
-        move.l  #$00000000, d1
-        move.b  #80, d0
-        trap    #15
-        move.b  #81, d0
-        trap    #15
-        ; draw rectangle
-        move.b  #87, d0
-        move.w  #28<<TILE_SHIFT, d1
-        move.w  #15<<TILE_SHIFT, d2
-        move.w  #(28+4)<<TILE_SHIFT-1, d3
-        move.w  #(15+2)<<TILE_SHIFT-1, d4
-        trap    #15
-
-        dbra    d7, .plotloop
+        jsr     boardnextplot
+        dbra    d0, .plotloop
 
         simhalt
 

@@ -1,12 +1,5 @@
 PIECE_WIDTH: equ 4
 PIECE_HEIGHT: equ 2
-PIECE_SIZE: equ PIECE_WIDTH*PIECE_HEIGHT
-
-BOARD_WIDTH: equ 10
-BOARD_HEIGHT: equ 20
-BOARD_SIZE: equ BOARD_WIDTH*BOARD_HEIGHT
-BOARD_BASE_X: equ 16
-BOARD_BASE_Y: equ 6
 
 ; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
@@ -31,7 +24,7 @@ pieceprev:
 
 ; board representation as a matrix
 board:
-        ; ds.b    BOARD_WIDTH*BOARD_HEIGHT
+        ; ds.b    BRD_WIDTH*BRD_HEIGHT
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
         dc.b    $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
@@ -339,25 +332,25 @@ piececoll:
         move.b  d0, d2                          ; x idx
         add.b   (piece), d2                     ; x idx + x coord
         bmi     .collision                      ; is current x < 0?
-        cmp.b   #BOARD_WIDTH, d2                ; is current x > board width?
+        cmp.b   #BRD_WIDTH, d2                  ; is current x > board width?
         bge     .collision
 .chky:
         ; y idx + y coord
         move.b  d1, d2                          ; y idx
         add.b   (piece+1), d2                   ; y idx + y coord
         bmi     .collision                      ; is current y < 0?
-        cmp.b   #BOARD_HEIGHT, d2               ; is current y > board height?
+        cmp.b   #BRD_HEIGHT, d2                 ; is current y > board height?
         bge     .collision
         ; check block collision
-        ; idx = x + piece x + (y + piece y) * BOARD_WIDTH
-        ; multiply d2 by BOARD_WIDTH
+        ; idx = x + piece x + (y + piece y) * BRD_WIDTH
+        ; multiply d2 by BRD_WIDTH
         ; d2*10 = d2*(8+2) = d2*8 + d2*2 = d2<<3 + d2<<1
         move.w  d2, d5
         lsl.w   #3, d2                          ; multiply by 8
         lsl.w   #1, d5                          ; multiply by 2
-        add.w   d5, d2                          ; (y + piece y) * BOARD_WIDTH
-        add.b   d0, d2                          ; (y + piece y) * BOARD_WIDTH + x
-        add.b   (piece), d2                     ; (y + piece y) * BOARD_WIDTH + x + piece x
+        add.w   d5, d2                          ; (y + piece y) * BRD_WIDTH
+        add.b   d0, d2                          ; (y + piece y) * BRD_WIDTH + x
+        add.b   (piece), d2                     ; (y + piece y) * BRD_WIDTH + x + piece x
         move.b  (a1,d2), d2                     ; get current piece block
         cmp.b   #$ff, d2
         bne     .collision                      ; check if current piece block is occupied
@@ -419,7 +412,7 @@ piecerelease:
         ; i = y*width + x
         move.l  d1, d5
         ; TODO: can muls be optimized?
-        muls    #BOARD_WIDTH, d5                ; y*width
+        muls    #BRD_WIDTH, d5                  ; y*width
         add.l   d0, d5                          ; y*width + x
         add.l   d5, a1
 
@@ -436,7 +429,7 @@ piecerelease:
         move.l  d2, d5                          ; reset width counter
         subq.l  #1, d5
 
-        add.l   #BOARD_WIDTH, a1                ; go down one row
+        add.l   #BRD_WIDTH, a1                  ; go down one row
         sub.l   d2, a1
 
         dbra    d3, .loop
@@ -464,12 +457,12 @@ boardchkfill:
         lea.l   board, a0
         moveq.l #0, d1
         move.b  d0, d1
-        mulu    #BOARD_WIDTH, d1                ; i = y*width
+        mulu    #BRD_WIDTH, d1                  ; i = y*width
         add.l   d1, a0
         move.l  a0, a1
 
         ; d1.w -> width loop counter
-        move.w  #BOARD_WIDTH-1, d1
+        move.w  #BRD_WIDTH-1, d1
         lsl.l   #1, d4                          ; shift fill status
 .loopx:
         move.b  (a0)+, d3
@@ -478,7 +471,7 @@ boardchkfill:
         dbra.w  d1, .loopx
 
         ; clear row
-        move.w  #BOARD_WIDTH-1, d1
+        move.w  #BRD_WIDTH-1, d1
 .loopclr:
         move.b  #$ff, (a1)+
         dbra.w  d1, .loopclr
@@ -504,7 +497,7 @@ boarddropdown:
         ; a1.l -> board src row address
         lea.l   board, a0
         move.l  d0, d1                          ; board base row
-        mulu    #BOARD_WIDTH, d1                ; board base row offset
+        mulu    #BRD_WIDTH, d1                  ; board base row offset
         add.l   d1, a0
         move.l  a0, a1
         ; d1.b -> empty row counter
@@ -520,15 +513,15 @@ boarddropdown:
         cmpa.l  a0, a1
         beq     .nitr
 
-        move.l  #BOARD_WIDTH-1, d2              ; copy loop counter & offset
+        move.l  #BRD_WIDTH-1, d2                ; copy loop counter & offset
 .copy:
         move.b  (a1,d2.l), (a0,d2.l)            ; copy src to dst row
         move.b  #$ff, (a1,d2.l)                 ; clear src row
         dbra    d2, .copy
 .skip:
-        sub.l   #BOARD_WIDTH, a0                ; move dst up one row
+        sub.l   #BRD_WIDTH, a0                  ; move dst up one row
 .nitr:
-        sub.l   #BOARD_WIDTH, a1                ; move src up one row
+        sub.l   #BRD_WIDTH, a1                  ; move src up one row
         lsr.l   #1, d4
         dbra    d0, .loop
 .done:
@@ -536,7 +529,7 @@ boarddropdown:
         rts
 
 boardclrfill:
-; sp+0 -> column count [1, BOARD_WIDTH/2]
+; sp+0 -> column count [1, BRD_WIDTH/2]
 ; sp+2 -> board start y coord << 8 | row count
 ; sp+4 -> row fill status higher word
 ; sp+6 -> row fill status lower word
@@ -554,13 +547,13 @@ boardclrfill:
         ; d1.w -> start x pixel
         ; d3.w -> end x pixel
         move.w  .base+0(a7), d0
-        move.w  #BOARD_WIDTH/2, d1
+        move.w  #BRD_WIDTH/2, d1
         sub.w   d0, d1                          ; start count
         lsl.w   #1, d0                          ; column count * 2
         move.w  d1, d3
         add.w   d0, d3                          ; end column
-        add.w   #BOARD_BASE_X, d1               ; tile start x
-        add.w   #BOARD_BASE_X, d3               ; tile end x
+        add.w   #BRD_BASE_X, d1                 ; tile start x
+        add.w   #BRD_BASE_X, d3                 ; tile end x
         lsl.w   #TILE_SHIFT, d1                 ; pixel start x
         lsl.w   #TILE_SHIFT, d3                 ; pixel end x
         sub.w   #1, d3
@@ -580,7 +573,7 @@ boardclrfill:
         moveq.l #0, d2
         move.b  .base+2(a7), d2                 ; board start y coord
         add.b   d5, d2                          ; current board y coord
-        add.b   #BOARD_BASE_Y, d2               ; current tile y coord
+        add.b   #BRD_BASE_Y, d2                 ; current tile y coord
         lsl.w   #TILE_SHIFT, d2                 ; start y pixel
         move.w  d2, d4
         add.w   #TILE_SIZE-1, d4                ; end y pixel
@@ -688,12 +681,12 @@ _pieceplot:
         addq.l  #2, a1                          ; offset a1 to point to piece matrix (skip rx, ry)
 
         ; d5.l -> tile x coord (relative to screen)
-        move.l  #BOARD_BASE_X, d5
+        move.l  #BRD_BASE_X, d5
         move.b  (a2), d1
         ext.w   d1
         add.w   d1, d5
         ; d6.l -> tile y coord (relative to screen)
-        move.l  #BOARD_BASE_Y, d6
+        move.l  #BRD_BASE_Y, d6
         move.b  1(a2), d1
         ext.w   d1
         add.w   d1, d6
@@ -739,6 +732,108 @@ piecematplot:
         movem.l (a7)+, d0-d1/d5-d6/a1
         rts
 
+; plot piece in the next box
+;
+; input    : d0.l - piece number
+; output   :
+; modifies :
+boardnextplot:
+        movem.l d0-d6/a0-a1, -(a7)
+        move.l  d0, -(a7)
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #BRD_NEXT_BASE_X<<TILE_SHIFT, d1
+        move.w  #BRD_NEXT_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BRD_NEXT_BASE_X+4)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_NEXT_BASE_Y+2)<<TILE_SHIFT-1, d4
+        trap    #15
+
+        moveq.l #PIECE_WIDTH, d2
+        moveq.l #PIECE_HEIGHT, d3
+        move.l  #BRD_NEXT_BASE_X, d5
+        move.l  #BRD_NEXT_BASE_Y, d6
+        move.l  (a7)+, d0
+        cmp     #3, d0
+        bne     .plot
+        addq.l  #1, d5
+.plot:
+        lsl.l   #2, d0
+        move.l  (piece_ptrn), a0
+        lea.l   piece_table, a1
+        move.l  (a1,d0), a1
+        addq.l  #2, a1
+        jsr     piecematplot
+
+        movem.l (a7)+, d0-d6/a0-a1
+        rts
+
+; update piece statistic
+;
+; input    : d0.l - new statistic number
+;            d2.l - piece number
+; output   :
+; modifies :
+boardstatupd:
+        movem.l d0-d6/a0-a2, -(a7)
+        ; convert number to bcd
+        moveq.l #3, d1
+        lea.l   .digits, a0
+        jsr     bcd
+
+        move.l  #BRD_STAT_BASE_X+5, d5
+        ; tile y coord = piece number * 3 + BRD_STAT_BASE_Y
+        move.l  d2, d6
+        lsl.l   #1, d6
+        add.l   d2, d6
+        add.l   #BRD_STAT_BASE_Y, d6
+
+        ; clear current number
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.l  d5, d1
+        move.l  d5, d3
+        addq.l  #3, d3
+        move.l  d6, d2
+        move.l  d6, d4
+        addq.l  #1, d4
+        lsl.l   #TILE_SHIFT, d1
+        lsl.l   #TILE_SHIFT, d2
+        lsl.l   #TILE_SHIFT, d3
+        lsl.l   #TILE_SHIFT, d4
+        trap    #15
+
+        ; plot number from bcd result
+        moveq.l #2, d0
+        move.l  #$000000ff, d1
+        move.l  a0, a1
+        lea.l   tiletable, a2
+.loop:
+        moveq.l #0, d2
+        move.b  (a1)+, d2
+        lsl.l   #2, d2
+        move.l  (a2,d2), a0
+        add.l   #tiles, a0
+        jsr     drawtilecol
+        addq.l  #1, d5
+        dbra    d0, .loop
+
+        movem.l (a7)+, d0-d6/a0-a2
+        rts
+.digits: ds.b   3
+        ds.w    0
+
 ; clear plotted pieces from board
 ;
 ; input    :
@@ -754,10 +849,10 @@ boardclr:
         trap    #15
         ; draw rectangle
         move.b  #87, d0
-        move.w  #BOARD_BASE_X<<TILE_SHIFT, d1
-        move.w  #BOARD_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BOARD_BASE_X+BOARD_WIDTH)<<TILE_SHIFT, d3
-        move.w  #(BOARD_BASE_Y+BOARD_HEIGHT)<<TILE_SHIFT, d4
+        move.w  #BRD_BASE_X<<TILE_SHIFT, d1
+        move.w  #BRD_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BRD_BASE_X+BRD_WIDTH)<<TILE_SHIFT, d3
+        move.w  #(BRD_BASE_Y+BRD_HEIGHT)<<TILE_SHIFT, d4
         trap    #15
         movem.l (a7)+, d0-d4
         rts
@@ -779,8 +874,8 @@ boardplot:
         lea.l   board, a1
         moveq.l #0, d2
         moveq.l #0, d3
-        move.l  #BOARD_BASE_X, d5
-        move.l  #BOARD_BASE_Y, d6
+        move.l  #BRD_BASE_X, d5
+        move.l  #BRD_BASE_Y, d6
 .loop:
         move.b  (a1)+, d0
         cmp.b   #$ff, d0
@@ -798,14 +893,14 @@ boardplot:
 .nitr:
         addq.l  #1, d2                          ; increment x index
         addq.l  #1, d5                          ; increment tile x coord
-        cmp.b   #BOARD_WIDTH, d2
+        cmp.b   #BRD_WIDTH, d2
         blo     .loop
 
         moveq.l #0, d2                          ; reset x index
-        move.l  #BOARD_BASE_X, d5               ; reset tile x coord
+        move.l  #BRD_BASE_X, d5                 ; reset tile x coord
         addq.l  #1, d3                          ; increment y coord
         addq.l  #1, d6                          ; increment tile y coord
-        cmp.b   #BOARD_HEIGHT, d3
+        cmp.b   #BRD_HEIGHT, d3
         blo     .loop
 .done:
         ; restore piece color & pattern
