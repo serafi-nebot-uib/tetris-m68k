@@ -2,6 +2,28 @@ GAME_STATE: ds.l 1
 
 screen_game:
 ; --- init ---------------------------------------------------------------------
+        jsr     game_plot
+        move.b  #-1, (piecenum)
+        move.l  #game_spawn, (GAME_STATE)
+.loop:
+; --- update -------------------------------------------------------------------
+        jsr     kbdupd
+        move.l  (GAME_STATE), a0
+        jsr     (a0)
+; --- sync ---------------------------------------------------------------------
+.sync:
+        move.b  (SNC_PLOT), d0
+        beq     .sync
+        move.b  #0, (SNC_PLOT)
+
+; --- plot ---------------------------------------------------------------------
+        jsr     scrplot
+        bra     .loop
+
+        rts
+
+game_plot:
+        movem.l d0-d2/d5-d6/a0, -(a7)
         ; draw screen background
         jsr     scrclr
         lea.l   bggame, a1
@@ -24,23 +46,7 @@ screen_game:
 
         jsr     scrplot
 
-        move.b  #-1, (piecenum)
-        move.l  #game_spawn, (GAME_STATE)
-.loop:
-; --- update -------------------------------------------------------------------
-        jsr     kbdupd
-        move.l  (GAME_STATE), a0
-        jsr     (a0)
-; --- sync ---------------------------------------------------------------------
-.sync:
-        move.b  (SNC_PLOT), d0
-        beq     .sync
-        move.b  #0, (SNC_PLOT)
-
-; --- plot ---------------------------------------------------------------------
-        jsr     scrplot
-        bra     .loop
-
+        movem.l (a7)+, d0-d2/d5-d6/a0
         rts
 
 game_spawn:
@@ -239,14 +245,8 @@ game_pause:
         btst    #KBD_ESC_POS, (KBD_EDGE)
         beq     .chk
 .done:
-        jsr     scrclr
-        lea.l   bggame, a1
-        moveq.l #0, d5
-        moveq.l #0, d6
-        jsr     drawmap
-        jsr     boardplot
+        jsr     game_plot
         jsr     pieceplot
-        jsr     scrplot
         move.l  #game_player, (GAME_STATE)
         sncenable
 
