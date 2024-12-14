@@ -39,27 +39,6 @@ screens:
 ;         dc.l    screen5
 
 start:
-        ; draw bg
-        moveq.l #0, d5
-        moveq.l #0, d6
-        lea.l   bggame, a1
-        jsr     drawmap
-
-        move.l  #999, d0
-        move.l  #6, d2
-.pltloop:
-        jsr     boardstatupd
-        sub.l   #69, d0
-        dbra    d2, .pltloop
-        simhalt
-
-        moveq.l #6, d0
-.plotloop:
-        jsr     boardnextplot
-        dbra    d0, .plotloop
-
-        simhalt
-
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 

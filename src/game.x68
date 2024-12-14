@@ -8,6 +8,20 @@ screen_game:
         moveq.l #0, d5
         moveq.l #0, d6
         jsr     drawmap
+        ; update statistics box
+        move.b  #0, (levelnum)
+        jsr     boardlvlupd
+
+        moveq.l #0, d0
+        moveq.l #6, d2
+        lea.l   piecestats, a0
+.statupd:
+        move.l  d2, d1
+        lsl.l   #1, d1
+        move.b  #0, (a0,d1)
+        jsr     boardstatupd
+        dbra    d2, .statupd
+
         jsr     scrplot
 
         move.b  #-1, (piecenum)
@@ -95,21 +109,7 @@ game_player:
 .chkenter:
         btst    #KBD_ENTER_POS, d0
         beq     .chkctrl
-        moveq.l #0, d1
-        move.b  (levelnum), d1
-        addq.b  #1, d1
-        divu    #9, d1
-        swap    d1
-        move.b  d1, (levelnum)
-
-        ; update piece color & pattern
-        moveq.l #0, d0
-        moveq.l #0, d1
-        move.l  (piece+4), a0
-        move.w  -2(a0), d0
-        move.b  d0, d1
-        lsr.l   #8, d0
-        jsr     boardplot
+        move.l  #game_inc_level, (GAME_STATE)
         bra     .done
 .chkctrl:
         btst    #KBD_CTRL_POS, d0
@@ -133,7 +133,7 @@ game_player:
         rts
 
 game_drop:
-        move.l  d0, -(a7)
+        movem.l d0-d2/a0, -(a7)
         ; move the piece down until a collision is found
 .drop:
         piecemovd #1
@@ -143,9 +143,37 @@ game_drop:
         piecemovu #1
         ; release piece to the board
         jsr     piecerelease
+        ; increment stats for current piece
+        moveq.l #0, d2
+        move.b  (piecenum), d2
+        move.l  d2, d1
+        lsl.l   #1, d1
+        lea.l   (piecestats), a0
+        move.w  (a0,d1), d0
+        addq.w  #1, d0
+        move.w  d0, (a0,d1)
+        jsr     boardstatupd
+
         jsr     boardplot
         move.l  #game_clr_rows, (GAME_STATE)
-        move.l  (a7)+, d0
+        movem.l (a7)+, d0-d2/a0
+        rts
+
+game_inc_level:
+        movem.l d0-d1, -(a7)
+        ; increase current level
+        moveq.l #0, d1
+        move.b  (levelnum), d1
+        addq.l  #1, d1
+        divu    #9, d1
+        swap    d1
+        move.b  d1, (levelnum)
+        jsr     boardplot
+        jsr     boardlvlupd
+        jsr     pieceplot
+        move.l  #game_player, (GAME_STATE)
+
+        movem.l (a7)+, d0-d1
         rts
 
 game_clr_rows:

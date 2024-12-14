@@ -4,23 +4,24 @@ PIECE_HEIGHT: equ 2
 ; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
 piecenum: dc.b  0
+piecestats: dc.w 0,0,0,0,0,0,0
         ds.w    0
 
 ;--- logic ---------------------------------------------------------------------
 
 ; current (falling) piece data structure
 piece:
-        ds.b    1                               ; x
-        ds.b    1                               ; y
-        ds.w    1                               ; orientation index
-        ds.l    1                               ; piece address
+        dc.b    0                               ; x
+        dc.b    0                               ; y
+        dc.w    0                               ; orientation index
+        dc.l    pieceT                          ; piece address
 
 ; copy of current piece data structure; allows to rollback any changes
 pieceprev:
-        ds.b    1                               ; x
-        ds.b    1                               ; y
-        ds.w    1                               ; orientation index
-        ds.l    1                               ; piece address
+        dc.b    0                               ; x
+        dc.b    0                               ; y
+        dc.w    0                               ; orientation index
+        dc.l    pieceT                          ; piece address
 
 ; board representation as a matrix
 board:
@@ -585,21 +586,113 @@ boardclrfill:
         movem.l (a7)+, d0-d6
         rts
 
+; update piece colors based on current level
+;
+; input    :
+; modifies :
+boardlvlupd:
+        ; clear previous level number
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #BRD_LVL_BASE_X<<TILE_SHIFT, d1
+        move.w  #BRD_LVL_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BRD_LVL_BASE_X+3)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_LVL_BASE_Y+1)<<TILE_SHIFT-1, d4
+        trap    #15
+
+        ; convert current level number to bcd
+        moveq.l #0, d0
+        move.b  (levelnum), d0
+        moveq.l #3, d1
+        lea.l   .lvldigits, a0
+        jsr     bcd
+
+        ; plot number from bcd result
+        moveq.l #2, d0
+        move.l  a0, a1
+        lea.l   tiletable, a2
+        move.l  #BRD_LVL_BASE_X, d5
+        move.l  #BRD_LVL_BASE_Y, d6
+.lvlloop:
+        moveq.l #0, d2
+        move.b  (a1)+, d2
+        lsl.l   #2, d2
+        move.l  (a2,d2), a0
+        add.l   #tiles, a0
+        jsr     drawtile
+        addq.l  #1, d5
+        dbra    d0, .lvlloop
+
+        ; clear previous piece plots
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #BRD_STAT_BASE_X<<TILE_SHIFT, d1
+        move.w  #BRD_STAT_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BRD_STAT_BASE_X+4)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_STAT_BASE_Y+(7*3-1))<<TILE_SHIFT-1, d4
+        trap    #15
+
+        moveq.l #PIECE_WIDTH, d2
+        moveq.l #PIECE_HEIGHT, d3
+        move.l  #BRD_STAT_BASE_X, d5
+        move.l  #BRD_STAT_BASE_Y+(6*3), d6
+        lea.l   piece_table, a2
+        moveq.l #6, d7
+.loop:
+        ; a1.l - piece address
+        move.l  a2, a1
+        move.l  d7, d0
+        lsl.l   #2, d0
+        move.l  (a1,d0), a1
+        ; d0.l - piece color
+        ; d1.l - piece pattern
+        move.w  -2(a1), d0
+        move.b  d0, d1
+        lsr.l   #8, d0
+        andi.l  #$0000000f, d0
+        andi.l  #$0000000f, d1
+        jsr     pieceupdcol
+        move.l  (piece_ptrn), a0
+
+        addq.l  #2, a1                          ; offset rx, ry
+        jsr     piecematplot
+
+        subq.l  #3, d6
+        dbra    d7, .loop
+
+        jsr     boardplot
+
+        rts
+.lvldigits: dc.b 0,0,0
+        ds.w    0
+
 ; --- plotting -----------------------------------------------------------------
 
 ; piece color map by level
 piece_colmap:
-        * ---    COLOR1   COLOR2     --- *
-        dc.l    $ec3820, $fcbc3c                ; LEVEL0
-        dc.l    $00a800, $10d080                ; LEVEL1
-        dc.l    $cc00d8, $f878f8                ; LEVEL2
-        dc.l    $f85800, $54d858                ; LEVEL3
-        dc.l    $5800e4, $98f858                ; LEVEL4
-        dc.l    $98f858, $fc8868                ; LEVEL5
-        dc.l    $0038f8, $7c7c7c                ; LEVEL6
-        dc.l    $fc4468, $2000a8                ; LEVEL7
-        dc.l    $f85800, $0038f8                ; LEVEL8
-        dc.l    $0038f8, $44a0fc                ; LEVEL9
+        * ---    color1   color2     --- *
+        dc.l    $ec3820, $fcbc3c                ; level0
+        dc.l    $00a800, $10d080                ; level1
+        dc.l    $cc00d8, $f878f8                ; level2
+        dc.l    $f85800, $54d858                ; level3
+        dc.l    $5800e4, $98f858                ; level4
+        dc.l    $98f858, $fc8868                ; level5
+        dc.l    $0038f8, $7c7c7c                ; level6
+        dc.l    $fc4468, $2000a8                ; level7
+        dc.l    $f85800, $0038f8                ; level8
+        dc.l    $0038f8, $44a0fc                ; level9
 
 piece_ptrn:
         dc.l    $00000000                       ; current piece pattern address
@@ -734,12 +827,13 @@ piecematplot:
 
 ; plot piece in the next box
 ;
-; input    : d0.l - piece number
+; input    : d2.l - piece number
 ; output   :
 ; modifies :
 boardnextplot:
         movem.l d0-d6/a0-a1, -(a7)
-        move.l  d0, -(a7)
+        move.l  d2, -(a7)
+        ; clear next box
         ; set color
         move.l  #$00000000, d1
         move.b  #80, d0
@@ -758,15 +852,11 @@ boardnextplot:
         moveq.l #PIECE_HEIGHT, d3
         move.l  #BRD_NEXT_BASE_X, d5
         move.l  #BRD_NEXT_BASE_Y, d6
-        move.l  (a7)+, d0
-        cmp     #3, d0
-        bne     .plot
-        addq.l  #1, d5
-.plot:
-        lsl.l   #2, d0
+        move.l  (a7)+, d2
+        lsl.l   #2, d2
         move.l  (piece_ptrn), a0
         lea.l   piece_table, a1
-        move.l  (a1,d0), a1
+        move.l  (a1,d2), a1
         addq.l  #2, a1
         jsr     piecematplot
 
