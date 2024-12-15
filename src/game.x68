@@ -61,7 +61,19 @@ game_spawn:
         andi.l  #$ffff, d0
         ;-----------------------------------------------------------------------
 
+        ; TODO: get next piece by number generator
+        move.l  d0, d2
+        addq.l  #1, d2
+        divu    #7, d2
+        swap    d2
+        andi.l  #$ffff, d2
+        ;-----------------------------------------------------------------------
+
+        ; boardnextplot is called first so that the color profile for the
+        ; current piece isn't changed
+        jsr     boardnextplot
         jsr     pieceinit
+
         move.l  #game_player, (GAME_STATE)
 
         move.l  (a7)+, d0

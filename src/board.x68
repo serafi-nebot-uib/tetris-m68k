@@ -3,6 +3,7 @@ PIECE_HEIGHT: equ 2
 
 ; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
+levelnumn: dc.b 0                               ; TODO: implement level num next
 piecenum: dc.b  0
 piecestats: dc.w 0,0,0,0,0,0,0
         ds.w    0
@@ -646,14 +647,18 @@ boardlvlupd:
 
         moveq.l #PIECE_WIDTH, d2
         moveq.l #PIECE_HEIGHT, d3
-        move.l  #BRD_STAT_BASE_X, d5
         move.l  #BRD_STAT_BASE_Y+(6*3), d6
         lea.l   piece_table, a2
+        lea.l   .statoff, a3
         moveq.l #6, d7
 .loop:
         ; a1.l - piece address
         move.l  a2, a1
         move.l  d7, d0
+        moveq.l #0, d1
+        move.b  (a3,d0), d1
+        move.l  #BRD_STAT_BASE_X, d5
+        add.l   d1, d5
         lsl.l   #2, d0
         move.l  (a1,d0), a1
         ; d0.l - piece color
@@ -675,6 +680,7 @@ boardlvlupd:
         jsr     boardplot
 
         rts
+.statoff: dc.b  1,1,1,2,1,1,0
 .lvldigits: dc.b 0,0,0
         ds.w    0
 
@@ -832,7 +838,7 @@ piecematplot:
 ; modifies :
 boardnextplot:
         movem.l d0-d6/a0-a1, -(a7)
-        move.l  d2, -(a7)
+        move.l  d2, d5
         ; clear next box
         ; set color
         move.l  #$00000000, d1
@@ -848,16 +854,29 @@ boardnextplot:
         move.w  #(BRD_NEXT_BASE_Y+2)<<TILE_SHIFT-1, d4
         trap    #15
 
-        moveq.l #PIECE_WIDTH, d2
-        moveq.l #PIECE_HEIGHT, d3
-        move.l  #BRD_NEXT_BASE_X, d5
-        move.l  #BRD_NEXT_BASE_Y, d6
-        move.l  (a7)+, d2
+        move.l  d5, d2
         lsl.l   #2, d2
-        move.l  (piece_ptrn), a0
         lea.l   piece_table, a1
         move.l  (a1,d2), a1
+        move.w  -2(a1), d0
+        move.b  d0, d1
+        lsr.l   #8, d0
+        andi.l  #$f, d0
+        andi.l  #$f, d1
+        jsr     pieceupdcol
+        move.l  (piece_ptrn), a0
         addq.l  #2, a1
+
+        moveq.l #PIECE_WIDTH, d2
+        moveq.l #PIECE_HEIGHT, d3
+        move.l  #BRD_NEXT_BASE_Y, d6
+        cmp     #6, d5
+        beq     .line
+        move.l  #BRD_NEXT_BASE_X+1, d5
+        bra     .plot
+.line:
+        move.l  #BRD_NEXT_BASE_X, d5
+.plot:
         jsr     piecematplot
 
         movem.l (a7)+, d0-d6/a0-a1
