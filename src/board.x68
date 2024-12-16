@@ -3,8 +3,8 @@ PIECE_HEIGHT: equ 2
 
 ; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
-levelnumn: dc.b 0                               ; TODO: implement level num next
 piecenum: dc.b  0
+piecenumn: dc.b 0
 piecestats: dc.w 0,0,0,0,0,0,0
         ds.w    0
 
@@ -831,14 +831,28 @@ piecematplot:
         movem.l (a7)+, d0-d1/d5-d6/a1
         rts
 
-; plot piece in the next box
+; save and plot next piece in the next box
 ;
 ; input    : d2.l - piece number
 ; output   :
 ; modifies :
-boardnextplot:
+boardnextupd:
         movem.l d0-d6/a0-a1, -(a7)
-        move.l  d2, d5
+
+        move.b  d2, (piecenumn)
+        move.b  d2, d5
+        lsl.l   #2, d2
+        lea.l   piece_table, a1
+        move.l  (a1,d2), a1
+        move.w  -2(a1), d0
+        move.b  d0, d1
+        lsr.l   #8, d0
+        andi.l  #$f, d0
+        andi.l  #$f, d1
+        jsr     pieceupdcol
+        move.l  (piece_ptrn), a0
+        addq.l  #2, a1
+
         ; clear next box
         ; set color
         move.l  #$00000000, d1
@@ -853,19 +867,6 @@ boardnextplot:
         move.w  #(BRD_NEXT_BASE_X+4)<<TILE_SHIFT-1, d3
         move.w  #(BRD_NEXT_BASE_Y+2)<<TILE_SHIFT-1, d4
         trap    #15
-
-        move.l  d5, d2
-        lsl.l   #2, d2
-        lea.l   piece_table, a1
-        move.l  (a1,d2), a1
-        move.w  -2(a1), d0
-        move.b  d0, d1
-        lsr.l   #8, d0
-        andi.l  #$f, d0
-        andi.l  #$f, d1
-        jsr     pieceupdcol
-        move.l  (piece_ptrn), a0
-        addq.l  #2, a1
 
         moveq.l #PIECE_WIDTH, d2
         moveq.l #PIECE_HEIGHT, d3

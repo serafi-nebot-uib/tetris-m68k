@@ -50,7 +50,7 @@ game_plot:
         rts
 
 game_spawn:
-        move.l  d0, -(a7)
+        movem.l d0/d2, -(a7)
 
         ; TODO: get next piece by number generator
         moveq.l #0, d0
@@ -69,14 +69,14 @@ game_spawn:
         andi.l  #$ffff, d2
         ;-----------------------------------------------------------------------
 
-        ; boardnextplot is called first so that the color profile for the
+        ; boardnextupd is called first so that the color profile for the
         ; current piece isn't changed
-        jsr     boardnextplot
+        jsr     boardnextupd
         jsr     pieceinit
 
         move.l  #game_player, (GAME_STATE)
 
-        move.l  (a7)+, d0
+        movem.l (a7)+, d0/d2
         rts
 
 game_player:
@@ -178,7 +178,7 @@ game_drop:
         rts
 
 game_inc_level:
-        movem.l d0-d1, -(a7)
+        movem.l d0-d2, -(a7)
         ; increase current level
         moveq.l #0, d1
         move.b  (levelnum), d1
@@ -188,10 +188,12 @@ game_inc_level:
         move.b  d1, (levelnum)
         jsr     boardplot
         jsr     boardlvlupd
+        ; moveq.l #0, d2
+        ; move.b  (piecenumn), d2
+        ; jsr     boardnextupd
         jsr     pieceplot
         move.l  #game_player, (GAME_STATE)
-
-        movem.l (a7)+, d0-d1
+        movem.l (a7)+, d0-d2
         rts
 
 game_clr_rows:

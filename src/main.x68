@@ -27,6 +27,8 @@
         include 'game.x68'
 
 screens:
+        dc.l    screen_game
+
         dc.l    screen_legal
         dc.l    screen_start
         dc.l    screen_2
