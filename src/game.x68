@@ -2,8 +2,11 @@ GAME_STATE: ds.l 1
 
 screen_game:
 ; --- init ---------------------------------------------------------------------
+        ; TODO: get values from RNG
+        move.b  #0, (piecenum)
+        move.b  #1, (piecenumn)
+        ; -------------------------
         jsr     game_plot
-        move.b  #-1, (piecenum)
         move.l  #game_spawn, (GAME_STATE)
 .loop:
 ; --- update -------------------------------------------------------------------
@@ -54,25 +57,26 @@ game_spawn:
 
         ; TODO: get next piece by number generator
         moveq.l #0, d0
-        move.b  (piecenum), d0
+        move.b  (piecenumn), d0
         addq.l  #1, d0
         divu    #7, d0
         swap    d0
         andi.l  #$ffff, d0
         ;-----------------------------------------------------------------------
 
-        ; TODO: get next piece by number generator
-        move.l  d0, d2
-        addq.l  #1, d2
-        divu    #7, d2
-        swap    d2
-        andi.l  #$ffff, d2
-        ;-----------------------------------------------------------------------
+        ; ; TODO: get next piece by number generator
+        ; move.l  d0, d2
+        ; addq.l  #1, d2
+        ; divu    #7, d2
+        ; swap    d2
+        ; andi.l  #$ffff, d2
+        ; ;-----------------------------------------------------------------------
 
         ; boardnextupd is called first so that the color profile for the
         ; current piece isn't changed
         jsr     boardnextupd
         jsr     pieceinit
+        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN) ; reset piece sync counter
 
         move.l  #game_player, (GAME_STATE)
 
@@ -178,22 +182,25 @@ game_drop:
         rts
 
 game_inc_level:
-        movem.l d0-d2, -(a7)
+        move.l  d0, -(a7)
         ; increase current level
-        moveq.l #0, d1
-        move.b  (levelnum), d1
-        addq.l  #1, d1
-        divu    #9, d1
-        swap    d1
-        move.b  d1, (levelnum)
-        jsr     boardplot
+        moveq.l #0, d0
+        move.b  (levelnum), d0
+        addq.l  #1, d0
+        divu    #9, d0
+        swap    d0
+        move.b  d0, (levelnum)
+        ; update level box pieces
         jsr     boardlvlupd
-        ; moveq.l #0, d2
-        ; move.b  (piecenumn), d2
-        ; jsr     boardnextupd
+        ; update next piece box
+        moveq.l #0, d0
+        move.b  (piecenumn), d0
+        jsr     boardnextupd
+        ; update board pieces
+        jsr     boardplot
         jsr     pieceplot
         move.l  #game_player, (GAME_STATE)
-        movem.l (a7)+, d0-d2
+        move.l  (a7)+, d0
         rts
 
 game_clr_rows:

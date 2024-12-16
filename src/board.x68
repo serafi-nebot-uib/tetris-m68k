@@ -70,7 +70,7 @@ pdim:   macro
 ;            \2 - accumulator register
 ; output   : \1 - orientation matrix offset
 ; modifies : \1, \2
-poff:   macro
+pieceoff: macro
         ; multiply orientation index by PIECE_SIZE+2 to get array offset
         move.l  \1, \2
         lsl.l   #3, \1                          ; multiply by 8 (PIECE_SIZE)
@@ -99,25 +99,45 @@ piececommit: macro
         move.l  (piece+4), (pieceprev+4)
         endm
 
-; initialize a new piece
+; get piece color & pattern from piece address
 ;
-; input    : d0.b - piece number lo load
+; input    : \1 piece address
+; output   : \2 piece color
+;            \3 piece pattern
+; modifies :
+piececolptrn: macro
+        move.w  -2(\1), \2
+        move.b  \2, \3
+        lsr.l   #8, \2
+        andi.l  #$0000000f, \2
+        andi.l  #$0000000f, \3
+        endm
+
+; initialize piece stored in piecenumn and set next piece number
+;
+; input    : d0.b - next piece number lo load
 ; output   :
-; modifies : d0.l
+; modifies :
 pieceinit:
-        movem.w d0-d2/a0, -(a7)
+        movem.l d0-d2/a0, -(a7)
 
         clr.w   (piece+2)                       ; reset orientation index to 0
 
+        moveq.l #0, d1
+        move.b  (piecenumn), d1
+        move.b  d1, (piecenum)
+        move.b  d0, (piecenumn)
+
+        ; andi.l  #$000000ff, d1
+        ; divu    #7, d1
+        ; swap    d1
+        ; andi.l  #$ffff, d1
+        ; move.b  d1, (piecenum)                  ; store new piecenum
+
         ; get piece matrix data address with piece number
-        andi.l  #$000000ff, d0
-        divu    #7, d0
-        swap    d0
-        andi.l  #$ffff, d0
-        move.b  d0, (piecenum)                  ; store new piecenum
-        lsl.l   #2, d0
+        lsl.l   #2, d1
         lea.l   piece_table, a0
-        move.l  (a0,d0), a0
+        move.l  (a0,d1), a0
 
         move.l  a0, (piece+4)                   ; copy piece matrix address
         ; adjust piece matrix x,y so that the orientation x,y offsets match
@@ -132,20 +152,14 @@ pieceinit:
         piececommit
 
         ; update color & pattern for current piece
-        move.w  -2(a0), d0
-        move.b  d0, d1
-        lsr.l   #8, d0
-        andi.l  #$0000000f, d0
-        andi.l  #$0000000f, d1
+        piececolptrn a0, d0, d1
         jsr     pieceupdcol
         ; boardplot is called here so that when a piece is released into the
         ; board it is automatically re-drawn (to avoid game loop complexity)
         jsr     boardplot
         jsr     pieceplot
 
-        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN) ; reset piece sync counter
-
-        movem.w (a7)+, d0-d2/a0
+        movem.l (a7)+, d0-d2/a0
         rts
 
 ; set the color profile for the current piece and level
@@ -193,7 +207,7 @@ piecerotr:
         ; remove current x,y offset
         moveq.l #0, d0
         move.w  (piece+2), d0                   ; orientation index
-        poff    d0, d1
+        pieceoff d0, d1
 
         move.l  (piece+4), a0                   ; piece matrix address
         move.w  (a0,d0), d1                     ; get current x,y offset
@@ -211,7 +225,7 @@ piecerotr:
         moveq.l #0, d0                          ; reset to 0 if d0 >= 4
 .off:
         move.w  d0, (piece+2)
-        poff    d0, d1
+        pieceoff d0, d1
 
         ; adjust new x,y offset
         move.w  (a0,d0), d1                     ; get new x,y offset
@@ -233,7 +247,7 @@ piecerotl:
         ; remove current x,y offset
         moveq.l #0, d0
         move.w  (piece+2), d0                   ; orientation index
-        poff    d0, d1
+        pieceoff d0, d1
 
         move.l  (piece+4), a0                   ; piece matrix address
         move.w  (a0,d0), d1                     ; get current x,y offset
@@ -250,7 +264,7 @@ piecerotl:
         moveq.l #3, d0                          ; reset to 3 if d0 < 0
 .off:
         move.w  d0, (piece+2)
-        poff    d0, d1
+        pieceoff d0, d1
 
         ; adjust new x,y offset
         move.w  (a0,d0), d1                     ; get new x,y offset
@@ -312,7 +326,7 @@ piececoll:
         pdim    d0, d4                          ; matrix dimensions (d3 width, d4 height)
         move.w  d4, d3
         lsr.w   #8, d3
-        poff    d0, d1                          ; calculate array offset
+        pieceoff d0, d1                         ; calculate array offset
         add.l   d0, a0                          ; offset a0 to point to the correct matrix
         add.l   #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
 
@@ -399,7 +413,7 @@ piecerelease:
         pdim    d0, d2
         move.b  d2, d3
         lsr.l   #8, d2
-        poff    d0, d1                          ; calculate array offset
+        pieceoff d0, d1                         ; calculate array offset
         add.l   d0, a0                          ; offset a0 to point to current orientation matrix
         addq.l  #2, a0                          ; offset a0 to point to piece matrix (skip rx, ry)
         move.l  d3, d6                          ; save matrix height for later
@@ -661,13 +675,8 @@ boardlvlupd:
         add.l   d1, d5
         lsl.l   #2, d0
         move.l  (a1,d0), a1
-        ; d0.l - piece color
-        ; d1.l - piece pattern
-        move.w  -2(a1), d0
-        move.b  d0, d1
-        lsr.l   #8, d0
-        andi.l  #$0000000f, d0
-        andi.l  #$0000000f, d1
+
+        piececolptrn a1, d0, d1
         jsr     pieceupdcol
         move.l  (piece_ptrn), a0
 
@@ -775,7 +784,7 @@ _pieceplot:
         pdim    d0, d2
         move.b  d2, d3
         lsr.l   #8, d2
-        poff    d0, d1                          ; calculate array offset
+        pieceoff d0, d1                         ; calculate array offset
         add.l   d0, a1                          ; offset a1 to point to current orientation matrix
         addq.l  #2, a1                          ; offset a1 to point to piece matrix (skip rx, ry)
 
@@ -833,22 +842,17 @@ piecematplot:
 
 ; save and plot next piece in the next box
 ;
-; input    : d2.l - piece number
+; input    : d0.l - piece number
 ; output   :
 ; modifies :
 boardnextupd:
         movem.l d0-d6/a0-a1, -(a7)
 
-        move.b  d2, (piecenumn)
-        move.b  d2, d5
-        lsl.l   #2, d2
+        move.b  d0, d5
+        lsl.l   #2, d0
         lea.l   piece_table, a1
-        move.l  (a1,d2), a1
-        move.w  -2(a1), d0
-        move.b  d0, d1
-        lsr.l   #8, d0
-        andi.l  #$f, d0
-        andi.l  #$f, d1
+        move.l  (a1,d0), a1
+        piececolptrn a1, d0, d1
         jsr     pieceupdcol
         move.l  (piece_ptrn), a0
         addq.l  #2, a1
@@ -879,6 +883,11 @@ boardnextupd:
         move.l  #BRD_NEXT_BASE_X, d5
 .plot:
         jsr     piecematplot
+
+        ; restore piece color & pattern
+        move.l  (piece+4), a0
+        piececolptrn a0, d0, d1
+        jsr     pieceupdcol
 
         movem.l (a7)+, d0-d6/a0-a1
         rts
@@ -1014,12 +1023,8 @@ boardplot:
         blo     .loop
 .done:
         ; restore piece color & pattern
-        moveq.l #0, d0
-        moveq.l #0, d1
         move.l  (piece+4), a0
-        move.w  -2(a0), d0
-        move.b  d0, d1
-        lsr.l   #8, d0
+        piececolptrn a0, d0, d1
         jsr     pieceupdcol
 
         movem.l (a7)+, d0-d3/d5-d6/a0-a1
