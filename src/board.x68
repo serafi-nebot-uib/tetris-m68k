@@ -7,6 +7,7 @@ piecenum: dc.b  0
 piecenumn: dc.b 0
 piecestats: dc.w 0,0,0,0,0,0,0
         ds.w    0
+linecount: dc.w 0
 
 ;--- logic ---------------------------------------------------------------------
 
@@ -861,6 +862,57 @@ piecematplot:
 .done:
         movem.l (a7)+, d0-d1/d5-d6/a1
         rts
+
+; increase and plot line count
+;
+; input    : d0.l - increment amount
+; output   :
+; modifies :
+boardlineinc:
+        movem.l d0-d6/a0-a2, -(a7)
+
+        add.w   (linecount), d0
+        move.w  d0, (linecount)
+
+        moveq.l #3, d1
+        lea.l   .digits, a0
+        jsr     bcd
+
+        ; clear previous line count
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #BRD_LINE_CNT_BASE_X<<TILE_SHIFT, d1
+        move.w  #BRD_LINE_CNT_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BRD_LINE_CNT_BASE_X+3)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_LINE_CNT_BASE_Y+1)<<TILE_SHIFT-1, d4
+        trap    #15
+
+        move.l  a0, a1
+        lea.l   tiletable, a2
+        move.l  #BRD_LINE_CNT_BASE_X+2, d5
+        move.l  #BRD_LINE_CNT_BASE_Y, d6
+        move.l  #2, d0
+.loop:
+        moveq.l #0, d2
+        move.b  (a1,d0), d2
+        lsl.l   #2, d2
+        move.l  (a2,d2), a0
+        add.l   #tiles, a0
+        jsr     drawtile
+        subq.l  #1, d5
+        dbra    d0, .loop
+
+        movem.l (a7)+, d0-d6/a0-a2
+        rts
+.digits:
+        dc.b    0,0,0
+        ds.w    0
 
 ; save and plot next piece in the next box
 ;

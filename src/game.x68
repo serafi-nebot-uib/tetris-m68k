@@ -2,6 +2,7 @@ GAME_STATE: ds.l 1
 
 screen_game:
 ; --- init ---------------------------------------------------------------------
+        move.w  #0, (linecount)
         ; TODO: get values from RNG
         move.b  #0, (piecenum)
         move.b  #1, (piecenumn)
@@ -245,6 +246,17 @@ game_clr_rows:
 
         dbra.w  d0, .clr
         addq.l  #8, a7
+
+        moveq.l #0, d0
+        move.l  #BRD_HEIGHT-1, d1
+.cntloop:
+        lsr.l   #1, d4
+        bcc     .skip
+        addq.l  #1, d0
+.skip:
+        dbra    d1, .cntloop
+        jsr     boardlineinc
+
 .done:
         move.l  #game_spawn, (GAME_STATE)
         movem.l (a7)+, d0-d2/d4
