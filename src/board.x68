@@ -14,14 +14,16 @@ piecestats: dc.w 0,0,0,0,0,0,0
 piece:
         dc.b    0                               ; x
         dc.b    0                               ; y
-        dc.w    0                               ; orientation index
+        dc.b    0                               ; drop y
+        dc.b    0                               ; orientation index
         dc.l    pieceT                          ; piece address
 
 ; copy of current piece data structure; allows to rollback any changes
 pieceprev:
         dc.b    0                               ; x
         dc.b    0                               ; y
-        dc.w    0                               ; orientation index
+        dc.b    0                               ; drop y
+        dc.b    0                               ; orientation index
         dc.l    pieceT                          ; piece address
 
 ; board representation as a matrix
@@ -121,7 +123,7 @@ piececolptrn: macro
 pieceinit:
         movem.l d0-d2/a0, -(a7)
 
-        clr.w   (piece+2)                       ; reset orientation index to 0
+        move.b  #0, (piece+3)                   ; reset orientation index to 0
 
         moveq.l #0, d1
         move.b  (piecenumn), d1
@@ -158,6 +160,7 @@ pieceinit:
         ; board it is automatically re-drawn (to avoid game loop complexity)
         jsr     boardplot
         jsr     pieceplot
+        ; jsr     piecedropfind
 
         movem.l (a7)+, d0-d2/a0
         rts
@@ -206,7 +209,7 @@ piecerotr:
 
         ; remove current x,y offset
         moveq.l #0, d0
-        move.w  (piece+2), d0                   ; orientation index
+        move.b  (piece+3), d0                   ; orientation index
         pieceoff d0, d1
 
         move.l  (piece+4), a0                   ; piece matrix address
@@ -217,14 +220,14 @@ piecerotr:
 
         ; cycle to next piece address
         moveq.l #0, d0
-        move.w  (piece+2), d0                   ; orientation index
+        move.b  (piece+3), d0                   ; orientation index
         addq.w  #1, d0                          ; increment orientation index
         ; wrap around every 4 (faster than getting the modulus)
         cmp.w   #4, d0
         blo     .off
         moveq.l #0, d0                          ; reset to 0 if d0 >= 4
 .off:
-        move.w  d0, (piece+2)
+        move.b  d0, (piece+3)
         pieceoff d0, d1
 
         ; adjust new x,y offset
@@ -246,7 +249,7 @@ piecerotl:
 
         ; remove current x,y offset
         moveq.l #0, d0
-        move.w  (piece+2), d0                   ; orientation index
+        move.b  (piece+3), d0                   ; orientation index
         pieceoff d0, d1
 
         move.l  (piece+4), a0                   ; piece matrix address
@@ -257,13 +260,13 @@ piecerotl:
 
         ; cycle to next piece address
         moveq.l #0, d0
-        move.w  (piece+2), d0                   ; orientation index
+        move.b  (piece+3), d0                   ; orientation index
         subq.w  #1, d0                          ; decrement orientation index
         ; wrap around every 4 (faster than getting the modulus)
         bge     .off
         moveq.l #3, d0                          ; reset to 3 if d0 < 0
 .off:
-        move.w  d0, (piece+2)
+        move.b  d0, (piece+3)
         pieceoff d0, d1
 
         ; adjust new x,y offset
@@ -322,7 +325,7 @@ piececoll:
         lea.l   board, a1
         moveq.l #0, d0
         move.l  (piece+4), a0                   ; piece address
-        move.w  (piece+2), d0                   ; orientation index
+        move.b  (piece+3), d0                   ; orientation index
         pdim    d0, d4                          ; matrix dimensions (d3 width, d4 height)
         move.w  d4, d3
         lsr.w   #8, d3
@@ -407,7 +410,7 @@ piecerelease:
 
         ; d2.l -> piece matrix width
         ; d3.l -> piece matrix height
-        move.w  (piece+2), d0                   ; orientation index
+        move.b  (piece+3), d0                   ; orientation index
         moveq.l #0, d2
         moveq.l #0, d3
         pdim    d0, d2
@@ -499,6 +502,20 @@ boardchkfill:
         bls     .loopy
 
         movem.l (a7)+, d0-d3/a0-a1
+        rts
+
+piecedropfind:
+        move.l  d0, -(a7)
+.drop:
+        piecemovd #1
+        jsr     piececoll
+        tst.b   d0
+        beq     .drop
+        piecemovu #1
+        move.b  (piece+1), d0
+        piecerollback
+        move.b  d0, (piece+2)
+        move.l  (a7)+, d0
         rts
 
 ; d0.l -> start y board coordinate
@@ -778,7 +795,7 @@ _pieceplot:
         move.l  4(a2), a1
         ; d2.l -> piece matrix width
         ; d3.l -> piece matrix height
-        move.w  2(a2), d0                       ; orientation index
+        move.b  3(a2), d0                       ; orientation index
         moveq.l #0, d2
         moveq.l #0, d3
         pdim    d0, d2
@@ -795,10 +812,15 @@ _pieceplot:
         add.w   d1, d5
         ; d6.l -> tile y coord (relative to screen)
         move.l  #BRD_BASE_Y, d6
+;         tst.b   d4
+;         bne     .alty
         move.b  1(a2), d1
         ext.w   d1
         add.w   d1, d6
-
+;         bra     .plot
+; .alty:
+;         add.w   d4, d6
+; .plot:
         jsr     piecematplot
 
         movem.l (a7)+, d0-d3/d5-d6/a0-a2
