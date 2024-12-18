@@ -248,7 +248,7 @@ game_clr_rows:
         addq.l  #8, a7
 
         moveq.l #0, d0
-        move.l  #BRD_HEIGHT-1, d1
+        move.l  #4, d1                          ; will never be > max(PIECE_HEIGHT, PIECE_WIDTH)
 .cntloop:
         lsr.l   #1, d4
         bcc     .skip
@@ -256,6 +256,7 @@ game_clr_rows:
 .skip:
         dbra    d1, .cntloop
         jsr     boardlineinc
+        jsr     boardscoreinc
 
 .done:
         move.l  #game_spawn, (GAME_STATE)

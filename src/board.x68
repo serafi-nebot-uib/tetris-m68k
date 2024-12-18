@@ -1,13 +1,20 @@
 PIECE_WIDTH: equ 4
 PIECE_HEIGHT: equ 2
 
+SCO_SINGLE: equ 40
+SCO_DOUBLE: equ 100
+SCO_TRIPLE: equ 300
+SCO_TETRIS: equ 1200
+
 ; TODO: move variables to game vars (necessary?)
 levelnum: dc.b  0
 piecenum: dc.b  0
 piecenumn: dc.b 0
-piecestats: dc.w 0,0,0,0,0,0,0
         ds.w    0
+piecestats: dc.w 0,0,0,0,0,0,0
 linecount: dc.w 0
+score:  dc.l    0
+scoretable: dc.w SCO_SINGLE, SCO_DOUBLE, SCO_TRIPLE, SCO_TETRIS
 
 ;--- logic ---------------------------------------------------------------------
 
@@ -912,6 +919,62 @@ boardlineinc:
         rts
 .digits:
         dc.b    0,0,0
+        ds.w    0
+
+; increase score by line clear count
+;
+; input    : d0.l - line clear count (must be between [1,4])
+; output   :
+; modifies :
+boardscoreinc:
+        movem.l d0-d6/a0-a2, -(a7)
+
+        ; update score by line clear count
+        subq.l  #1, d0
+        lsl.l   #1, d0
+        lea.l   scoretable, a0
+        move.w  (a0,d0), d0
+        add.l   (score), d0
+        move.l  d0, (score)
+
+        moveq.l #6, d1
+        lea.l   .digits, a0
+        jsr     bcd
+
+        ; clear previous score
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #BRD_SCO_BASE_X<<TILE_SHIFT, d1
+        move.w  #BRD_SCO_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BRD_SCO_BASE_X+6)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_SCO_BASE_Y+1)<<TILE_SHIFT-1, d4
+        trap    #15
+
+        move.l  a0, a1
+        lea.l   tiletable, a2
+        move.l  #BRD_SCO_BASE_X+5, d5
+        move.l  #BRD_SCO_BASE_Y, d6
+        move.l  #5, d0
+.loop:
+        moveq.l #0, d2
+        move.b  (a1,d0), d2
+        lsl.l   #2, d2
+        move.l  (a2,d2), a0
+        add.l   #tiles, a0
+        jsr     drawtile
+        subq.l  #1, d5
+        dbra    d0, .loop
+
+        movem.l (a7)+, d0-d6/a0-a2
+        rts
+.digits:
+        dc.b    0,0,0,0,0
         ds.w    0
 
 ; save and plot next piece in the next box

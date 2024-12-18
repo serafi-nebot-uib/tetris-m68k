@@ -24,6 +24,8 @@ BRD_LVL_BASE_X: equ 31
 BRD_LVL_BASE_Y: equ 21
 BRD_LINE_CNT_BASE_X: equ 24
 BRD_LINE_CNT_BASE_Y: equ 3
+BRD_SCO_BASE_X: equ 29
+BRD_SCO_BASE_Y: equ 8
 
 ; --- button -------------------------------------------------------------------
 BUTT_POS_X: equ 320
