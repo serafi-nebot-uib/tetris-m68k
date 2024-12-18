@@ -35,6 +35,7 @@ game_plot:
         moveq.l #0, d6
         jsr     drawmap
         ; update statistics box
+        move.b  #0, (levelcnt)
         move.b  #0, (levelnum)
         jsr     boardlvlupd
 
@@ -188,9 +189,11 @@ game_inc_level:
         moveq.l #0, d0
         move.b  (levelnum), d0
         addq.l  #1, d0
-        divu    #9, d0
+        divu    #10, d0
         swap    d0
         move.b  d0, (levelnum)
+        add.w   #1, (levelcnt)
+
         ; update level box pieces
         jsr     boardlvlupd
         ; increase score count

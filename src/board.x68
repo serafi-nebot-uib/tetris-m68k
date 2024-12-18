@@ -7,7 +7,8 @@ SCO_TRIPLE: equ 300
 SCO_TETRIS: equ 1200
 
 ; TODO: move variables to game vars (necessary?)
-levelnum: dc.b  0
+levelcnt: dc.w  0                               ; current total level
+levelnum: dc.b  0                               ; current piece color level
 piecenum: dc.b  0
 piecenumn: dc.b 0
         ds.w    0
@@ -649,7 +650,7 @@ boardlvlupd:
 
         ; convert current level number to bcd
         moveq.l #0, d0
-        move.b  (levelnum), d0
+        move.w  (levelcnt), d0
         moveq.l #3, d1
         lea.l   .lvldigits, a0
         jsr     bcd
