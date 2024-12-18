@@ -235,16 +235,30 @@ game_clr_rows:
 
         move.w  #BRD_WIDTH/2-1, d0
         move.b  #0, (SNC_PLOT)
-.clr:
+
+        lea.l   bggame, a1
+        moveq.l #0, d5
+        moveq.l #0, d6
+        move.l  #$00ffffff, d1
+.animation:
+        jsr     drawmapcol
+        jsr     scrplot
+; .sync1:
+        ; cmp.b   #2, (SNC_PLOT)
+        ; blo     .sync1
+        jsr     drawmap
+        jsr     scrplot
+        move.b  #0, (SNC_PLOT)
+; .clr:
         jsr     boardclrfill
         add.w   #1, (a7)
-.sync:
-        cmp.b   #8, (SNC_PLOT)
-        blo     .sync
+; .sync2:
+        ; cmp.b   #4, (SNC_PLOT)
+        ; blo     .sync2
         jsr     scrplot
         move.b  #0, (SNC_PLOT)
 
-        dbra.w  d0, .clr
+        dbra.w  d0, .animation
         addq.l  #8, a7
 
         moveq.l #0, d0
