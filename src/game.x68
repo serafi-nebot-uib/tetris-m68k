@@ -193,6 +193,8 @@ game_inc_level:
         move.b  d0, (levelnum)
         ; update level box pieces
         jsr     boardlvlupd
+        ; increase score count
+        jsr     boardscoreinc
         ; update next piece box
         moveq.l #0, d0
         move.b  (piecenumn), d0
@@ -257,7 +259,7 @@ game_clr_rows:
 .skip:
         dbra    d1, .cntloop
         jsr     boardlineinc
-        jsr     boardscoreinc
+        jsr     boardscoreupd
 
 .done:
         move.l  #game_spawn, (GAME_STATE)

@@ -14,6 +14,7 @@ piecenumn: dc.b 0
 piecestats: dc.w 0,0,0,0,0,0,0
 linecount: dc.w 0
 score:  dc.l    0
+scorevals: dc.w SCO_SINGLE, SCO_DOUBLE, SCO_TRIPLE, SCO_TETRIS
 scoretable: dc.w SCO_SINGLE, SCO_DOUBLE, SCO_TRIPLE, SCO_TETRIS
 
 ;--- logic ---------------------------------------------------------------------
@@ -921,12 +922,35 @@ boardlineinc:
         dc.b    0,0,0
         ds.w    0
 
-; increase score by line clear count
+; increase score table by one level
+;
+; input    :
+; output   :
+; modifies :
+boardscoreinc:
+        movem.l d0-d1/a0, -(a7)
+        ; a0.l -> scorevals address
+        ; a1.l -> scoretable address
+        lea.l   scorevals, a0
+        lea.l   scoretable, a1
+        ; d0.l -> scoretable offset
+        moveq.l #0, d0
+.loop:
+        move.w  (a0,d0), d1
+        add.w   (a1,d0), d1
+        move.w  d1, (a1,d0)
+        addq.l  #2, d0                          ; move offset to next word
+        cmp.l   #4*2, d0
+        blo     .loop
+        movem.l (a7)+, d0-d1/a0
+        rts
+
+; increase score by line clear count & plot changes
 ;
 ; input    : d0.l - line clear count (must be between [1,4])
 ; output   :
 ; modifies :
-boardscoreinc:
+boardscoreupd:
         movem.l d0-d6/a0-a2, -(a7)
 
         ; update score by line clear count
