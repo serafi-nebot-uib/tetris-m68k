@@ -7,8 +7,7 @@ GLB_SCALE: equ  GLB_SCALE_SMALL
 ; configured to 7 to avoid Easy68K blocking the interrupt
 SNC_EXC: equ    7
 SNC_TIME: equ   10                              ; 10 milliseconds -> 100 times/second
-SNC_TIME_TO_S: equ 1000/SNC_TIME
-SNC_PIECE_TIME: equ SNC_TIME_TO_S*1
+SNC_TIME_S: equ 1000/SNC_TIME
 
 ; --- screen -------------------------------------------------------------------
         ifeq    GLB_SCALE-GLB_SCALE_SMALL

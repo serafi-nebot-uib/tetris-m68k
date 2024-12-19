@@ -89,7 +89,7 @@ screen_legal:
 
         jsr     scrplot
 
-        move.l  #SNC_TIME_TO_S*5, (SNC_CNT_DOWN) ; 5 second timer
+        move.l  #SNC_TIME_S*5, (SNC_CNT_DOWN) ; 5 second timer
 .loop:
         jsr     kbdupd
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)

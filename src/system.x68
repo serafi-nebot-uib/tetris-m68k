@@ -37,7 +37,7 @@ sncinc:
 
 sncinit:
         move.b  #0, (SNC_PLOT)
-        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
+        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         sncenable
         ; enable exceptions
         move.b  #32, d0

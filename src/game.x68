@@ -2,11 +2,28 @@ GAME_STATE: ds.l 1
 
 screen_game:
 ; --- init ---------------------------------------------------------------------
+        move.w  #0, (levelcnt)
+        move.b  #0, (levelnum)
         move.w  #0, (linecount)
+        move.w  #0, (score)
+        ; clear piecestats
+        lea.l   piecestats, a0
+        moveq.l #6, d0
+.piecestats:
+        move.b  #0, (a0)+
+        dbra    d0, .piecestats
+        ; reset scoretable
+        lea.l   scorevals, a0
+        lea.l   scoretable, a1
+        moveq.l #3, d0
+.scoretable:
+        move.w  (a0)+, (a1)+
+        dbra    d0, .scoretable
         ; TODO: get values from RNG
         move.b  #0, (piecenum)
         move.b  #1, (piecenumn)
         ; -------------------------
+        jsr     boarddropupd
         jsr     game_plot
         move.l  #game_spawn, (GAME_STATE)
 .loop:
@@ -35,7 +52,7 @@ game_plot:
         moveq.l #0, d6
         jsr     drawmap
         ; update statistics box
-        move.b  #0, (levelcnt)
+        move.w  #0, (levelcnt)
         move.b  #0, (levelnum)
         jsr     boardlvlupd
 
@@ -78,7 +95,7 @@ game_spawn:
         ; current piece isn't changed
         jsr     boardnextupd
         jsr     pieceinit
-        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN) ; reset piece sync counter
+        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN) ; reset piece sync counter
 
         move.l  #game_player, (GAME_STATE)
 
@@ -90,9 +107,19 @@ game_player:
         ; check if piece should be moved down
         move.l  (SNC_CNT_DOWN), d0
         bgt     .upd
-        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
+        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         piecemovd #1
-        bra     .chkcol
+        jsr     piececoll
+        cmp.b   #0, d0
+        bne     .release
+        jsr     piececlr
+        jsr     pieceplot
+        piececommit
+        bra     .done
+.release:
+        piecerollback
+        move.l  #game_drop, (GAME_STATE)
+        bra     .done
 .upd:
         move.b  (KBD_EDGE), d0
         move.b  (KBD_VAL), d1
@@ -100,7 +127,7 @@ game_player:
         btst    #KBD_DOWN_POS, d0
         beq     .chkleft
         piecemovd #1
-        move.l  #SNC_PIECE_TIME, (SNC_CNT_DOWN)
+        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol
 .chkleft:
         btst    #KBD_LEFT_POS, d0
@@ -196,6 +223,8 @@ game_inc_level:
 
         ; update level box pieces
         jsr     boardlvlupd
+        ; update drop rate
+        jsr     boarddropupd
         ; increase score count
         jsr     boardscoreinc
         ; update next piece box

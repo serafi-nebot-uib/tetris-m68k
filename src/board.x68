@@ -17,6 +17,13 @@ linecount: dc.w 0
 score:  dc.l    0
 scorevals: dc.w SCO_SINGLE, SCO_DOUBLE, SCO_TRIPLE, SCO_TETRIS
 scoretable: dc.w SCO_SINGLE, SCO_DOUBLE, SCO_TRIPLE, SCO_TETRIS
+; drop table in drops/(ms/10)
+droptable:
+        dc.b    80, 71, 63, 55, 46, 38, 30, 21, 13, 10
+        dc.b    8, 8, 8, 6, 6, 6, 5, 5, 5
+        dc.b    3, 3, 3, 3, 3, 3, 3, 3, 3
+        dc.b    2
+        ds.w    0
 
 ;--- logic ---------------------------------------------------------------------
 
@@ -528,9 +535,13 @@ piecedropfind:
         move.l  (a7)+, d0
         rts
 
-; d0.l -> start y board coordinate
-; d1.l -> number of rows in row status
-; d4.l -> row fill status
+; drop non-filled rows according to row shift status
+;
+; input    : d0.l - start y board coordinate
+;            d1.l - number of rows in row status
+;            d4.l - row fill status
+; output   :
+; modifies :
 boarddropdown:
         movem.l d0-d2/d4/a0-a1, -(a7)
         ; d0.l -> board bottom row coordinate
@@ -628,9 +639,32 @@ boardclrfill:
         movem.l (a7)+, d0-d6
         rts
 
+; update drop rate according to current level
+;
+; input    :
+; output   :
+; modifies :
+boarddropupd:
+        movem.l d0/a0, -(a7)
+
+        moveq.l #0, d0
+        move.w  (levelcnt), d0
+        cmp.w   #28, d0
+        bls     .upd
+        move.w  #28, d0
+.upd:
+        lea.l   droptable, a0
+        move.b  (a0,d0), d0
+        andi.l  #$ff, d0
+        move.l  d0, (SNC_PIECE_TIME)
+
+        movem.l (a7)+, d0/a0
+        rts
+
 ; update piece colors based on current level
 ;
 ; input    :
+; output   :
 ; modifies :
 boardlvlupd:
         ; clear previous level number
