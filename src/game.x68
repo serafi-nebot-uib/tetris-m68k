@@ -351,41 +351,64 @@ game_over:
         move.l  #(BRD_BASE_X+BRD_WIDTH)<<TILE_SHIFT-1-BRD_GO_PADDING, d3
         move.l  #BRD_BASE_Y<<TILE_SHIFT, d2
         move.l  d2, d4
-        add.l   #BRD_GO_BAR_HEIGHT, d4
+        add.l   #4*TILE_MULT, d4
 
-        moveq.l #0, d5                          ; board height iteration index
-.animation:
-        moveq.l #0, d6                          ; color scheme stack offset
-.plot:
-        move.l  #3, (SNC_CNT_DOWN)              ; plot every 3*10ms
-        ; set color
-        move.l  (a7,d6), d1
+        ; TODO: optimize plot loop (e.g. put bar height in stack)
+        move.l  #BRD_HEIGHT-1, d6
+.loop:
+        move.l  (a7), d1
         move.b  #80, d0
         trap    #15
         move.b  #81, d0
         trap    #15
-        ; draw rectangle
         move.b  #87, d0
         move.l  #BRD_BASE_X<<TILE_SHIFT, d1
         trap    #15
-.sync:
+        add.l   #4*TILE_MULT, d2
+        add.l   #6*TILE_MULT, d4
+.sync1:
         move.l  (SNC_CNT_DOWN), d0
-        bgt     .sync
+        bgt     .sync1
         jsr     scrplot
+        move.l  #3, (SNC_CNT_DOWN)              ; plot every 3*10ms
 
-        add.l   #BRD_GO_BAR_HEIGHT, d2          ; start y to next bar
-        add.l   #BRD_GO_BAR_HEIGHT, d4          ; end y to next bar
-        addq.l  #4, d6                          ; advance 1 long word = 4 bytes
-        cmp.l   #3*4, d6                        ; 3 colors * 4 bytes
-        blo     .plot
+        move.l  4(a7), d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        move.b  #87, d0
+        move.l  #BRD_BASE_X<<TILE_SHIFT, d1
+        trap    #15
+        add.l   #6*TILE_MULT, d2
+        add.l   #4*TILE_MULT, d4
+.sync2:
+        move.l  (SNC_CNT_DOWN), d0
+        bgt     .sync2
+        jsr     scrplot
+        move.l  #3, (SNC_CNT_DOWN)              ; plot every 3*10ms
 
-        addq.l  #1, d5
-        cmp.l   #BRD_HEIGHT, d5
-        bls     .animation
+        move.l  8(a7), d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        move.b  #87, d0
+        move.l  #BRD_BASE_X<<TILE_SHIFT, d1
+        trap    #15
+        add.l   #6*TILE_MULT, d2
+        add.l   #6*TILE_MULT, d4
+.sync3:
+        move.l  (SNC_CNT_DOWN), d0
+        bgt     .sync3
+        jsr     scrplot
+        move.l  #3, (SNC_CNT_DOWN)              ; plot every 3*10ms
 
-        move.l  #game_halt, (GAME_STATE)
+        dbra    d6, .loop
 
         add.l   #3*4, a7                        ; pop color scheme from stack
+        move.l  #game_halt, (GAME_STATE)
+
         movem.l (a7)+, d0-d6/a0
         rts
 

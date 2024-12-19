@@ -28,7 +28,6 @@ BRD_LINE_CNT_BASE_X: equ 24
 BRD_LINE_CNT_BASE_Y: equ 3
 BRD_SCO_BASE_X: equ 29
 BRD_SCO_BASE_Y: equ 8
-BRD_GO_BAR_HEIGHT: equ (TILE_SIZE/3)
 BRD_GO_PADDING: equ 2*TILE_MULT
 
 ; --- button -------------------------------------------------------------------
