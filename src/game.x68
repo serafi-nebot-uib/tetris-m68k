@@ -95,10 +95,15 @@ game_spawn:
         ; current piece isn't changed
         jsr     boardnextupd
         jsr     pieceinit
-        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN) ; reset piece sync counter
-
+        jsr     piececoll
+        tst.b   d0
+        bne     .collision
         move.l  #game_player, (GAME_STATE)
-
+        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN) ; reset piece sync counter
+        bra     .done
+.collision:
+        move.l  #game_over, (GAME_STATE)
+.done:
         movem.l (a7)+, d0/d2
         rts
 
@@ -329,4 +334,61 @@ game_stats:
         rts
 
 game_over:
+        movem.l d0-d6/a0, -(a7)
+
+        ; get color scheme based on current level and push them to the stack
+        lea.l   piece_colmap, a0
+        moveq.l #0, d0
+        move.b  (levelnum), d0
+        lsl.l   #3, d0
+        add.l   d0, a0
+        move.l  (a0)+, -(a7)                    ; third color to be drawn
+        move.l  #$00ffffff, -(a7)               ; second color to be drawn
+        move.l  (a0)+, -(a7)                    ; first color to be drawn
+
+        ; draw rectangle parameters
+        ; (except d1 which will be ovewritten by color trap 14 call)
+        move.l  #(BRD_BASE_X+BRD_WIDTH)<<TILE_SHIFT-1-BRD_GO_PADDING, d3
+        move.l  #BRD_BASE_Y<<TILE_SHIFT, d2
+        move.l  d2, d4
+        add.l   #BRD_GO_BAR_HEIGHT, d4
+
+        moveq.l #0, d5                          ; board height iteration index
+.animation:
+        moveq.l #0, d6                          ; color scheme stack offset
+.plot:
+        move.l  #3, (SNC_CNT_DOWN)              ; plot every 3*10ms
+        ; set color
+        move.l  (a7,d6), d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.l  #BRD_BASE_X<<TILE_SHIFT, d1
+        trap    #15
+.sync:
+        move.l  (SNC_CNT_DOWN), d0
+        bgt     .sync
+        jsr     scrplot
+
+        add.l   #BRD_GO_BAR_HEIGHT, d2          ; start y to next bar
+        add.l   #BRD_GO_BAR_HEIGHT, d4          ; end y to next bar
+        addq.l  #4, d6                          ; advance 1 long word = 4 bytes
+        cmp.l   #3*4, d6                        ; 3 colors * 4 bytes
+        blo     .plot
+
+        addq.l  #1, d5
+        cmp.l   #BRD_HEIGHT, d5
+        bls     .animation
+
+        move.l  #game_halt, (GAME_STATE)
+
+        add.l   #3*4, a7                        ; pop color scheme from stack
+        movem.l (a7)+, d0-d6/a0
+        rts
+
+game_halt:
+.halt:  bra     .halt
         rts

@@ -1166,8 +1166,8 @@ boardclr:
         move.b  #87, d0
         move.w  #BRD_BASE_X<<TILE_SHIFT, d1
         move.w  #BRD_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BRD_BASE_X+BRD_WIDTH)<<TILE_SHIFT, d3
-        move.w  #(BRD_BASE_Y+BRD_HEIGHT)<<TILE_SHIFT, d4
+        move.w  #(BRD_BASE_X+BRD_WIDTH)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_BASE_Y+BRD_HEIGHT)<<TILE_SHIFT-1, d4
         trap    #15
         movem.l (a7)+, d0-d4
         rts

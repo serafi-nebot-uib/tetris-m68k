@@ -2,10 +2,12 @@
         ifeq    GLB_SCALE-GLB_SCALE_SMALL
 TILE_SIZE: equ  16
 TILE_SHIFT: equ 4
+TILE_MULT: equ  1
         endc
         ifeq    GLB_SCALE-GLB_SCALE_BIG
 TILE_SIZE: equ  32
 TILE_SHIFT: equ 5
+TILE_MULT: equ  2
         endc
 
 ; --- board --------------------------------------------------------------------
@@ -26,6 +28,8 @@ BRD_LINE_CNT_BASE_X: equ 24
 BRD_LINE_CNT_BASE_Y: equ 3
 BRD_SCO_BASE_X: equ 29
 BRD_SCO_BASE_Y: equ 8
+BRD_GO_BAR_HEIGHT: equ (TILE_SIZE/3)
+BRD_GO_PADDING: equ 2*TILE_MULT
 
 ; --- button -------------------------------------------------------------------
 BUTT_POS_X: equ 320
