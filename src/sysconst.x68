@@ -69,5 +69,6 @@ SND_DIRECTX equ 1                               ; use of directx player [0 (std.
 SND_LOADERTSK equ 3*SND_DIRECTX+71              ; holds task number of the selected play method
 SND_PLAYERTSK equ 76+SND_DIRECTX                ; holds task number of the selected player
 
-SND_LOOP equ    1                               ; used as loop mode in soundplay macro
-SND_STOP equ    2                               ; used as stop sound action in soundplay macro
+SND_LOOP: equ   1
+SND_STOP: equ   2
+SND_STOP_ALL: equ 3

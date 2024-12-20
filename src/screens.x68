@@ -154,12 +154,11 @@ screen_type:
         move.b  #0, (GAME_MUSIC)
         move.w  #0, (KBD_ENTER_PRESS)
         move.b  #0, (KBD_EDGE)
-            
+
         ; --- PAINT BLACK SCREEN ---
         move.b  #11, d0
         move.w  #$ff00, d1
         trap    #15
-
 
         ; --- PAINTING BITMAP ---
         lea.l   bgmode, a1
@@ -183,7 +182,7 @@ screen_type:
 ; ----------------------------------------------------------------------------
 
         movem.l d0-d1, -(a7)
-            
+
         ;; UPDATE COORDINATE X
         move.b  (GAME_TYPE), d0
         btst.b  #KBD_LEFT_POS, (KBD_EDGE)

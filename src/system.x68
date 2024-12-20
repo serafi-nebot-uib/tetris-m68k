@@ -264,41 +264,49 @@ sndinit:
  
 ; sound player
 ;
-; input    : d7 - sound id
-;            d6 - player mode
+; input    : d1.b - sound id
+;            d2.l - player mode
 ; output   : none
 ; modifies : none
-sndplayer:
-        movem.w d0-d2, -(a7)
+; sndplayer:
+;         move.w  d0, -(a7)
+;         move.b  #SND_PLAYERTSK, d0
+;         trap    #15
+;         move.w  (a7)+, d0
+;         rts
+
+; play sound
+;
+; input : \1 - sound id to play
+;         \2 - action (SND_LOOP, SND_STOP)
+sndplay: macro
+        ; plays a sound using sound id
+        ifc     '\1','SND_STOP_ALL'
+        movem.l d0/d2, -(a7)
+        move.l  #3, d2
         move.b  #SND_PLAYERTSK, d0
-        move.b  d7, d1                          ; PLACES SOUND ID ON D1
-        move.l  d6, d2                          ; PLACES SOUND PLAYER MODE ON D2
         trap    #15
-        movem.w (a7)+, d0-d2
-        rte
-
-playsound: macro
-        ; plays a sound using sound id and snd trapnumber         
-        ifc     '\1','stop_all'
-        move.l  #3, d6
-        trap    #sndpltn
+        movem.l (a7)+, d0/d2
         mexit
         endc
 
-        ifc     '\2','loop'
-        ifeq    directx
+        ifc     '\2','SND_LOOP'
+        ifeq    SND_DIRECTX
         mexit
         endc
         endc
 
-        move.b  #\1, d7  
+        movem.l d1-d2, -(a7)
+        move.b  #\1, d1
         ifnc    '\2',''
-        move.l  #\2, d6
+        move.l  #\2, d2
         endc 
 
         ifc     '\2',''
-        moveq   #0, d6
+        moveq.l #0, d2
         endc
 
-        jsr     sndplayer
+        move.b  #SND_PLAYERTSK, d0
+        trap    #15
+        movem.l (a7)+, d1-d2
         endm
