@@ -43,3 +43,31 @@ KBD_ENTER_POS: equ 7
 
 ; --- mouse --------------------------------------------------------------------
 MOUSE_TRAP: equ 2
+
+; --- sound --------------------------------------------------------------------
+SND_MUSIC1: equ 0
+SND_MUSIC2: equ 1
+SND_MUSIC3: equ 2
+SND_BTYPESUC: equ 3
+SND_ENDMUSIC: equ 4
+SND_HIGHSCORE: equ 5
+SND_MUSIC1FST: equ 6
+SND_MUSIC2FST: equ 7
+SND_MUSIC3FST: equ 8
+SND_MENUSLCT: equ 9
+SND_MENUSLCTD: equ 10
+SND_SHFTPIECE: equ 11
+SND_ROTPIECE: equ 12
+SND_LEVELUP: equ 13
+SND_PIECELOCK: equ 14
+SND_TETRISACH: equ 15
+SND_LINECOMPL: equ 16
+SND_DEATH: equ  17
+SND_ENDRCKT: equ 18
+
+SND_DIRECTX equ 1                               ; use of directx player [0 (std. player) / 1 (directx)]
+SND_LOADERTSK equ 3*SND_DIRECTX+71              ; holds task number of the selected play method
+SND_PLAYERTSK equ 76+SND_DIRECTX                ; holds task number of the selected player
+
+SND_LOOP equ    1                               ; used as loop mode in soundplay macro
+SND_STOP equ    2                               ; used as stop sound action in soundplay macro

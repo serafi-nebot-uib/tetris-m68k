@@ -7,6 +7,7 @@ sysinit:
         jsr     scrinit
         jsr     kbdinit
         jsr     mouseinit
+        jsr     sndinit
         jsr     sncinit
 
         ; do not enter user because of Eeasy68k auto interrupt bug;
@@ -214,3 +215,90 @@ mouseupd:
 .noclick:
         movem.l (a7)+, d0-d3
         rts
+
+; sound system init
+;
+; input    : none
+; output   : none
+; modifies : none
+sndinit:
+        movem.l d0-d1/a0-a1, -(a7)
+        clr.b   d1
+        lea     .list, a0
+.loop:  move.l  (a0)+, d0
+        beq     .done
+        move.l  d0, a1
+        move.b  #SND_LOADERTSK, d0
+        trap    #15
+        addq.b  #1, d1
+        bra     .loop
+.done:  movem.l (a7)+, d0-d1/a0-a1
+        rts
+
+.music1: dc.b   'snd/1-MUSIC1.wav',0            ; MUSIC 1
+.music2: dc.b   'snd/2-MUSIC2.wav',0            ; MUSIC 2 
+.music3: dc.b   'snd/3-MUSIC3.wav',0            ; MUSIC 3
+.btypsuc: dc.b  'snd/4-BTYPESUCCESS.wav',0      ; B-TYPE GOAL ACHIEVED (LINES COMPLETED)                      
+.endmusic: dc.b 'snd/5-ENDING.wav',0            ; A-TYPE & B-TYPE ENDING MUSIC
+.highscore: dc.b 'snd/6-HIGHSCORE.wav',0        ; HIGH SCORE SCREEN MUSIC
+.music1fst: dc.b 'snd/8-TRACK8.wav',0           ; MUSIC 1 ALLEGRO
+.music2fst: dc.b 'snd/9-TRACK9.wav',0           ; MUSIC 2 ALLEGRO
+.music3fst: dc.b 'snd/10-TRACK10.wav',0         ; MUSIC 3 ALLEGRO
+.menuslct: dc.b 'snd/SFX2.wav',0                ; LVL SELECTION & USERNAME KEY SOUND EFFECT
+.menuslctd: dc.b 'snd/SFX3.wav',0               ; LVL SELECTED SOUND EFFECT
+.shftpiece: dc.b 'snd/SFX4.wav',0               ; SHIFTING PIECE SIDEWAYS SOUND EFFECT
+.rotpiece: dc.b 'snd/SFX6.wav',0                ; ROTATING PIECE SOUND EFFECT
+.levelup: dc.b  'snd/SFX7.wav',0                ; LEVEL UP SOUND EFFECT
+.piecelock: dc.b 'snd/SFX8.wav',0               ; LOCK PIECE (FINAL POSITION) SOUND EFFECT
+.tetrisach: dc.b 'snd/SFX10.wav',0              ; TETRIS ACHIEVED (4-LINES CLEAR) SOUND EFFECT
+.linecompl: dc.b 'snd/SFX11.wav',0              ; LINE COMPLETED SOUND EFFECT
+.death: dc.b    'snd/SFX14.wav',0               ; DEATH SOUND SOUND EFFECT
+.endrckt: dc.b  'snd/SFX15.wav',0               ; ENDING ROCKET SOUND EFFECT
+        ds.w    0
+.list:  dc.l    .music1,.music2,.music3
+        dc.l    .btypsuc,.endmusic,.highscore
+        dc.l    .music1fst,.music2fst,.music3fst
+        dc.l    .menuslct,.menuslctd,.shftpiece
+        dc.l    .rotpiece,.levelup,.piecelock
+        dc.l    .tetrisach,.linecompl,.death,.endrckt,0
+ 
+; sound player
+;
+; input    : d7 - sound id
+;            d6 - player mode
+; output   : none
+; modifies : none
+sndplayer:
+        movem.w d0-d2, -(a7)
+        move.b  #SND_PLAYERTSK, d0
+        move.b  d7, d1                          ; PLACES SOUND ID ON D1
+        move.l  d6, d2                          ; PLACES SOUND PLAYER MODE ON D2
+        trap    #15
+        movem.w (a7)+, d0-d2
+        rte
+
+playsound: macro
+        ; plays a sound using sound id and snd trapnumber         
+        ifc     '\1','stop_all'
+        move.l  #3, d6
+        trap    #sndpltn
+        mexit
+        endc
+
+        ifc     '\2','loop'
+        ifeq    directx
+        mexit
+        endc
+        endc
+
+        move.b  #\1, d7  
+        ifnc    '\2',''
+        move.l  #\2, d6
+        endc 
+
+        ifc     '\2',''
+        moveq   #0, d6
+        endc
+
+        jsr     sndplayer
+        endm
