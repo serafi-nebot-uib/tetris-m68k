@@ -261,26 +261,18 @@ sndinit:
         dc.l    .menuslct,.menuslctd,.shftpiece
         dc.l    .rotpiece,.levelup,.piecelock
         dc.l    .tetrisach,.linecompl,.death,.endrckt,0
- 
-; sound player
-;
-; input    : d1.b - sound id
-;            d2.l - player mode
-; output   : none
-; modifies : none
-; sndplayer:
-;         move.w  d0, -(a7)
-;         move.b  #SND_PLAYERTSK, d0
-;         trap    #15
-;         move.w  (a7)+, d0
-;         rts
 
 ; play sound
 ;
 ; input : \1 - sound id to play
 ;         \2 - action (SND_LOOP, SND_STOP)
 sndplay: macro
-        ; plays a sound using sound id
+        ifc     '\2','SND_LOOP'
+        ifeq    SND_DIRECTX
+        mexit
+        endc
+        endc
+
         ifc     '\1','SND_STOP_ALL'
         movem.l d0/d2, -(a7)
         move.l  #3, d2
@@ -290,13 +282,7 @@ sndplay: macro
         mexit
         endc
 
-        ifc     '\2','SND_LOOP'
-        ifeq    SND_DIRECTX
-        mexit
-        endc
-        endc
-
-        movem.l d1-d2, -(a7)
+        movem.l d0-d2, -(a7)
         move.b  #\1, d1
         ifnc    '\2',''
         move.l  #\2, d2
@@ -308,5 +294,5 @@ sndplay: macro
 
         move.b  #SND_PLAYERTSK, d0
         trap    #15
-        movem.l (a7)+, d1-d2
+        movem.l (a7)+, d0-d2
         endm
