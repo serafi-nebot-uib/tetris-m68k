@@ -5,7 +5,6 @@ SCR_NUM: ds.b   1                               ; decimal number to select the s
 ; --- mouse --------------------------------------------------------------------
 BUTT_PRESS: ds.w 1                              ; 1 if screen button has been pressed
 
-
 ; --- keyboard -----------------------------------------------------------------
 KBD_ENTER_PRESS: ds.w 1                         ; holds 1 if enter has been pressed
 

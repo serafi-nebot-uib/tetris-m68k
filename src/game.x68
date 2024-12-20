@@ -1,7 +1,15 @@
 GAME_STATE: ds.l 1
 
 screen_game:
+        movem.l d0/a0-a1, -(a7)
 ; --- init ---------------------------------------------------------------------
+        ; TODO: change song to selected in previous screen
+        sndplay SND_STOP_ALL
+        move.b  (GAME_MUSIC), d0
+        cmp.b   #3, d0
+        beq     .init
+        sndplay d0, #SND_LOOP
+.init:
         move.w  #0, (levelcnt)
         move.b  #0, (levelnum)
         move.w  #0, (linecount)
@@ -36,11 +44,10 @@ screen_game:
         move.b  (SNC_PLOT), d0
         beq     .sync
         move.b  #0, (SNC_PLOT)
-
 ; --- plot ---------------------------------------------------------------------
         jsr     scrplot
         bra     .loop
-
+        movem.l (a7)+, d0/a0-a1
         rts
 
 game_plot:
@@ -108,7 +115,8 @@ game_spawn:
         rts
 
 game_player:
-        movem.l d0-d1, -(a7)
+        movem.l d0-d2, -(a7)
+        move.b  #$ff, d2                        ; sound ignore
         ; check if piece should be moved down
         move.l  (SNC_CNT_DOWN), d0
         bgt     .upd
@@ -148,6 +156,7 @@ game_player:
         btst    #KBD_UP_POS, d0
         beq     .chkspbar
         jsr     piecerotr
+        move.b  #SND_ROTPIECE, d2
         bra     .chkcol
 .chkspbar:
         btst    #KBD_SPBAR_POS, d0
@@ -184,8 +193,13 @@ game_player:
         bra     .done
 .rollback:
         piecerollback
+        move.b  #$ff, d2
 .done:
-        movem.l (a7)+, d0-d1
+        cmp.b   #$ff, d2
+        beq     .exit
+        sndplay d2
+.exit:
+        movem.l (a7)+, d0-d2
         rts
 
 game_drop:
@@ -211,12 +225,16 @@ game_drop:
         jsr     boardstatupd
 
         jsr     boardplot
+        jsr     scrplot
+        sndplay #SND_PIECELOCK
         move.l  #game_clr_rows, (GAME_STATE)
         movem.l (a7)+, d0-d2/a0
         rts
 
 game_inc_level:
         move.l  d0, -(a7)
+        ; play level up sound
+        sndplay #SND_LEVELUP
         ; increase current level
         moveq.l #0, d0
         move.b  (levelnum), d0
@@ -225,7 +243,6 @@ game_inc_level:
         swap    d0
         move.b  d0, (levelnum)
         add.w   #1, (levelcnt)
-
         ; update level box pieces
         jsr     boardlvlupd
         ; update drop rate
@@ -272,6 +289,29 @@ game_clr_rows:
         move.w  d0, -(a7)
         move.w  #1, -(a7)
 
+        ; get number of cleared lines
+        moveq.l #0, d0
+        move.l  #4, d1                          ; will never be > max(PIECE_HEIGHT, PIECE_WIDTH)
+.cntloop:
+        lsr.l   #1, d4
+        bcc     .skip
+        addq.l  #1, d0
+.skip:
+        dbra    d1, .cntloop
+
+        ; update line & core stats
+        jsr     boardlineinc
+        jsr     boardscoreupd
+
+        cmp.b   #4, d0
+        bhs     .tetris
+        sndplay #SND_LINECOMPL
+        bra     .animation
+.tetris:
+        sndplay #SND_TETRISACH
+
+        ; line clear animation
+.animation:
         move.w  #BRD_WIDTH/2-1, d0
         move.b  #0, (SNC_PLOT)
 
@@ -286,17 +326,6 @@ game_clr_rows:
 
         dbra.w  d0, .clr
         addq.l  #8, a7
-
-        moveq.l #0, d0
-        move.l  #4, d1                          ; will never be > max(PIECE_HEIGHT, PIECE_WIDTH)
-.cntloop:
-        lsr.l   #1, d4
-        bcc     .skip
-        addq.l  #1, d0
-.skip:
-        dbra    d1, .cntloop
-        jsr     boardlineinc
-        jsr     boardscoreupd
 
 .done:
         move.l  #game_spawn, (GAME_STATE)
@@ -335,6 +364,9 @@ game_stats:
 
 game_over:
         movem.l d0-d6/a0, -(a7)
+
+        sndplay SND_STOP_ALL
+        sndplay #SND_DEATH
 
         ; get color scheme based on current level and push them to the stack
         lea.l   piece_colmap, a0

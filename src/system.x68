@@ -283,10 +283,10 @@ sndplay: macro
         endc
 
         movem.l d0-d2, -(a7)
-        move.b  #\1, d1
+        move.b  \1, d1
         ifnc    '\2',''
-        move.l  #\2, d2
-        endc 
+        move.l  \2, d2
+        endc
 
         ifc     '\2',''
         moveq.l #0, d2

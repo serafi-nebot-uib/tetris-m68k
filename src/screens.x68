@@ -382,9 +382,8 @@ screen_type:
         move.b  #87, d0
         trap    #15
 
+        jsr     scrplot
 
-        jsr     SCRPLOT
-            
         ; --- PAINTING ARROWS FOR LEVEL TYPE AND MUSIC SELECTION ---------
             
         ; --- TYPE LEFT ARROW
@@ -470,8 +469,7 @@ screen_type:
 .DONER:
         jsr     drawtile
 
-            
-        jsr     SCRPLOT
+        jsr     scrplot
 
         ; --- CHECKING IF ENTER BUTTON IS PRESSED ------------------------
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)
