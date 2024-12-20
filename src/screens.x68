@@ -12,9 +12,10 @@ screen_legal:
         move.w  #.basey, d6
         jsr     drawstr
 
-        lea.l   .txt2, a2
+        lea.l   .txt2, a1
         move.w  #.basex+9, d5
-        jsr     drawstr
+        move.l  #.colblue, d1
+        jsr     drawstrcol
 
         lea.l   .txt3, a1
         move.w  #.basex-4, d5
@@ -89,7 +90,7 @@ screen_legal:
 
         jsr     scrplot
 
-        move.l  #SNC_TIME_S*5, (SNC_CNT_DOWN) ; 5 second timer
+        move.l  #SNC_TIME_S*5, (SNC_CNT_DOWN)   ; 5 second timer
 .loop:
         jsr     kbdupd
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)
@@ -120,7 +121,7 @@ screen_legal:
 .txt12: dc.b    'BY',0
 .txt13: dc.b    'ALEXEY PAZHITNOV',0
 
-; --- screen 2: pantalla start -----------------------------------------------
+; --- screen start: pantalla start -------------------------------------------
 screen_start:
         clr.w   (BUTT_PRESS)
         clr.w   (MOUSE_POS_X)
@@ -134,19 +135,357 @@ screen_start:
         jsr     drawmap
         jsr     scrplot
 .loop:
-        jsr     kbdupd
-        btst.b  #KBD_ENTER_POS, (KBD_EDGE)
+        jsr     mouseupd
+        btst.b  #0, (MOUSE_VAL)
         beq     .loop
 .done:
-        ; TODO: change to #2 when screen_2 is done
-        move.b  #3, (SCR_NUM)
+        move.b  #2, (SCR_NUM)
         rts
 
-; --- screen 2: ??????????????????????????????? ------------------------------
-screen_2:
-        jsr     scrclr
+; --- screen_type: pantalla de seleccio de type i music ----------------------
+screen_type:
+; ----------------------------------------------------------------------------
+; INITIALIZE TYPE AND MUSIC SELECTION SCREEN.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+        move.b  #0, (GAME_TYPE)
+        move.b  #0, (GAME_MUSIC)
+        move.w  #0, (KBD_ENTER_PRESS)
+        move.b  #0, (KBD_EDGE)
+            
+        ; --- PAINT BLACK SCREEN ---
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+
+        ; --- PAINTING BITMAP ---
+        lea.l   bgmode, a1
+        moveq.l #0, d5
+        moveq.l #0, d6
+        jsr     drawmap
         jsr     scrplot
+
+.LOOP2:
+; --- UPDATE -----------------------------------------------------------------
+
+; READ INPPUT DEVICES
+
+        jsr     kbdupd
+            
+; ----------------------------------------------------------------------------
+; UPDATE TYPE AND MUSIC SELECTION POSITION.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+
+        movem.l d0-d1, -(a7)
+            
+        ;; UPDATE COORDINATE X
+        move.b  (GAME_TYPE), d0
+        btst.b  #KBD_LEFT_POS, (KBD_EDGE)
+        beq     .CHKLFT
+        sub.b   #1, d0
+        sub.b   #1, (GAME_TYPE)
+.CHKLFT:
+        btst.b  #KBD_RIGHT_POS, (KBD_EDGE)
+        beq     .CONT
+        add.b   #1, d0
+        add.b   #1, (GAME_TYPE)
+            
+        ; CHECK COLLISIONS
+.CONT:  cmp.b   #0, d0
+        bge     .CONT2
+        move.b  #0, d0
+        move.b  #0, (GAME_TYPE)
+        bra     .DONE1
+.CONT2: cmp.b   #1, d0
+        ble     .DONE1
+        move.b  #1, d0
+        move.b  #1, (GAME_TYPE)
+
+        ; UPDATE VARIABLE
+.DONE1: move.b  d0, (GAME_TYPE)
+
+        ; UPDATE COORDINATE Y
+        move.b  (GAME_MUSIC), d1
+        btst.b  #KBD_UP_POS, (KBD_EDGE)
+        beq     .CHKUP
+        sub.b   #1, d1
+        sub.b   #1, (GAME_MUSIC)
+.CHKUP: btst.b  #KBD_DOWN_POS, (KBD_EDGE)
+        beq     .CONT3
+        add.b   #1, d1
+        add.b   #1, (GAME_MUSIC)
+            
+        ; CHECK COLLISIONS
+.CONT3: cmp.b   #0, d1
+        bge     .CONT4
+        move.b  #0, d1
+        add.b   #1, (GAME_MUSIC)
+        bra     .DONE2
+.CONT4: cmp.b   #3, d1
+        ble     .DONE2
+        move.b  #3, d1
+        sub.b   #1, (GAME_MUSIC)
+
+        ; UPDATE VARIABLE
+.DONE2: move.b  d1, (GAME_MUSIC)
+
+        ; CHECK FOR ENTER
+        btst.b  #KBD_ENTER_POS, (KBD_EDGE)
+        beq     .END
+        move.b  #1, (KBD_ENTER_PRESS)
+.END:
+        movem.l (a7)+, d0-d1
+
+
+
+
+
+
+; ----------------------------------------------------------------------------
+; PLOT TYPE AND MUSIC SELECTION WINDOW.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+
+        ; --- CLEAR ALL ARROWS TILES -------------------------------------
+            
+        ; --- LEFT ARROW TYPE ---
+            
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  #TAM_TYPE_POS_X<<TILE_SHIFT, d1
+        move.w  #TAM_TYPE_POS_Y<<TILE_SHIFT, d2
+        move.w  #(TAM_TYPE_POS_X+1)<<TILE_SHIFT, d3
+        move.w  #(TAM_TYPE_POS_Y+1)<<TILE_SHIFT, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+            
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  #(TAM_TYPE_POS_X+12)<<TILE_SHIFT, d1
+        move.w  #TAM_TYPE_POS_Y<<TILE_SHIFT, d2
+        move.w  #((TAM_TYPE_POS_X+12)+1)<<TILE_SHIFT, d3
+        move.w  #(TAM_TYPE_POS_Y+1)<<TILE_SHIFT, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+
+            
+        ; --- RIGHT ARROW TYPE ---
+            
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  #(TAM_TYPE_POS_X+7)<<TILE_SHIFT, d1
+        move.w  #TAM_TYPE_POS_Y<<TILE_SHIFT, d2
+        move.w  #((TAM_TYPE_POS_X+7)+1)<<TILE_SHIFT, d3
+        move.w  #(TAM_TYPE_POS_Y+1)<<TILE_SHIFT, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  #(TAM_TYPE_POS_X+19)<<TILE_SHIFT, d1
+        move.w  #TAM_TYPE_POS_Y<<TILE_SHIFT, d2
+        move.w  #((TAM_TYPE_POS_X+19)+1)<<TILE_SHIFT, d3
+        move.w  #(TAM_TYPE_POS_Y+1)<<TILE_SHIFT, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+            
+        ; --- LEFT ARROW MUSIC ---
+            
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  #TAM_MUSIC_POS_X<<TILE_SHIFT, d1
+        move.w  #TAM_MUSIC_POS_Y<<TILE_SHIFT, d2
+        move.w  #(TAM_MUSIC_POS_X+1)<<TILE_SHIFT, d3
+        move.w  #(TAM_MUSIC_POS_Y+7)<<TILE_SHIFT, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+            
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  #(TAM_MUSIC_POS_X+9)<<TILE_SHIFT, d1
+        move.w  #TAM_MUSIC_POS_Y<<TILE_SHIFT, d2
+        move.w  #((TAM_MUSIC_POS_X+9)+1)<<TILE_SHIFT, d3
+        move.w  #(TAM_MUSIC_POS_Y+7)<<TILE_SHIFT, d4
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+
+
+        jsr     SCRPLOT
+            
+        ; --- PAINTING ARROWS FOR LEVEL TYPE AND MUSIC SELECTION ---------
+            
+        ; --- TYPE LEFT ARROW
+        lea.l   tiletable, a0
+        move.w  #TAM_LEFT_ARROW, d0             ; tile index
+        lsl.l   #2, d0
+        move.l  (a0,d0), a0
+        add.l   #TILES, a0
+            
+        move.w  #TAM_TYPE_POS_Y, d6             ; y pos
+        move.w  #TAM_TYPE_POS_X, d5             ; x pos
+        cmp.b   #0, (GAME_TYPE)
+        beq     .typea
+        addi.b  #12, d5
+.typea:
+        jsr     drawtile
+            
+            
+        ; --- TYPE RIGHT ARROW
+        lea.l   tiletable, a0
+        move.w  #TAM_RIGHT_ARROW, d0            ; tile index
+        lsl.l   #2, d0
+        move.l  (a0,d0), a0
+        add.l   #TILES, a0
+            
+        move.w  #TAM_TYPE_POS_Y, d6             ; y pos
+        move.w  #TAM_TYPE_POS_X+7, d5           ; x pos
+        cmp.b   #0, (GAME_TYPE)
+        beq     .typea1
+        addi.b  #12, d5
+.typea1:
+        jsr     drawtile
+            
+            
+        ; --- MUSIC LEFT ARROW
+        lea.l   tiletable, a0
+        move.w  #TAM_LEFT_ARROW, d0             ; tile index
+        lsl.l   #2, d0
+        move.l  (a0,d0), a0
+        add.l   #TILES, a0
+            
+        move.w  #TAM_MUSIC_POS_Y, d6            ; y pos
+        move.w  #TAM_MUSIC_POS_X, d5            ; x pos
+        cmp.b   #0, (GAME_MUSIC)
+        beq     .DONE
+        cmp.b   #1, (GAME_MUSIC)
+        beq     .MUSIC2
+        cmp.b   #2, (GAME_MUSIC)
+        beq     .MUSIC3
+        cmp.b   #3, (GAME_MUSIC)
+        beq     .OFF
+.MUSIC2: add.b  #2, d6
+        bra     .DONE
+.MUSIC3: add.b  #4, d6
+        bra     .DONE
+.OFF:   add.b   #6, d6
+.DONE:
+        jsr     drawtile
+            
+            
+        ; --- MUSIC RIGHT ARROW
+        lea.l   tiletable, a0
+        move.w  #TAM_RIGHT_ARROW, d0            ; tile index
+        lsl.l   #2, d0
+        move.l  (a0,d0), a0
+        add.l   #TILES, a0
+            
+        move.w  #TAM_MUSIC_POS_Y, d6            ; y pos
+        move.w  #TAM_MUSIC_POS_X+9, d5          ; x pos
+        cmp.b   #0, (GAME_MUSIC)
+        beq     .DONER
+        cmp.b   #1, (GAME_MUSIC)
+        beq     .MUSIC2R
+        cmp.b   #2, (GAME_MUSIC)
+        beq     .MUSIC3R
+        cmp.b   #3, (GAME_MUSIC)
+        beq     .OFFR
+.MUSIC2R: add.b #2, d6
+        bra     .DONER
+.MUSIC3R: add.b #4, d6
+        bra     .DONER
+.OFFR:  add.b   #6, d6
+.DONER:
+        jsr     drawtile
+
+            
+        jsr     SCRPLOT
+
+        ; --- CHECKING IF ENTER BUTTON IS PRESSED ------------------------
+        btst.b  #KBD_ENTER_POS, (KBD_EDGE)
+        bne     .FIN2
+        bra     .LOOP2
+
+.FIN2:  move.b  #3, (SCR_NUM)
         rts
+
+
+
+
+
 
 ; --- screen 3: pantalla selecció nivell a-type ------------------------------
 screen_level:
@@ -169,7 +508,7 @@ screen_level:
         trap    #15
 
         ; --- PAINTING BITMAP ---
-        lea.l   bgscore, a1
+        lea.l   bgtypea, a1
         moveq.l #0, d5
         moveq.l #0, d6
         jsr     drawmap
@@ -181,7 +520,7 @@ screen_level:
 ; READ INPPUT DEVICES
 
         jsr     kbdupd
-            
+
 ; ----------------------------------------------------------------------------
 ; UPDATE LEVEL SELECTION SQUARE POSITION.
 ; INPUT    : NONE 
@@ -661,4 +1000,4 @@ screen_level:
 ; ;             
 ; ; .FIN51: move.b  #1, (SCR_NUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
 ; ;
-; ;         rts
+

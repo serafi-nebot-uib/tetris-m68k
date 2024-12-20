@@ -18,7 +18,8 @@
         include 'bg/home.x68'
         include 'bg/mode.x68'
         include 'bg/game.x68'
-        include 'bg/score.x68'
+        include 'bg/type-a.x68'
+        include 'bg/type-b.x68'
 
         include 'tile.x68'
         include 'piece.x68'
@@ -27,11 +28,11 @@
         include 'game.x68'
 
 screens:
-        dc.l    screen_game
+        ; dc.l    screen_game
 
         dc.l    screen_legal
         dc.l    screen_start
-        dc.l    screen_2
+        dc.l    screen_type
         dc.l    screen_level
         dc.l    screen_game
 ;         dc.l    screen4

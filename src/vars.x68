@@ -7,7 +7,12 @@ BUTT_PRESS: ds.w 1                              ; 1 if screen button has been pr
 
 
 ; --- keyboard -----------------------------------------------------------------
-KBD_ENTER_PRESS: ds.w 1                          ; holds 1 if enter has been pressed
+KBD_ENTER_PRESS: ds.w 1                         ; holds 1 if enter has been pressed
+
+; --- type and music selection -------------------------------------------------
+GAME_TYPE: ds.b 1
+GAME_MUSIC: ds.b 1
+        ds.w    0
 
 ; --- level selection ----------------------------------------------------------
 LVL_SEL_POS_X: ds.w 1                           ; x pos of the selected level square
