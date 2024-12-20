@@ -45,6 +45,14 @@ MSG_LINE2: equ  $0102                           ; second line coordinates
 MSG_LINE3: equ  $1702                           ; third line coordinates
 MSG_FONT: equ   $00000000                       ; default font
 
+; --- type and music selection -------------------------------------------------
+TAM_LEFT_ARROW: equ 45
+TAM_RIGHT_ARROW: equ 46
+TAM_TYPE_POS_X equ 10
+TAM_TYPE_POS_Y equ 8
+TAM_MUSIC_POS_X equ 15
+TAM_MUSIC_POS_Y equ 18
+
 ; --- level selection ----------------------------------------------------------
 LVL_SEL_BASE_X: equ 183
 LVL_SEL_BASE_Y: equ 183

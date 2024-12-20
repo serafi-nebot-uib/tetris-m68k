@@ -15,4 +15,5 @@ tilemap:
 	./tool/tilemap.py map/bg-game.csv src/bg/game.x68 bggame
 	./tool/tilemap.py map/bg-home.csv src/bg/home.x68 bghome
 	./tool/tilemap.py map/bg-mode.csv src/bg/mode.x68 bgmode
-	./tool/tilemap.py map/bg-score.csv src/bg/score.x68 bgscore
+	./tool/tilemap.py map/bg-type-a.csv src/bg/type-a.x68 bgtypea
+	./tool/tilemap.py map/bg-type-b.csv src/bg/type-b.x68 bgtypeb
