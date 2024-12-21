@@ -1,11 +1,9 @@
-GAME_STATE: ds.l 1
-
 screen_game:
         movem.l d0/a0-a1, -(a7)
 ; --- init ---------------------------------------------------------------------
         ; TODO: change song to selected in previous screen
         sndplay SND_STOP_ALL
-        move.b  (GAME_MUSIC), d0
+        move.b  (GME_MUSIC), d0
         cmp.b   #3, d0
         beq     .init
         sndplay d0, #SND_LOOP
@@ -32,12 +30,15 @@ screen_game:
         move.b  #1, (piecenumn)
         ; -------------------------
         jsr     boarddropupd
+        ; TODO: check if current game is B type
+        jsr     game_type_b_init
+.game_plot:
         jsr     game_plot
-        move.l  #game_spawn, (GAME_STATE)
+        move.l  #game_spawn, (GME_STATE)
 .loop:
 ; --- update -------------------------------------------------------------------
         jsr     kbdupd
-        move.l  (GAME_STATE), a0
+        move.l  (GME_STATE), a0
         jsr     (a0)
 ; --- sync ---------------------------------------------------------------------
 .sync:
@@ -48,6 +49,67 @@ screen_game:
         jsr     scrplot
         bra     .loop
         movem.l (a7)+, d0/a0-a1
+        rts
+
+game_type_b_init:
+        movem.l d0-d2/d6-d7/a0-a2, -(a7)
+        ; calculate a board address for tiles to spawn starting from a given height
+        lea.l   GME_B_HEIGHT_TABLE, a0
+        lea.l   board, a2
+
+        moveq.l #BRD_ROWS, d0
+        moveq.l #0, d1
+        movea.l a2, a1
+        add.l   #BRD_SIZE, a1
+
+        move.b  (GME_B_HEIGHT), d1
+        sub.b   (a0,d1.w), d0                   ; N = BRD_ROWS-GME_B_HEIGHT
+        mulu    #BRD_COLS, d0                   ; N * BRD_COLS
+        adda.l  d0, a2                          ; address on the board, initial tile spawning point
+        ; skip PRN generation if total number of rows is 0
+        cmp.l   a1, a2
+        beq     .done
+
+        ; generate multiple pseudo random numbers
+        moveq.l #8, d0
+        trap    #15
+        move.l  d1, (PRNG32)                    ; set current time as seed
+        move.l  #$af-$100, d1                   ; initial mask for PRNG, #$fffffea7, #$b4bcd35c
+
+        lea.l   PRNBUFFER, a0
+        moveq.l #5, d7                          ; number of long words to generate
+.randlp:
+        move.l  (PRNG32), d0
+        jsr     randgen
+        move.l  (PRNG32), (a0)+
+        dbra    d7, .randlp
+
+        ; fill board according to the binary value of the generated PRNs
+        lea.l   PRNBUFFER, a3
+        movea.l #PRNBUFFER+8, a0
+        move.w  #3, d5                          ; 4 PRN; first two are ignored
+.loopa:
+        move.l  (a0)+, d0
+        moveq.l #31, d7
+        moveq.l #32, d6
+.loopb:
+        subq.l  #1, d6
+        btst.l  d6, d0
+        beq     .bits0                          ; jump if bit is 0
+        ; random tile color & pattern
+        move.w  d6, d1
+        andi.w  #%11, d1
+        move.b  (a3,d1.w), d2
+        andi.b  #$11, d2
+        move.b  d2, (a2)
+.bits0:
+        addq.l  #1, a2
+        cmp.l   a1, a2                          ; a2 - a1
+        bge     .done                           ; if (a2 >= a1) -> jump out of loop
+        dbra    d7, .loopb
+        dbra    d5, .loopa
+.done:
+        movem.l (a7)+, d0-d2/d6-d7/a0-a2
         rts
 
 game_plot:
@@ -105,11 +167,11 @@ game_spawn:
         jsr     piececoll
         tst.b   d0
         bne     .collision
-        move.l  #game_player, (GAME_STATE)
+        move.l  #game_player, (GME_STATE)
         move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN) ; reset piece sync counter
         bra     .done
 .collision:
-        move.l  #game_over, (GAME_STATE)
+        move.l  #game_over, (GME_STATE)
 .done:
         movem.l (a7)+, d0/d2
         rts
@@ -131,7 +193,7 @@ game_player:
         bra     .done
 .release:
         piecerollback
-        move.l  #game_drop, (GAME_STATE)
+        move.l  #game_drop, (GME_STATE)
         bra     .done
 .upd:
         move.b  (KBD_EDGE), d0
@@ -161,12 +223,12 @@ game_player:
 .chkspbar:
         btst    #KBD_SPBAR_POS, d0
         beq     .chkesc
-        move.l  #game_drop, (GAME_STATE)
+        move.l  #game_drop, (GME_STATE)
         bra     .done
 .chkesc:
         btst    #KBD_ESC_POS, d0
         beq     .chkenter
-        move.l  #game_pause, (GAME_STATE)
+        move.l  #game_pause, (GME_STATE)
         bra     .done
 
 ; -----------------------------
@@ -174,12 +236,12 @@ game_player:
 .chkenter:
         btst    #KBD_ENTER_POS, d0
         beq     .chkctrl
-        move.l  #game_inc_level, (GAME_STATE)
+        move.l  #game_inc_level, (GME_STATE)
         bra     .done
 .chkctrl:
         btst    #KBD_CTRL_POS, d0
         beq     .done
-        move.l  #game_spawn, (GAME_STATE)
+        move.l  #game_spawn, (GME_STATE)
         bra     .done
 ; -----------------------------
 
@@ -227,7 +289,7 @@ game_drop:
         jsr     boardplot
         jsr     scrplot
         sndplay #SND_PIECELOCK
-        move.l  #game_clr_rows, (GAME_STATE)
+        move.l  #game_clr_rows, (GME_STATE)
         movem.l (a7)+, d0-d2/a0
         rts
 
@@ -256,7 +318,7 @@ game_inc_level:
         ; update board pieces
         jsr     boardplot
         jsr     pieceplot
-        move.l  #game_player, (GAME_STATE)
+        move.l  #game_player, (GME_STATE)
         move.l  (a7)+, d0
         rts
 
@@ -328,7 +390,7 @@ game_clr_rows:
         addq.l  #8, a7
 
 .done:
-        move.l  #game_spawn, (GAME_STATE)
+        move.l  #game_spawn, (GME_STATE)
         movem.l (a7)+, d0-d2/d4
         rts
 
@@ -350,7 +412,7 @@ game_pause:
 .done:
         jsr     game_plot
         jsr     pieceplot
-        move.l  #game_player, (GAME_STATE)
+        move.l  #game_player, (GME_STATE)
         sncenable
 
         movem.l (a7)+, d1-d2/d5-d6
@@ -439,7 +501,7 @@ game_over:
         dbra    d6, .loop
 
         add.l   #3*4, a7                        ; pop color scheme from stack
-        move.l  #game_halt, (GAME_STATE)
+        move.l  #game_halt, (GME_STATE)
 
         movem.l (a7)+, d0-d6/a0
         rts

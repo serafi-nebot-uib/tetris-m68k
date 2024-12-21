@@ -123,7 +123,7 @@ screen_legal:
 
 ; --- screen start: pantalla start -------------------------------------------
 screen_start:
-        clr.w   (BUTT_PRESS)
+        clr.w   (BUT_PRESS)
         clr.w   (MOUSE_POS_X)
         clr.w   (MOUSE_POS_Y)
         clr.b   (MOUSE_VAL)
@@ -150,8 +150,8 @@ screen_type:
 ; OUTPUT   : NONE
 ; MODIFIES : NONE
 ; ----------------------------------------------------------------------------
-        move.b  #0, (GAME_TYPE)
-        move.b  #0, (GAME_MUSIC)
+        move.b  #0, (GME_TYPE)
+        move.b  #0, (GME_MUSIC)
         move.w  #0, (KBD_ENTER_PRESS)
         move.b  #0, (KBD_EDGE)
 
@@ -184,55 +184,55 @@ screen_type:
         movem.l d0-d1, -(a7)
 
         ;; UPDATE COORDINATE X
-        move.b  (GAME_TYPE), d0
+        move.b  (GME_TYPE), d0
         btst.b  #KBD_LEFT_POS, (KBD_EDGE)
         beq     .CHKLFT
         sub.b   #1, d0
-        sub.b   #1, (GAME_TYPE)
+        sub.b   #1, (GME_TYPE)
 .CHKLFT:
         btst.b  #KBD_RIGHT_POS, (KBD_EDGE)
         beq     .CONT
         add.b   #1, d0
-        add.b   #1, (GAME_TYPE)
+        add.b   #1, (GME_TYPE)
             
         ; CHECK COLLISIONS
 .CONT:  cmp.b   #0, d0
         bge     .CONT2
         move.b  #0, d0
-        move.b  #0, (GAME_TYPE)
+        move.b  #0, (GME_TYPE)
         bra     .DONE1
 .CONT2: cmp.b   #1, d0
         ble     .DONE1
         move.b  #1, d0
-        move.b  #1, (GAME_TYPE)
+        move.b  #1, (GME_TYPE)
 
         ; UPDATE VARIABLE
-.DONE1: move.b  d0, (GAME_TYPE)
+.DONE1: move.b  d0, (GME_TYPE)
 
         ; UPDATE COORDINATE Y
-        move.b  (GAME_MUSIC), d1
+        move.b  (GME_MUSIC), d1
         btst.b  #KBD_UP_POS, (KBD_EDGE)
         beq     .CHKUP
         sub.b   #1, d1
-        sub.b   #1, (GAME_MUSIC)
+        sub.b   #1, (GME_MUSIC)
 .CHKUP: btst.b  #KBD_DOWN_POS, (KBD_EDGE)
         beq     .CONT3
         add.b   #1, d1
-        add.b   #1, (GAME_MUSIC)
+        add.b   #1, (GME_MUSIC)
             
         ; CHECK COLLISIONS
 .CONT3: cmp.b   #0, d1
         bge     .CONT4
         move.b  #0, d1
-        add.b   #1, (GAME_MUSIC)
+        add.b   #1, (GME_MUSIC)
         bra     .DONE2
 .CONT4: cmp.b   #3, d1
         ble     .DONE2
         move.b  #3, d1
-        sub.b   #1, (GAME_MUSIC)
+        sub.b   #1, (GME_MUSIC)
 
         ; UPDATE VARIABLE
-.DONE2: move.b  d1, (GAME_MUSIC)
+.DONE2: move.b  d1, (GME_MUSIC)
 
         ; CHECK FOR ENTER
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)
@@ -395,7 +395,7 @@ screen_type:
             
         move.w  #TAM_TYPE_POS_Y, d6             ; y pos
         move.w  #TAM_TYPE_POS_X, d5             ; x pos
-        cmp.b   #0, (GAME_TYPE)
+        cmp.b   #0, (GME_TYPE)
         beq     .typea
         addi.b  #12, d5
 .typea:
@@ -411,7 +411,7 @@ screen_type:
             
         move.w  #TAM_TYPE_POS_Y, d6             ; y pos
         move.w  #TAM_TYPE_POS_X+7, d5           ; x pos
-        cmp.b   #0, (GAME_TYPE)
+        cmp.b   #0, (GME_TYPE)
         beq     .typea1
         addi.b  #12, d5
 .typea1:
@@ -427,13 +427,13 @@ screen_type:
             
         move.w  #TAM_MUSIC_POS_Y, d6            ; y pos
         move.w  #TAM_MUSIC_POS_X, d5            ; x pos
-        cmp.b   #0, (GAME_MUSIC)
+        cmp.b   #0, (GME_MUSIC)
         beq     .DONE
-        cmp.b   #1, (GAME_MUSIC)
+        cmp.b   #1, (GME_MUSIC)
         beq     .MUSIC2
-        cmp.b   #2, (GAME_MUSIC)
+        cmp.b   #2, (GME_MUSIC)
         beq     .MUSIC3
-        cmp.b   #3, (GAME_MUSIC)
+        cmp.b   #3, (GME_MUSIC)
         beq     .OFF
 .MUSIC2: add.b  #2, d6
         bra     .DONE
@@ -453,13 +453,13 @@ screen_type:
             
         move.w  #TAM_MUSIC_POS_Y, d6            ; y pos
         move.w  #TAM_MUSIC_POS_X+9, d5          ; x pos
-        cmp.b   #0, (GAME_MUSIC)
+        cmp.b   #0, (GME_MUSIC)
         beq     .DONER
-        cmp.b   #1, (GAME_MUSIC)
+        cmp.b   #1, (GME_MUSIC)
         beq     .MUSIC2R
-        cmp.b   #2, (GAME_MUSIC)
+        cmp.b   #2, (GME_MUSIC)
         beq     .MUSIC3R
-        cmp.b   #3, (GAME_MUSIC)
+        cmp.b   #3, (GME_MUSIC)
         beq     .OFFR
 .MUSIC2R: add.b #2, d6
         bra     .DONER

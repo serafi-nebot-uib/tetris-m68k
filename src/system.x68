@@ -208,7 +208,7 @@ mouseupd:
 
         btst.b  #0, (MOUSE_VAL)
         bne     .noclick
-        addq.w  #1, (BUTT_PRESS)
+        addq.w  #1, (BUT_PRESS)
         move.b  #1, (MOUSE_VAL)
 
         bra     .noclick
