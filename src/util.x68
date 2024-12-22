@@ -10,7 +10,7 @@ bcd:
         movem.l d0-d2, -(a7)
         subq.l  #1, d1
 .loop:
-        divu.w  #10, d0
+        divu    #10, d0
         move.l  d0, d2
         swap    d2
         move.b  d2, (a0,d1)

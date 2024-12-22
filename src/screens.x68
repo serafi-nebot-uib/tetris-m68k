@@ -509,6 +509,111 @@ screen_level:
         moveq.l #0, d5
         moveq.l #0, d6
         jsr     drawmap
+
+        ; --- GET TOP 3 PLAYERS FROM SERVER ---
+        jsr     netinit
+        move.b  #1, d0
+        move.w  #3, d1
+        jsr     netscorereq
+        jsr     netclose
+
+        lea.l   netbuff, a0
+        lea.l   SCO_NAME, a1
+        ; check score list id
+        cmp.b   #$03, (a0)+
+        bne     .done
+
+        ; number of scores
+        move.b  (a0)+, d0
+        lsl.w   #8, d0
+        move.b  (a0)+, d0
+
+        moveq.l #0, d3                          ; score iteration counter
+.score_loop:
+        ; check score id
+        cmp.b   #$02, (a0)+
+        bne     .done
+        moveq.l #0, d2                          ; player character tmp var
+        move.w  #0, d1
+.player_cpy:
+        move.b  (a0)+, d2
+        move.b  d2, (a1,d1.w)
+        addq.w  #1, d1
+        cmp.w   #6, d1
+        blo     .player_cpy
+        move.b  #0, 6(a1)                       ; add trailing 0 to indicate string end
+
+        move.w  #LVL_SEL_NAME_BASE_X, d5
+        move.w  #LVL_SEL_NAME_BASE_Y, d6
+        move.l  d3, d2
+        lsl.l   #1, d2
+        add.w   d2, d6
+        jsr     drawstr
+
+        ; skip game type
+        addq.l  #1, a0
+        ; player score
+        move.b  (a0)+, d1
+        lsl.l   #8, d1
+        move.b  (a0)+, d1
+        lsl.l   #8, d1
+        move.b  (a0)+, d1
+        lsl.l   #8, d1
+        move.b  (a0)+, d1
+
+        ; convert score to decimal digit array
+        movem.l d0/a0, -(a7)
+        lea.l   SCO_SCORE, a0
+        move.l  #LVL_SEL_SCORE_LEN-1, d2
+.score_clr:
+        move.b  #0, (a0)+
+        dbra    d2, .score_clr
+
+        move.l  d1, d0
+        move.l  #LVL_SEL_SCORE_LEN, d1
+        lea.l   SCO_SCORE, a0
+        jsr     bcd
+        move.l  a0, a1
+        move.w  #LVL_SEL_SCORE_BASE_X, d5
+        move.w  #LVL_SEL_SCORE_BASE_Y, d6
+        moveq.l #LVL_SEL_SCORE_LEN, d4
+        move.l  d3, d2
+        lsl.l   #1, d2
+        add.w   d2, d6
+        jsr     drawnum
+        movem.l (a7)+, d0/a0
+
+        ; game level
+        moveq.l #0, d1
+        move.b  (a0)+, d1
+        lsl.w   #8, d1
+        move.b  (a0)+, d1
+        ; convert level to decimal digit array
+        movem.l d0/a0, -(a7)
+        lea.l   SCO_SCORE, a0                   ; reuse score array
+        move.l  #LVL_SEL_LEVEL_LEN-1, d2
+.score_clr2:
+        move.b  #0, (a0)+
+        dbra    d2, .score_clr2
+
+        move.l  d1, d0
+        move.l  #LVL_SEL_LEVEL_LEN, d1
+        lea.l   SCO_SCORE, a0
+        jsr     bcd
+        move.l  a0, a1
+        move.w  #LVL_SEL_LEVEL_BASE_X, d5
+        move.w  #LVL_SEL_LEVEL_BASE_Y, d6
+        moveq.l #LVL_SEL_LEVEL_LEN, d4
+        move.l  d3, d2
+        lsl.l   #1, d2
+        add.w   d2, d6
+        jsr     drawnum
+        movem.l (a7)+, d0/a0
+
+        addq.l  #1, d3
+        cmp.w   d0, d3
+        blo     .score_loop
+.done:
         jsr     scrplot
 
 .LOOP3:

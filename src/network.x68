@@ -107,6 +107,7 @@ netscorereq:
 ; --- tests --------------------------------------------------------------------
 ; score list decode
 scorelistdec:
+        movem.l d0-d2/a0-a1, -(a7)
         lea.l   netbuff, a0
         lea.l   .player, a1
         ; check score list id
@@ -145,6 +146,7 @@ scorelistdec:
 
         dbra.w  d0, .score_loop
 .done:
+        movem.l (a7)+, d0-d2/a0-a1
         rts
 .player: dc.b   0,0,0,0,0,0
         ds.w    0

@@ -233,3 +233,54 @@ _drawstr:
         dc.b    45, $3e                         ; '>'
         dc.b    46, $3c                         ; '<'
         dc.b    0, 0
+
+; draw decimal number from digit array with color override
+;
+; input    : d1.l - override color
+;            d4.w - number of digits to draw
+;            d5.w - number start x coordinate
+;            d6.w - number start y coordinate
+;            a1.l - number array (in decimal digit form)
+; output   :
+; modifies :
+drawnumcol:
+        movem.l d3-d6/a0-a3, -(a7)
+        lea.l   drawtilecol, a3
+        bra     _drawnum
+; draw decimal number from digit array
+;
+; input    : d4.w - number of digits to draw
+;            d5.w - number start x coordinate
+;            d6.w - number start y coordinate
+;            a1.l - number array (in decimal digit form)
+; output   :
+; modifies :
+drawnum:
+        movem.l d3-d6/a0-a3, -(a7)
+        lea.l   drawtile, a3
+_drawnum:
+        lea.l   tiletable, a2
+        moveq.l #0, d3
+        subq.w  #1, d4
+.loop:
+        moveq.l #0, d2
+        move.b  (a1)+, d2
+        bne     .draw
+        tst.b   d3
+        beq     .skip
+.draw:
+        moveq.l #1, d3
+        cmp.b   #10, d2
+        bhs     .done
+        lsl.l   #2, d2
+        move.l  (a2,d2), a0
+        add.l   #tiles, a0
+        jsr     (a3)
+.skip:
+        addq.w  #1, d5
+        dbra.w  d4, .loop
+.done:
+        movem.l (a7)+, d3-d6/a0-a3
+        rts
+
+; TODO: change custom number plot implementation for drawnum

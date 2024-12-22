@@ -24,3 +24,8 @@ LVL_SEL_POS_Y: ds.w 1                           ; y pos of the selected level sq
 LVL_SEL_NUM_POS: ds.w 1                         ; selected number position
 LVL_SEL_NUM: ds.w 1                             ; selected number
 LVL_SEL_FNUM: ds.w 1                            ; selected final number
+
+; -- score screen --------------------------------------------------------------
+SCO_NAME: ds.b  7
+SCO_SCORE: ds.b LVL_SEL_SCORE_LEN+1
+        ds.w    0

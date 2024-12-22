@@ -71,6 +71,15 @@ LVL_SEL_FONT_COL: equ $00ffffff
 LVL_SEL_P: equ  $0000
 LVL_SEL_FP: equ $0001
 
+LVL_SEL_NAME_BASE_X: equ 12
+LVL_SEL_NAME_BASE_Y: equ 20
+LVL_SEL_SCORE_BASE_X: equ 19
+LVL_SEL_SCORE_BASE_Y: equ 20
+LVL_SEL_SCORE_LEN: equ 5
+LVL_SEL_LEVEL_BASE_X: equ 26
+LVL_SEL_LEVEL_BASE_Y: equ 20
+LVL_SEL_LEVEL_LEN: equ 3
+
 ; --- user intro ---------------------------------------------------------------
 USR_I_POS_X: equ 12
 USR_I_POS_Y: equ 19

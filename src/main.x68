@@ -30,8 +30,6 @@
         include 'network.x68'
 
 screens:
-        dc.l    screen_game
-
         dc.l    screen_legal
         dc.l    screen_start
         dc.l    screen_type
@@ -41,16 +39,6 @@ screens:
 ;         dc.l    screen5
 
 start:
-; --- test ---------------------------------------------------------------------
-        jsr     netinit
-        move.b  #1, d0
-        move.b  #5, d1
-        jsr     netscorereq
-        jsr     scorelistdec
-        jsr     netclose
-
-        simhalt
-
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
 
