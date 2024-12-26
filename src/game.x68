@@ -1,13 +1,6 @@
 screen_game:
         movem.l d0/a0-a1, -(a7)
 ; --- init ---------------------------------------------------------------------
-        ; TODO: change song to selected in previous screen
-        sndplay SND_STOP_ALL
-        move.b  (GME_MUSIC), d0
-        cmp.b   #3, d0
-        beq     .init
-        sndplay d0, #SND_LOOP
-.init:
         move.w  #0, (levelcnt)
         move.b  #0, (levelnum)
         move.w  #0, (linecount)
@@ -30,7 +23,9 @@ screen_game:
         move.b  #1, (piecenumn)
         ; -------------------------
         jsr     boarddropupd
-        ; TODO: check if current game is B type
+        ; check if current game type B
+        tst.b   (GME_TYPE)
+        beq     .game_plot
         jsr     game_type_b_init
 .game_plot:
         jsr     game_plot
