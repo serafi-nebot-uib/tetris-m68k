@@ -154,6 +154,8 @@ screen_start:
         btst.b  #0, (MOUSE_VAL)
         beq     .loop
 .done:
+        sndplay     #SND_MENUSLCT
+        SNDPLAY     #SND_MUSIC1, #SND_LOOP
         move.b  #2, (SCR_NUM)
         move.b  #0, (GME_TYPE)
         move.b  #0, (GME_MUSIC)
@@ -175,19 +177,19 @@ CHK_MUSIC:
 .PLAY_MUSIC1:                                   ; IF UP ARROW CLICKED MULTIPLE TIMES
         sndplay SND_STOP_ALL
         sndplay #SND_MENUSLCT
-        sndplay #SND_MUSIC1
+        sndplay #SND_MUSIC1, #SND_LOOP
         bra     .END
 
 .PLAY_MUSIC2:
         sndplay SND_STOP_ALL
         sndplay #SND_MENUSLCT
-        sndplay #SND_MUSIC2
+        sndplay #SND_MUSIC2, #SND_LOOP
         bra     .END
 
 .PLAY_MUSIC3:
         sndplay SND_STOP_ALL
         sndplay #SND_MENUSLCT
-        sndplay #SND_MUSIC3
+        sndplay #SND_MUSIC3, #SND_LOOP
         bra     .END
 
 .OFF_MUSIC:
@@ -206,8 +208,6 @@ screen_type:
 ; OUTPUT   : NONE
 ; MODIFIES : NONE
 ; ----------------------------------------------------------------------------
-        sndplay SND_STOP_ALL
-        sndplay #SND_MUSIC1, #SND_LOOP
         move.w  #0, (KBD_ENTER_PRESS)
         move.b  #0, (KBD_EDGE)
             
@@ -301,6 +301,7 @@ screen_type:
         ; CHECK FOR ENTER
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)
         beq     .END
+        sndplay #SND_MENUSLCTD
         move.b  #1, (KBD_ENTER_PRESS)
 .END:
         movem.l (a7)+, d0-d1

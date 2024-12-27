@@ -11,13 +11,13 @@ SNC_TIME_S: equ 1000/SNC_TIME
 
 ; --- screen -------------------------------------------------------------------
         ifeq    GLB_SCALE-GLB_SCALE_SMALL
-SCR_WIDTH: equ  640                             ; screen width in pixels
-SCR_HEIGHT: equ 480                             ; screen height in pixels
+SCR_MULT: equ   1
         endc
         ifeq    GLB_SCALE-GLB_SCALE_BIG
-SCR_WIDTH: equ  1280                            ; screen width in pixels
-SCR_HEIGHT: equ 960                             ; screen height in pixels
+SCR_MULT: equ   2
         endc
+SCR_WIDTH: equ  640*SCR_MULT                    ; screen width in pixels
+SCR_HEIGHT: equ 480*SCR_MULT                    ; screen height in pixels
 SCR_TRAP: equ   0
 
 ; --- keyboard -----------------------------------------------------------------
