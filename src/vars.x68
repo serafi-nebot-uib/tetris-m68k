@@ -12,7 +12,7 @@ GME_B_HEIGHT: dc.b 5                            ; selected height
 GME_STATE: ds.l 1
 
 ; --- mouse --------------------------------------------------------------------
-BUT_PRESS: ds.w 1                               ; 1 if screen button has been pressed
+BUTT_PRESS: ds.w 1                              ; 1 if screen button has been pressed
 
 ; --- keyboard -----------------------------------------------------------------
 KBD_ENTER_PRESS: ds.w 1                         ; holds 1 if enter has been pressed
@@ -20,12 +20,17 @@ KBD_ENTER_PRESS: ds.w 1                         ; holds 1 if enter has been pres
 ; --- level selection ----------------------------------------------------------
 LVL_SEL_POS_X: ds.w 1                           ; x pos of the selected level square
 LVL_SEL_POS_Y: ds.w 1                           ; y pos of the selected level square
-
+LVL_SEL_NUM: ds.w 1                             ; selected number for level
 LVL_SEL_NUM_POS: ds.w 1                         ; selected number position
-LVL_SEL_NUM: ds.w 1                             ; selected number
-LVL_SEL_FNUM: ds.w 1                            ; selected final number
+LVL_SEL_FNUM: ds.w 1                            ; selected final numbervars
 
 ; -- score screen --------------------------------------------------------------
 SCO_NAME: ds.b  7
 SCO_SCORE: ds.b LVL_SEL_SCORE_LEN+1
         ds.w    0
+
+; --- height selection ---------------------------------------------------------
+HIGH_SEL_POS_X: ds.w 1                          ; x pos of the selected level square
+HIGH_SEL_POS_Y: ds.w 1                          ; y pos of the selected level square
+HIGH_SEL_NUM: ds.w 1                            ; selected number for height
+HIGH_SEL_FNUM: ds.w 1                           ; selected final number for height

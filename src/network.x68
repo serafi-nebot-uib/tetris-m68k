@@ -1,7 +1,7 @@
 NET_BUFFER_LEN: equ 1024
 
 server_port: dc.w 6969
-server_host: dc.b '127.0.0.1',0
+server_host: dc.b 'tetris-m68k.westeurope.cloudapp.azure.com',0
         ds.w    0
 
 netbuff: ds.b   NET_BUFFER_LEN
@@ -58,11 +58,12 @@ netsend:
 
 ; send d1 bytes from netbuff to the connected host
 ;
-; input    : d2.w - retry count
+; input    : d2.l - max retry time in 10s of ms
 ; output   : d1.w - number of bytes received
 ; modifies :
 netrecv:
-        movem.l d0/d2/a1, -(a7)
+        movem.l d0/a1, -(a7)
+        move.l  d2, (SNC_CNT_DOWN)
 .recv:
         move.b  #107, d0
         move.l  #NET_BUFFER_LEN, d1
@@ -71,11 +72,10 @@ netrecv:
         ; retry on empty data
         tst.w   d1                              ; d1 -> number of bytes received
         bne     .done
-        ; TODO: sync with sytem timer
-        subq.w  #1, d2
+        tst.l   (SNC_CNT_DOWN)
         bgt     .recv
 .done:
-        movem.l (a7)+, d0/d2/a1
+        movem.l (a7)+, d0/a1
         rts
 
 ; request scores ordered in descending order with a limit
@@ -85,10 +85,11 @@ netrecv:
 ;                   1 -> type A
 ;                   2 -> type B
 ;            d1.w - number of scores to retrieve
+;            d2.l - max retry time in 10s of ms
 ; output   :
 ; modifies :
 netscorereq:
-        movem.l d0-d2/a0, -(a7)
+        movem.l d0-d1/a0, -(a7)
         ; build data frame
         lea.l   netbuff, a0
         move.b  #$04, (a0)+
@@ -96,9 +97,8 @@ netscorereq:
         move.w  d1, (a0)+
         move.w  #4, d1                          ; number of bytes to send
         jsr     netsend
-        move.w  #100, d2                        ; number of retries
         jsr     netrecv
-        movem.l (a7)+, d0-d2/a0
+        movem.l (a7)+, d0-d1/a0
         rts
 
 
