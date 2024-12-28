@@ -1,5 +1,50 @@
 tileoffset: dc.l $00000000                      ; x << 16 | y
 
+; load tile table from file
+;
+; input    :
+; output   :
+; modifies :
+tileinit:
+        movem.l d0-d2/a1, -(a7)
+        ; close all files (recommended by the documentation)
+        move.b  #50, d0
+        trap    #15
+
+        ; open tileset file
+        move.b  #51, d0
+        lea.l   .tileset_path, a1
+        trap    #15
+
+        ; read first 4 bytes -> number of bytes to read
+        move.b  #53, d0
+        lea.l   tileaddr, a1
+        moveq.l #4, d2
+        trap    #15
+
+        ; load the rest of the file
+        move.b  #53, d0
+        lea.l   tileaddr, a1
+        move.l  (a1), d2
+        trap    #15
+
+        ; close file
+        move.b  #56, d0
+        trap    #15
+
+        ; save tile set address
+        add.l   #tiletable, (tileaddr)
+
+        movem.l (a7)+, d0-d2/a1
+        rts
+        ifeq GLB_SCALE-GLB_SCALE_SMALL
+.tileset_path: dc.b 'tile-table-16.bin',0
+        endc
+        ifeq GLB_SCALE-GLB_SCALE_BIG
+.tileset_path: dc.b 'tile-table-32.bin',0
+        endc
+        ds.w    0
+
 ; draw small tile at x, y coordinates with an offset
 ;
 ; input    : d5.w - tile x coordinate
@@ -143,7 +188,7 @@ drawtilecol:
 ; output   :
 ; modifies :
 drawmapcol:
-        movem.l d0-d6/a0-a3, -(a7)
+        movem.l d0-d6/a0-a4, -(a7)
         lea.l   drawtilecol, a3
         bra     _drawmap
 ; draw tile map
@@ -155,13 +200,13 @@ drawmapcol:
 ; modifies :
 drawmap:
 ; TODO: do the d5, d6 arguments make sense?
-        movem.l d0-d6/a0-a3, -(a7)
+        movem.l d0-d6/a0-a4, -(a7)
         lea.l   drawtile, a3
-
 _drawmap:
         lea.l   tiletable, a2
         move.w  -4(a1), d3                      ; map width
         move.w  -2(a1), d4                      ; map height
+        move.l  (tileaddr), a4
 .loop:
         moveq.l #0, d0                          ; reset d0 to clear junk
         move.w  (a1)+, d0
@@ -170,9 +215,8 @@ _drawmap:
 
         ; get current tile
         lsl.l   #2, d0                          ; multiply tile number by 4
-        move.l  (a2,d0), d0
-        lea.l   tiles, a0
-        add.l   d0, a0                          ; offset a0
+        move.l  a4, a0
+        add.l   (a2,d0), a0
         jsr     (a3)
 .skip:
         addq.w  #1, d5
@@ -184,7 +228,7 @@ _drawmap:
         cmp.w   d4, d6
         blo     .loop
 
-        movem.l (a7)+, d0-d6/a0-a3
+        movem.l (a7)+, d0-d6/a0-a4
         rts
 
 ASCII_NUM_CNT: equ 10
@@ -199,7 +243,7 @@ ASCII_CHR_CNT: equ 26
 ; output   :
 ; modifies :
 drawstrcol:
-        movem.l d3-d5/a0-a3, -(a7)
+        movem.l d3-d5/a0-a4, -(a7)
         lea.l   drawtilecol, a3
         bra     _drawstr
 ; draw null terminated string with color override
@@ -210,11 +254,12 @@ drawstrcol:
 ; output   :
 ; modifies :
 drawstr:
-        movem.l d3-d5/a0-a3, -(a7)
+        movem.l d3-d5/a0-a4, -(a7)
         lea.l   drawtile, a3
 
 _drawstr:
         lea.l   tiletable, a2
+        move.l  (tileaddr), a4
 .loop:
         move.l  #0, d4                          ; reset d4 to clear junk
         move.b  (a1)+, d4
@@ -260,14 +305,14 @@ _drawstr:
         ; get current tile
         lsl.l   #2, d4
         move.l  (a2,d4), d4
-        lea.l   tiles, a0
+        move.l  a4, a0
         add.l   d4, a0
         jsr     (a3)
 .skip:
         addq.w  #1, d5                          ; increment x coordinate
         bra     .loop
 .done:
-        movem.l (a7)+, d3-d5/a0-a3
+        movem.l (a7)+, d3-d5/a0-a4
         rts
 .symtable:
         dc.b    36, $2d                         ; '-'
@@ -292,7 +337,7 @@ _drawstr:
 ; output   :
 ; modifies :
 drawnumcol:
-        movem.l d3-d6/a0-a3, -(a7)
+        movem.l d3-d6/a0-a4, -(a7)
         lea.l   drawtilecol, a3
         bra     _drawnum
 ; draw decimal number from digit array
@@ -305,9 +350,10 @@ drawnumcol:
 ; output   :
 ; modifies :
 drawnum:
-        movem.l d3-d6/a0-a3, -(a7)
+        movem.l d3-d6/a0-a4, -(a7)
         lea.l   drawtile, a3
 _drawnum:
+        move.l  (tileaddr), a4
         lea.l   tiletable, a2
         subq.w  #1, d4
 .loop:
@@ -321,14 +367,12 @@ _drawnum:
         cmp.b   #10, d2
         bhs     .done
         lsl.l   #2, d2
-        move.l  (a2,d2), a0
-        add.l   #tiles, a0
+        move.l  a4, a0
+        add.l   (a2,d2), a0
         jsr     (a3)
 .skip:
         addq.w  #1, d5
         dbra.w  d4, .loop
 .done:
-        movem.l (a7)+, d3-d6/a0-a3
+        movem.l (a7)+, d3-d6/a0-a4
         rts
-
-; TODO: change custom number plot implementation for drawnum

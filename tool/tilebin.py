@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import sys
 from PIL import Image
+from struct import pack
 from pathlib import Path
-from imgtool import mat_to_rec, rec_to_m68k
+from imgtool import mat_to_rec
 
 if __name__ == "__main__":
   assert len(sys.argv) > 3, f"usage: {__file__} tile_size src_img_path dst_m68k_tile_path"
@@ -18,13 +19,18 @@ if __name__ == "__main__":
     tiles = [[[pix[i*tsize+x, y][:3] for x in range(tsize)]for y in range(tsize)] for i in range(width // tsize)]
 
     idx = [0]
-    lines = []
+    data = []
     for tile in tiles:
       r = mat_to_rec(tile, ignore_black=True)
       idx.append((len(r)*3+1)*4+idx[-1])
-      lines.append("\t" + "\n\t".join(rec_to_m68k(r)) + "\n\tdc.l    $ffffffff")
-    with Path(sys.argv[3]).open("w") as dst:
-      dst.write("tiletable:\n")
-      for i in range(0, len(idx), 8): dst.write("\tdc.l    " + ", ".join(f"${x:08x}" for x in idx[i:i+8]) + "\n")
-      dst.write("\ntiles:\n")
-      for l in lines: dst.write(l + "\n")
+      for col, crd in r:
+        data.append(col[2] << 16 | col[1] << 8 | col[0])
+        data.append(crd[0]<<16 | crd[1])
+        data.append(crd[2]<<16 | crd[3])
+      data.append(0xffffffff)
+
+    with Path(sys.argv[3]).open("wb") as dst:
+      dst.write(pack(">L", len(idx)*4+len(data)*4+4))
+      dst.write(pack(">L", len(idx)*4)) # do not count initial 0
+      for i in idx: dst.write(pack(">L", i))
+      for v in data: dst.write(pack(">L", v))

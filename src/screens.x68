@@ -1,3 +1,11 @@
+screens:
+        dc.l    screen_legal
+        dc.l    screen_start
+        dc.l    screen_type
+        dc.l    screen_level_a
+        dc.l    screen_level_b
+        dc.l    screen_game
+
 ; TODO: add mouse to legal and start screens
 
 screen_legal:
@@ -77,7 +85,7 @@ screen_legal:
         jsr     drawstrcol
 
         move.l  (tiletable+(47<<2)), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
         move.l  #.coldarkblue, d1
 
         move.w  #.basex+7, d5
@@ -453,8 +461,8 @@ screen_type:
         move.w  #TAM_LEFT_ARROW, d0             ; tile index
         lsl.l   #2, d0
         move.l  (a0,d0), a0
-        add.l   #TILES, a0
-            
+        add.l   (tileaddr), a0
+
         move.w  #TAM_TYPE_POS_Y, d6             ; y pos
         move.w  #TAM_TYPE_POS_X, d5             ; x pos
         cmp.b   #0, (GME_TYPE)
@@ -469,7 +477,7 @@ screen_type:
         move.w  #TAM_RIGHT_ARROW, d0            ; tile index
         lsl.l   #2, d0
         move.l  (a0,d0), a0
-        add.l   #TILES, a0
+        add.l   (tileaddr), a0
             
         move.w  #TAM_TYPE_POS_Y, d6             ; y pos
         move.w  #TAM_TYPE_POS_X+7, d5           ; x pos
@@ -485,7 +493,7 @@ screen_type:
         move.w  #TAM_LEFT_ARROW, d0             ; tile index
         lsl.l   #2, d0
         move.l  (a0,d0), a0
-        add.l   #TILES, a0
+        add.l   (tileaddr), a0
             
         move.w  #TAM_MUSIC_POS_Y, d6            ; y pos
         move.w  #TAM_MUSIC_POS_X, d5            ; x pos
@@ -511,7 +519,7 @@ screen_type:
         move.w  #TAM_RIGHT_ARROW, d0            ; tile index
         lsl.l   #2, d0
         move.l  (a0,d0), a0
-        add.l   #TILES, a0
+        add.l   (tileaddr), a0
             
         move.w  #TAM_MUSIC_POS_Y, d6            ; y pos
         move.w  #TAM_MUSIC_POS_X+9, d5          ; x pos
@@ -647,9 +655,12 @@ screen_level_a:
         move.w  #LVL_SEL_SCORE_BASE_Y, d6
         moveq.l #LVL_SEL_SCORE_LEN, d4
         move.l  d3, d2
+        move.l  d3, -(a7)
+        moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawnum
+        move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 
         ; game level
@@ -674,9 +685,12 @@ screen_level_a:
         move.w  #LVL_SEL_LEVEL_BASE_Y, d6
         moveq.l #LVL_SEL_LEVEL_LEN, d4
         move.l  d3, d2
+        move.l  d3, -(a7)
+        moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawnum
+        move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 
         addq.l  #1, d3
@@ -850,7 +864,7 @@ screen_level_a:
         move.l  d3, d7
         lsl.l   #2, d7
         move.l  (a1,d7), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
 
         move.l  d0, d5
         lsl.l   #1, d5
@@ -933,7 +947,7 @@ screen_level_a:
         move.l  d3, d7
         lsl.l   #2, d7
         move.l  (a1,d7), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
 
         move.l  d0, d5
         lsl.l   #1, d5
@@ -1084,9 +1098,12 @@ screen_level_b:
         move.w  #LVL_SEL_SCORE_BASE_Y, d6
         moveq.l #LVL_SEL_SCORE_LEN, d4
         move.l  d3, d2
+        move.l  d3, -(a7)
+        moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawnum
+        move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 
         ; game level
@@ -1111,9 +1128,12 @@ screen_level_b:
         move.w  #LVL_SEL_LEVEL_BASE_Y, d6
         moveq.l #LVL_SEL_LEVEL_LEN, d4
         move.l  d3, d2
+        move.l  d3, -(a7)
+        moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawnum
+        move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 
         addq.l  #1, d3
@@ -1171,7 +1191,7 @@ screen_level_b:
         move.l  d3, d7
         lsl.l   #2, d7
         move.l  (a1,d7), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
 
         move.l  d0, d5
         lsl.l   #1, d5
@@ -1358,7 +1378,7 @@ LOOP4_L:
         move.l  d3, d7
         lsl.l   #2, d7
         move.l  (a1,d7), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
 
         move.l  d0, d5
         lsl.l   #1, d5
@@ -1430,7 +1450,7 @@ LOOP4_L:
         move.l  d3, d7
         lsl.l   #2, d7
         move.l  (a1,d7), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
 
         move.l  d0, d5
         lsl.l   #1, d5
@@ -1644,7 +1664,7 @@ SEL_HEIGHT:
         move.l  d3, d7
         lsl.l   #2, d7
         move.l  (a1,d7), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
 
         move.l  d0, d5
         lsl.l   #1, d5
@@ -1716,7 +1736,7 @@ SEL_HEIGHT:
         move.l  d3, d7
         lsl.l   #2, d7
         move.l  (a1,d7), a0
-        add.l   #tiles, a0
+        add.l   (tileaddr), a0
 
         move.l  d0, d5
         lsl.l   #1, d5

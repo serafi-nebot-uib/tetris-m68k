@@ -5,8 +5,8 @@ from pathlib import Path
 
 if __name__ == "__main__":
   assert len(sys.argv) > 3, f"usage: {__file__} src_tilemap_path dst_tilemap_path name"
-  with Path.open(sys.argv[1], "r") as src:
-    with Path.open(sys.argv[2], "w") as dst:
+  with Path(sys.argv[1]).open("r") as src:
+    with Path(sys.argv[2]).open("w") as dst:
       tmap = [[int(x) & 0xffff for x in l.strip().split(",")] for l in src]
       w, h = len(tmap[0]), len(tmap)
       assert all(len(x) == w for x in tmap), "map width mismatch"

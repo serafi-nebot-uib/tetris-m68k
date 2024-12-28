@@ -1,4 +1,13 @@
         opt     mex
+
+; NOTE: tile table data is declared at the very beginning of the code, so that
+; any included file can use its label, but stored at a higher address to avoid
+; overwriting code when loading data
+; TODO: check if loaded data exceeds maximum permitted size
+        org     $20000
+tileaddr: ds.l  1
+tiletable:
+
         org     $1000
 
         include 'sysconst.x68'
@@ -7,13 +16,12 @@
         include 'vars.x68'
         include 'system.x68'
         include 'util.x68'
-
-        ifeq    GLB_SCALE-GLB_SCALE_SMALL
-        include 'tile-table-16.x68'
-        endc
-        ifeq    GLB_SCALE-GLB_SCALE_BIG
-        include 'tile-table-32.x68'
-        endc
+        include 'tile.x68'
+        include 'piece.x68'
+        include 'board.x68'
+        include 'screens.x68'
+        include 'game.x68'
+        include 'network.x68'
 
         include 'bg/home.x68'
         include 'bg/mode.x68'
@@ -23,24 +31,10 @@
         include 'bg/score-b.x68'
         include 'bg/congratulations-a.x68'
 
-        include 'tile.x68'
-        include 'piece.x68'
-        include 'board.x68'
-        include 'screens.x68'
-        include 'game.x68'
-        include 'network.x68'
-
-screens:
-        dc.l    screen_legal
-        dc.l    screen_start
-        dc.l    screen_type
-        dc.l    screen_level_a
-        dc.l    screen_level_b
-        dc.l    screen_game
-
 start:
 ; --- initialization -----------------------------------------------------------
         jsr     sysinit
+        jsr     tileinit
 
         move.b  #0, (SCR_NUM)
 .loop:

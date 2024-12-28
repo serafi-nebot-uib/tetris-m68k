@@ -8,8 +8,8 @@ tilify:
 	./tool/tilify.py 32 img/sprites-32.png img/tiles-32.png
 
 tile:
-	./tool/tile.py 16 img/tiles-16.png src/tile-table-16.x68
-	./tool/tile.py 32 img/tiles-32.png src/tile-table-32.x68
+	./tool/tilebin.py 16 img/tiles-16.png src/tile-table-16.bin
+	./tool/tilebin.py 32 img/tiles-32.png src/tile-table-32.bin
 
 tilemap:
 	rm -rf src/bg/*
