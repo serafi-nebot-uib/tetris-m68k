@@ -1,11 +1,13 @@
 ; --- tile ---------------------------------------------------------------------
         ifeq    GLB_SCALE-GLB_SCALE_SMALL
 TILE_SIZE: equ  16
+TILE_SIZE_SM: equ 12                            ; 12.62 -> 12 o 13
 TILE_SHIFT: equ 4
 TILE_MULT: equ  1
         endc
         ifeq    GLB_SCALE-GLB_SCALE_BIG
 TILE_SIZE: equ  32
+TILE_SIZE_SM: equ 23                            ; 25,24 -> 25 o 26
 TILE_SHIFT: equ 5
 TILE_MULT: equ  2
         endc
@@ -16,17 +18,17 @@ BRD_ROWS: equ   20                              ; number of vertical tiles
 BRD_WIDTH: equ  10
 BRD_HEIGHT: equ 20
 BRD_SIZE: equ   BRD_WIDTH*BRD_HEIGHT
-BRD_BASE_X: equ 17
+BRD_BASE_X: equ 16
 BRD_BASE_Y: equ 6
-BRD_NEXT_BASE_X: equ 30
+BRD_NEXT_BASE_X: equ 28
 BRD_NEXT_BASE_Y: equ 15
-BRD_STAT_BASE_X: equ 6
-BRD_STAT_BASE_Y: equ 8
-BRD_LVL_BASE_X: equ 31
+BRD_STAT_BASE_X: equ 9
+BRD_STAT_BASE_Y: equ 16
+BRD_LVL_BASE_X: equ 29
 BRD_LVL_BASE_Y: equ 21
-BRD_LINE_CNT_BASE_X: equ 24
+BRD_LINE_CNT_BASE_X: equ 25
 BRD_LINE_CNT_BASE_Y: equ 3
-BRD_SCO_BASE_X: equ 29
+BRD_SCO_BASE_X: equ 28
 BRD_SCO_BASE_Y: equ 8
 BRD_GO_PADDING: equ 2*TILE_MULT
 

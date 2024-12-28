@@ -96,6 +96,10 @@ game_type_b_init:
         andi.w  #%11, d1
         move.b  (a3,d1.w), d2
         andi.b  #$11, d2
+        cmp.b   #$11, d2
+        bne     .not11
+        moveq.l #0, d2                          ; color 0, patró 0
+.not11:
         move.b  d2, (a2)
 .bits0:
         addq.l  #1, a2

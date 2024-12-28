@@ -1,3 +1,49 @@
+tileoffset: dc.l $00000000                      ; x << 16 | y
+
+; draw small tile at x, y coordinates with an offset
+;
+; input    : d5.w - tile x coordinate
+;            d6.w - tile y coordinate
+;            a0.l - tile address
+; output   :
+; modifies :
+drawtileoffsm:
+        movem.l d0-d7/a0, -(a7)
+        move.l  (tileoffset), d7
+        mulu    #TILE_SIZE_SM, d6
+        sub.w   d7, d6
+        swap    d7
+        mulu    #TILE_SIZE_SM, d5
+        sub.w   d7, d5
+        bra     _drawtile
+; draw tile at x, y coordinates with an offset
+;
+; input    : d5.w - tile x coordinate
+;            d6.w - tile y coordinate
+;            a0.l - tile address
+; output   :
+; modifies :
+drawtileoff:
+        movem.l d0-d7/a0, -(a7)
+        move.l  (tileoffset), d7
+        lsl.l   #TILE_SHIFT, d6
+        sub.w   d7, d6
+        swap    d7
+        lsl.l   #TILE_SHIFT, d5
+        sub.w   d7, d5
+        bra     _drawtile
+; draw small tile at x, y coordinates
+;
+; input    : d5.w - tile x coordinate
+;            d6.w - tile y coordinate
+;            a0.l - tile address
+; output   :
+; modifies :
+drawtilesm:
+        movem.l d0-d7/a0, -(a7)
+        mulu    #TILE_SIZE_SM, d5 
+        mulu    #TILE_SIZE_SM, d6
+        bra     _drawtile
 ; draw tile at x, y coordinates
 ;
 ; input    : d5.w - tile x coordinate
@@ -6,7 +52,7 @@
 ; output   :
 ; modifies :
 drawtile:
-        movem.l d0-d6/a0, -(a7)
+        movem.l d0-d7/a0, -(a7)
 
         ; multiply x/y coords by TILE_SIZE
         lsl.l   #TILE_SHIFT, d5
@@ -36,7 +82,7 @@ drawtile:
         trap    #15
         bra     .loop
 .done:
-        movem.l (a7)+, d0-d6/a0
+        movem.l (a7)+, d0-d7/a0
         rts
 
 ; draw tile at x, y coordinates with color override

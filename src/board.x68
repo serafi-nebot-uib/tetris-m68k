@@ -211,7 +211,10 @@ pieceupdcol:
         ; copy current color to piece_ptrnx
         move.l  d2, (piece_ptrn1+(3*4))
         move.l  d2, (piece_ptrn1+(12*4))
+        move.l  d2, (piece_ptrn1sm+(3*4))
+        move.l  d2, (piece_ptrn1sm+(12*4))
         move.l  d2, (piece_ptrn2+(3*4))
+        move.l  d2, (piece_ptrn2sm+(3*4))
 
         movem.l (a7)+, d0-d2/a0
         rts
@@ -717,14 +720,16 @@ boardlvlupd:
         move.w  #BRD_STAT_BASE_X<<TILE_SHIFT, d1
         move.w  #BRD_STAT_BASE_Y<<TILE_SHIFT, d2
         move.w  #(BRD_STAT_BASE_X+4)<<TILE_SHIFT-1, d3
-        move.w  #(BRD_STAT_BASE_Y+(7*3-1))<<TILE_SHIFT-1, d4
+*        move.w  #(BRD_STAT_BASE_Y+(7*3-1))<<TILE_SHIFT-1, d4
+        move.w  #(BRD_STAT_BASE_Y+10)<<TILE_SHIFT-1, d4
         trap    #15
 
         moveq.l #PIECE_WIDTH, d2
         moveq.l #PIECE_HEIGHT, d3
-        move.l  #BRD_STAT_BASE_Y+(6*3), d6
+        move.w  #BRD_STAT_BASE_Y+(6*3+1), d6
         lea.l   piece_table, a2
         lea.l   .statoff, a3
+        lea.l   .spacing+28, a4
         moveq.l #6, d7
 .loop:
         ; a1.l - piece address
@@ -732,25 +737,42 @@ boardlvlupd:
         move.l  d7, d0
         moveq.l #0, d1
         move.b  (a3,d0), d1
-        move.l  #BRD_STAT_BASE_X, d5
-        add.l   d1, d5
+        move.w  #BRD_STAT_BASE_X, d5
+        add.w   d1, d5
         lsl.l   #2, d0
         move.l  (a1,d0), a1
-
         piececolptrn a1, d0, d1
         jsr     pieceupdcol
+
+        btst    #0, d1                          ; mira el bit de patró de la peça (0: patró 1/ 1: patró 2)
+        bne     .isptrn2                        ; si el bit de patró és 1 -> jumps .isptrn2
+        addi.l  #64, (piece_ptrn)               ; suma el desplaçament per a situarse sobre piece_ptrn1sm
+        bra     .nxtstep
+.isptrn2:
+        addi.l  #52, (piece_ptrn)               ; suma el desplaçament per a situarse sobre piece_ptrn2sm
+.nxtstep:
         move.l  (piece_ptrn), a0
+        addq.l  #2, a1
 
-        addq.l  #2, a1                          ; offset rx, ry
-        jsr     piecematplot
+        move.l  -(a4), (tileoffset)
+        jsr     piecematplotsm
+        subq.w  #3, d6
 
-        subq.l  #3, d6
         dbra    d7, .loop
-
+        move.l  #0, (tileoffset)                ; resets tileoffset
         jsr     boardplot
 
         rts
-.statoff: dc.b  1,1,1,2,1,1,0
+
+.spacing:
+        ifeq    GLB_SCALE-GLB_SCALE_SMALL
+        dc.l    $00040014, $0004001a, $0004001c, $0009001e, $00040022, $00040028, $00090025
+        endc
+        ifeq    GLB_SCALE-GLB_SCALE_BIG
+        dc.l    $00000014, $0000001a, $0000001d, $000a0022, $00000026, $00000031, $00050026
+        endc
+
+.statoff: dc.b  1,1,1,2,1,1,1
 .lvldigits: dc.b 0,0,0
         ds.w    0
 
@@ -779,16 +801,53 @@ piece_ptrn0:
         dc.l    $ffffffff
 piece_ptrn1:
         dc.l    $00000000, $00000000, $000f000f
+        ifeq    GLB_VER-GLB_VER_HIGHRES
         dc.l    $000038f8, $00000000, $000e000e
-        dc.l    $00ffffff, $00000000, $00020002
-        dc.l    $00ffffff, $00020002, $00060006
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $000d000d
+        endc
+        dc.l    $00ffffff, $00000000, $00010001
+        dc.l    $00ffffff, $00020002, $00050005
+        dc.l    $000038f8, $00040004, $00060006
+        dc.l    $ffffffff
+piece_ptrn1sm:                                  ;***MINI TILES, ACTUAL:-4, 16*0,21=3,37 -> 4
+        dc.l    $00000000, $00000000, $000b000b 
+        ifeq    GLB_VER-GLB_VER_HIGHRES
+        dc.l    $000038f8, $00000000, $000a000a
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $00090009
+        endc
+        dc.l    $00ffffff, $00000000, $00010001
+        dc.l    $00ffffff, $00020002, $00050005
         dc.l    $000038f8, $00040004, $00060006
         dc.l    $ffffffff
 piece_ptrn2:
         dc.l    $00000000, $00000000, $000f000f
+        ifeq    GLB_VER-GLB_VER_HIGHRES
         dc.l    $000038f8, $00000000, $000e000e
-        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00000000, $00010001
         dc.l    $00ffffff, $00020002, $000c000c
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $000d000d
+        dc.l    $00ffffff, $00000000, $00010001
+        dc.l    $00ffffff, $00020002, $000b000b
+        endc
+        dc.l    $ffffffff
+piece_ptrn2sm:
+        dc.l    $00000000, $00000000, $000b000b
+        ifeq    GLB_VER-GLB_VER_HIGHRES
+        dc.l    $000038f8, $00000000, $000a000a
+        dc.l    $00ffffff, $00000000, $00010001
+        dc.l    $00ffffff, $00020002, $00080008 
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $00090009
+        dc.l    $00ffffff, $00000000, $00010001
+        dc.l    $00ffffff, $00020002, $00070007
+        endc
         dc.l    $ffffffff
         endc
 
@@ -798,16 +857,51 @@ piece_ptrn0:
         dc.l    $ffffffff
 piece_ptrn1:
         dc.l    $00000000, $00000000, $001e001e
+        ifeq    GLB_VER-GLB_VER_HIGHRES
         dc.l    $000038f8, $00000000, $001c001c
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $001b001b
+        endc
         dc.l    $00ffffff, $00000000, $00020002
-        dc.l    $00ffffff, $00040004, $000c000c
-        dc.l    $000038f8, $00080008, $000c000c
+        dc.l    $00ffffff, $00040004, $000a000a
+        dc.l    $000038f8, $00070007, $000c000c
+        dc.l    $ffffffff
+piece_ptrn1sm:                                  ***MINI TILES, ACTUAL: -7  32*0,21=6,75 -> 7
+        dc.l    $00000000, $00000000, $00150015
+        ifeq    GLB_VER-GLB_VER_HIGHRES
+        dc.l    $000038f8, $00000000, $00130013
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $00120012
+        endc
+        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00040004, $000a000a 
+        dc.l    $000038f8, $00070007, $000c000c
         dc.l    $ffffffff
 piece_ptrn2:
         dc.l    $00000000, $00000000, $001e001e
+        ifeq    GLB_VER-GLB_VER_HIGHRES 
         dc.l    $000038f8, $00000000, $001c001c
-        dc.l    $00ffffff, $00000000, $00040004
+        dc.l    $00ffffff, $00000000, $00020002
         dc.l    $00ffffff, $00040004, $00180018
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $001b001b
+        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00040004, $00170017
+        endc
+        dc.l    $ffffffff
+piece_ptrn2sm:
+        dc.l    $00000000, $00000000, $00150015
+        ifeq    GLB_VER-GLB_VER_HIGHRES 
+        dc.l    $000038f8, $00000000, $00130013
+        endc
+        ifeq    GLB_VER-GLB_VER_ORIGINAL
+        dc.l    $000038f8, $00000000, $00120012
+        endc
+        dc.l    $00ffffff, $00000000, $00020002
+        dc.l    $00ffffff, $00040004, $000f000f
         dc.l    $ffffffff
         endc
 
@@ -870,6 +964,26 @@ _pieceplot:
         movem.l (a7)+, d0-d3/d5-d6/a0-a2
         rts
 
+; plots small piece matrix
+;
+; input    : d2.l - piece matrix width
+;            d3.l - piece matrix height
+;            d5.l - tile x coord
+;            d6.l - tile y coord
+;            a0.l - piece pattern address
+;            a1.l - piece matrix address
+; output   :
+; modifies :
+piecematplotsm:
+        movem.l d0-d1/d5-d6/a1-a2, -(a7)
+        
+        cmp.l   #0, (tileoffset)
+        beq     .notileoff
+        lea.l   drawtileoffsm, a2
+        bra     _piecematplot    
+.notileoff:
+        lea.l   drawtilesm, a2
+        bra     _piecematplot  
 ; plot piece matrix
 ;
 ; input    : d2.l - piece matrix width
@@ -881,29 +995,40 @@ _pieceplot:
 ; output   :
 ; modifies :
 piecematplot:
-        movem.l d0-d1/d5-d6/a1, -(a7)
+        movem.l d0-d1/d5-d6/a1-a2, -(a7)
+
+        cmp.l   #0, (tileoffset)
+        beq     .notileoff
+        lea.l   drawtileoff, a2
+        bra     _piecematplot
+.notileoff:
+        lea.l   drawtile, a2         
+_piecematplot:
         ; d0.b -> matrix x index (only used as loop counter)
         moveq.l #0, d0
         ; d1.b -> matrix y index (only used as loop counter)
         moveq.l #0, d1
 .loop:
         btst    #0, (a1)+
-        beq     .nitr                           ; skip plot if empty cell
-        jsr     drawtile
-.nitr:
-        addq.l  #1, d5                          ; increment tile x coord
+        beq     .nitr                           ; skip plot if empty cell       
+        jsr     (a2)
+.nitr:   
+        addq.w  #1, d5                          ; increment tile x coord    
+    
         addq.l  #1, d0                          ; increment matrix x index
         cmp.b   d2, d0                          ; compare matrix x index with matrix width
         blo     .loop
 
         moveq.l #0, d0                          ; reset matrix x index
-        sub.l   d2, d5                          ; reset tile x coord to start position
-        addq.l  #1, d6                          ; increment tile y coord
+        
+        sub.w   d2, d5                          ; reset tile x coord to start position
+        addq.w  #1, d6                          ; increment tile y coord
+        
         addq.l  #1, d1                          ; increment matrix y index
         cmp.b   d3, d1                          ; compare matrix y index with matrix height
         blo     .loop
 .done:
-        movem.l (a7)+, d0-d1/d5-d6/a1
+        movem.l (a7)+, d0-d1/d5-d6/a1-a2
         rts
 
 ; increase and plot line count
@@ -923,7 +1048,8 @@ boardlineinc:
 
         ; clear previous line count
         ; set color
-        move.l  #$00000000, d1
+*        move.l  #$00000000, d1
+        move.l  #$00ffffff, d1                  ;remove, white just to check
         move.b  #80, d0
         trap    #15
         move.b  #81, d0
@@ -932,13 +1058,13 @@ boardlineinc:
         move.b  #87, d0
         move.w  #BRD_LINE_CNT_BASE_X<<TILE_SHIFT, d1
         move.w  #BRD_LINE_CNT_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BRD_LINE_CNT_BASE_X+3)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_LINE_CNT_BASE_X+3)<<TILE_SHIFT-1, d3 ;!!! NEEDS TO BE FIXED, RECTANGLE MUST COVER ALL THREE DIGITS !!!
         move.w  #(BRD_LINE_CNT_BASE_Y+1)<<TILE_SHIFT-1, d4
         trap    #15
 
         move.l  a0, a1
         lea.l   tiletable, a2
-        move.l  #BRD_LINE_CNT_BASE_X+2, d5
+        move.l  #BRD_LINE_CNT_BASE_X, d5
         move.l  #BRD_LINE_CNT_BASE_Y, d6
         move.l  #2, d0
 .loop:
@@ -1044,6 +1170,18 @@ boardscoreupd:
 boardnextupd:
         movem.l d0-d6/a0-a1, -(a7)
 
+        ;checks if piece is O or I, can be optimised. (?)
+        cmp.l   #3, d0
+        beq     .isOorI
+        cmp.l   #6, d0
+        beq     .isOorI
+
+        ;sets an offset to center the piece on next square
+        move.l  #$00080000, (tileoffset)
+        bra     .nxtstep
+.isOorI:
+        move.l  #$00000000, (tileoffset)
+.nxtstep:
         move.b  d0, d5
         lsl.l   #2, d0
         lea.l   piece_table, a1
@@ -1079,12 +1217,12 @@ boardnextupd:
         move.l  #BRD_NEXT_BASE_X, d5
 .plot:
         jsr     piecematplot
+        move.l  #0, (tileoffset)
 
         ; restore piece color & pattern
         move.l  (piece+4), a0
         piececolptrn a0, d0, d1
         jsr     pieceupdcol
-
         movem.l (a7)+, d0-d6/a0-a1
         rts
 
@@ -1101,12 +1239,12 @@ boardstatupd:
         lea.l   .digits, a0
         jsr     bcd
 
-        move.l  #BRD_STAT_BASE_X+5, d5
+        move.l  #BRD_STAT_BASE_X+1, d5
         ; tile y coord = piece number * 3 + BRD_STAT_BASE_Y
         move.l  d2, d6
         lsl.l   #1, d6
-        add.l   d2, d6
-        add.l   #BRD_STAT_BASE_Y, d6
+        *add.l   d2, d6
+        add.l   #BRD_STAT_BASE_Y-4, d6
 
         ; clear current number
         ; set color
@@ -1131,7 +1269,7 @@ boardstatupd:
 
         ; plot number from bcd result
         moveq.l #2, d0
-        move.l  #$000000ff, d1
+        move.l  #$000019bc, d1
         move.l  a0, a1
         lea.l   tiletable, a2
 .loop:
