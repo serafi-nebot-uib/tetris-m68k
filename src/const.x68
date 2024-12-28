@@ -24,12 +24,16 @@ BRD_NEXT_BASE_X: equ 28
 BRD_NEXT_BASE_Y: equ 15
 BRD_STAT_BASE_X: equ 9
 BRD_STAT_BASE_Y: equ 16
+BRD_STAT_SIZE: equ 3
 BRD_LVL_BASE_X: equ 29
 BRD_LVL_BASE_Y: equ 21
-BRD_LINE_CNT_BASE_X: equ 25
+BRD_LVL_SIZE: equ 3
+BRD_LINE_CNT_BASE_X: equ 23
 BRD_LINE_CNT_BASE_Y: equ 3
-BRD_SCO_BASE_X: equ 28
+BRD_LINE_CNT_SIZE: equ 3
+BRD_SCO_BASE_X: equ 29
 BRD_SCO_BASE_Y: equ 8
+BRD_SCO_SIZE: equ 5
 BRD_GO_PADDING: equ 2*TILE_MULT
 
 ; --- button -------------------------------------------------------------------
@@ -81,4 +85,3 @@ LVL_SEL_LEVEL_LEN: equ 3
 USR_I_POS_X: equ 12
 USR_I_POS_Y: equ 19
 USR_MAX_SIZE: equ 6
-

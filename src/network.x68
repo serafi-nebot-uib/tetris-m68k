@@ -1,7 +1,8 @@
 NET_BUFFER_LEN: equ 1024
 
 server_port: dc.w 6969
-server_host: dc.b 'tetris-m68k.westeurope.cloudapp.azure.com',0
+; server_host: dc.b 'tetris-m68k.westeurope.cloudapp.azure.com',0
+server_host: dc.b '127.0.0.1',0
         ds.w    0
 
 netbuff: ds.b   NET_BUFFER_LEN

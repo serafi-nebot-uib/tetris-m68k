@@ -57,6 +57,7 @@ drawtile:
         ; multiply x/y coords by TILE_SIZE
         lsl.l   #TILE_SHIFT, d5
         lsl.l   #TILE_SHIFT, d6
+_drawtile:
 .loop:
         ; set fill color
         move.l  (a0)+, d1
@@ -283,6 +284,7 @@ _drawstr:
 ; draw decimal number from digit array with color override
 ;
 ; input    : d1.l - override color
+;            d3.b - draw leading 0s (flag: 1 -> true, 0 -> false)
 ;            d4.w - number of digits to draw
 ;            d5.w - number start x coordinate
 ;            d6.w - number start y coordinate
@@ -295,7 +297,8 @@ drawnumcol:
         bra     _drawnum
 ; draw decimal number from digit array
 ;
-; input    : d4.w - number of digits to draw
+; input    : d3.b - draw leading 0s (flag: 1 -> true, 0 -> false)
+;            d4.w - number of digits to draw
 ;            d5.w - number start x coordinate
 ;            d6.w - number start y coordinate
 ;            a1.l - number array (in decimal digit form)
@@ -306,7 +309,6 @@ drawnum:
         lea.l   drawtile, a3
 _drawnum:
         lea.l   tiletable, a2
-        moveq.l #0, d3
         subq.w  #1, d4
 .loop:
         moveq.l #0, d2

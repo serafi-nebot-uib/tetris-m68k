@@ -3,8 +3,8 @@
  <editorsettings>
   <export target="bg-home.csv" format="csv"/>
  </editorsettings>
- <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="311" columns="311">
-  <image source="../img/tiles-16.png" width="4976" height="16"/>
+ <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="320" columns="320">
+  <image source="../img/tiles-16.png" width="5120" height="16"/>
  </tileset>
  <layer id="1" name="Tile Layer 1" width="40" height="30">
   <data encoding="csv">

@@ -670,6 +670,7 @@ boarddropupd:
 ; output   :
 ; modifies :
 boardlvlupd:
+        movem.l d0-d7/a0-a4, -(a7)
         ; clear previous level number
         ; set color
         move.l  #$00000000, d1
@@ -693,36 +694,12 @@ boardlvlupd:
         jsr     bcd
 
         ; plot number from bcd result
-        moveq.l #2, d0
+        moveq.l #1, d3
+        move.w  #BRD_LVL_SIZE, d4
+        move.w  #BRD_LVL_BASE_X, d5
+        move.w  #BRD_LVL_BASE_Y, d6
         move.l  a0, a1
-        lea.l   tiletable, a2
-        move.l  #BRD_LVL_BASE_X, d5
-        move.l  #BRD_LVL_BASE_Y, d6
-.lvlloop:
-        moveq.l #0, d2
-        move.b  (a1)+, d2
-        lsl.l   #2, d2
-        move.l  (a2,d2), a0
-        add.l   #tiles, a0
-        jsr     drawtile
-        addq.l  #1, d5
-        dbra    d0, .lvlloop
-
-        ; clear previous piece plots
-        ; set color
-        move.l  #$00000000, d1
-        move.b  #80, d0
-        trap    #15
-        move.b  #81, d0
-        trap    #15
-        ; draw rectangle
-        move.b  #87, d0
-        move.w  #BRD_STAT_BASE_X<<TILE_SHIFT, d1
-        move.w  #BRD_STAT_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BRD_STAT_BASE_X+4)<<TILE_SHIFT-1, d3
-*        move.w  #(BRD_STAT_BASE_Y+(7*3-1))<<TILE_SHIFT-1, d4
-        move.w  #(BRD_STAT_BASE_Y+10)<<TILE_SHIFT-1, d4
-        trap    #15
+        jsr     drawnum
 
         moveq.l #PIECE_WIDTH, d2
         moveq.l #PIECE_HEIGHT, d3
@@ -762,6 +739,7 @@ boardlvlupd:
         move.l  #0, (tileoffset)                ; resets tileoffset
         jsr     boardplot
 
+        movem.l (a7)+, d0-d7/a0-a4
         rts
 
 .spacing:
@@ -1037,19 +1015,18 @@ _piecematplot:
 ; output   :
 ; modifies :
 boardlineinc:
-        movem.l d0-d6/a0-a2, -(a7)
+        movem.l d0-d6/a0-a1, -(a7)
 
         add.w   (linecount), d0
         move.w  d0, (linecount)
 
-        moveq.l #3, d1
+        moveq.l #BRD_LINE_CNT_SIZE, d1
         lea.l   .digits, a0
         jsr     bcd
 
         ; clear previous line count
         ; set color
-*        move.l  #$00000000, d1
-        move.l  #$00ffffff, d1                  ;remove, white just to check
+        move.l  #$00000000, d1
         move.b  #80, d0
         trap    #15
         move.b  #81, d0
@@ -1058,26 +1035,18 @@ boardlineinc:
         move.b  #87, d0
         move.w  #BRD_LINE_CNT_BASE_X<<TILE_SHIFT, d1
         move.w  #BRD_LINE_CNT_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BRD_LINE_CNT_BASE_X+3)<<TILE_SHIFT-1, d3 ;!!! NEEDS TO BE FIXED, RECTANGLE MUST COVER ALL THREE DIGITS !!!
+        move.w  #(BRD_LINE_CNT_BASE_X+BRD_LINE_CNT_SIZE)<<TILE_SHIFT-1, d3
         move.w  #(BRD_LINE_CNT_BASE_Y+1)<<TILE_SHIFT-1, d4
         trap    #15
 
-        move.l  a0, a1
-        lea.l   tiletable, a2
+        moveq.l #1, d3
+        move.w  #BRD_LINE_CNT_SIZE, d4
         move.l  #BRD_LINE_CNT_BASE_X, d5
         move.l  #BRD_LINE_CNT_BASE_Y, d6
-        move.l  #2, d0
-.loop:
-        moveq.l #0, d2
-        move.b  (a1,d0), d2
-        lsl.l   #2, d2
-        move.l  (a2,d2), a0
-        add.l   #tiles, a0
-        jsr     drawtile
-        subq.l  #1, d5
-        dbra    d0, .loop
+        move.l  a0, a1
+        jsr     drawnum
 
-        movem.l (a7)+, d0-d6/a0-a2
+        movem.l (a7)+, d0-d6/a0-a1
         rts
 .digits:
         dc.b    0,0,0
@@ -1112,7 +1081,7 @@ boardscoreinc:
 ; output   :
 ; modifies :
 boardscoreupd:
-        movem.l d0-d6/a0-a2, -(a7)
+        movem.l d0-d6/a0-a1, -(a7)
 
         ; update score by line clear count
         subq.l  #1, d0
@@ -1122,7 +1091,7 @@ boardscoreupd:
         add.l   (score), d0
         move.l  d0, (score)
 
-        moveq.l #6, d1
+        moveq.l #BRD_SCO_SIZE, d1
         lea.l   .digits, a0
         jsr     bcd
 
@@ -1137,26 +1106,18 @@ boardscoreupd:
         move.b  #87, d0
         move.w  #BRD_SCO_BASE_X<<TILE_SHIFT, d1
         move.w  #BRD_SCO_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BRD_SCO_BASE_X+6)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_SCO_BASE_X+BRD_SCO_SIZE)<<TILE_SHIFT-1, d3
         move.w  #(BRD_SCO_BASE_Y+1)<<TILE_SHIFT-1, d4
         trap    #15
 
+        moveq.l #1, d3
+        move.w  #BRD_SCO_SIZE, d4
+        move.w  #BRD_SCO_BASE_X, d5
+        move.w  #BRD_SCO_BASE_Y, d6
         move.l  a0, a1
-        lea.l   tiletable, a2
-        move.l  #BRD_SCO_BASE_X+5, d5
-        move.l  #BRD_SCO_BASE_Y, d6
-        move.l  #5, d0
-.loop:
-        moveq.l #0, d2
-        move.b  (a1,d0), d2
-        lsl.l   #2, d2
-        move.l  (a2,d2), a0
-        add.l   #tiles, a0
-        jsr     drawtile
-        subq.l  #1, d5
-        dbra    d0, .loop
+        jsr     drawnum
 
-        movem.l (a7)+, d0-d6/a0-a2
+        movem.l (a7)+, d0-d6/a0-a1
         rts
 .digits:
         dc.b    0,0,0,0,0
@@ -1233,7 +1194,7 @@ boardnextupd:
 ; output   :
 ; modifies :
 boardstatupd:
-        movem.l d0-d6/a0-a2, -(a7)
+        movem.l d0-d6/a0-a1, -(a7)
         ; convert number to bcd
         moveq.l #3, d1
         lea.l   .digits, a0
@@ -1243,7 +1204,6 @@ boardstatupd:
         ; tile y coord = piece number * 3 + BRD_STAT_BASE_Y
         move.l  d2, d6
         lsl.l   #1, d6
-        *add.l   d2, d6
         add.l   #BRD_STAT_BASE_Y-4, d6
 
         ; clear current number
@@ -1268,21 +1228,13 @@ boardstatupd:
         trap    #15
 
         ; plot number from bcd result
-        moveq.l #2, d0
+        moveq.l #1, d3
+        move.w  #BRD_STAT_SIZE, d4
         move.l  #$000019bc, d1
         move.l  a0, a1
-        lea.l   tiletable, a2
-.loop:
-        moveq.l #0, d2
-        move.b  (a1)+, d2
-        lsl.l   #2, d2
-        move.l  (a2,d2), a0
-        add.l   #tiles, a0
-        jsr     drawtilecol
-        addq.l  #1, d5
-        dbra    d0, .loop
+        jsr     drawnumcol
 
-        movem.l (a7)+, d0-d6/a0-a2
+        movem.l (a7)+, d0-d6/a0-a1
         rts
 .digits: ds.b   3
         ds.w    0
