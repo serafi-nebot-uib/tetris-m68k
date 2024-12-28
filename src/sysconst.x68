@@ -1,10 +1,10 @@
 ; --- global -------------------------------------------------------------------
 GLB_SCALE_SMALL: equ 0
 GLB_SCALE_BIG: equ 1
-GLB_SCALE: equ  GLB_SCALE_SMALL
+GLB_SCALE: equ  GLB_SCALE_BIG
 GLB_VER_ORIGINAL: equ 0
 GLB_VER_HIGHRES: equ 1
-GLB_VER: equ GLB_VER_ORIGINAL
+GLB_VER: equ GLB_VER_HIGHRES
 
 ; --- sync ---------------------------------------------------------------------
 ; configured to 7 to avoid Easy68K blocking the interrupt

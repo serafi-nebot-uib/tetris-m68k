@@ -130,7 +130,7 @@ game_plot:
 .statupd:
         move.l  d2, d1
         lsl.l   #1, d1
-        move.b  #0, (a0,d1)
+        move.b  (a0,d1), d0
         jsr     boardstatupd
         dbra    d2, .statupd
 
@@ -396,6 +396,7 @@ game_clr_rows:
 game_pause:
         movem.l d1-d2/d5-d6, -(a7)
 
+        sndplay SND_STOP_ALL
         sncdisable
         jsr     scrclr
         move.l  #$00f89568, d1
@@ -408,20 +409,22 @@ game_pause:
         jsr     kbdupd
         btst    #KBD_ESC_POS, (KBD_EDGE)
         beq     .chk
-.done:
+
+        ; TODO: fix game restore (not everything is restored correctly)
         jsr     game_plot
         jsr     pieceplot
         move.l  #game_player, (GME_STATE)
         sncenable
-
+        move.b  (GME_MUSIC), d1
+        cmp.b   #3, d1
+        beq     .done
+        sndplay d1, #SND_LOOP
+.done:
         movem.l (a7)+, d1-d2/d5-d6
         rts
 .pause_str:
         dc.b    'PAUSED',0
         ds.w    0
-
-game_stats:
-        rts
 
 game_over:
         movem.l d0-d6/a0, -(a7)
@@ -506,5 +509,6 @@ game_over:
         rts
 
 game_halt:
+        sndplay SND_STOP_ALL
 .halt:  bra     .halt
         rts

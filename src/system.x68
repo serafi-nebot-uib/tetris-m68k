@@ -190,19 +190,19 @@ mouseupd:
         bne     .lclick
         bra     .noclick
 .lclick:
-        move.w  #BUTT_POS_X-BUTT_WIDTH/2, d1
+        move.w  #(BUTT_POS_X*TILE_MULT)-(BUTT_WIDTH*TILE_MULT)/2, d1
         cmp.w   (MOUSE_POS_X), d1
         bge     .noclick
 
-        move.w  #BUTT_POS_Y-BUTT_HEIGHT/2, d1
+        move.w  #(BUTT_POS_Y*TILE_MULT)-(BUTT_HEIGHT*TILE_MULT)/2, d1
         cmp.w   (MOUSE_POS_Y), d1
         bge     .noclick
 
-        move.w  #BUTT_POS_X+BUTT_WIDTH/2, d1
+        move.w  #(BUTT_POS_X*TILE_MULT)+(BUTT_WIDTH*TILE_MULT)/2, d1
         cmp.w   (MOUSE_POS_X), d1
         ble     .noclick
 
-        move.w  #BUTT_POS_Y+BUTT_HEIGHT/2, d1
+        move.w  #(BUTT_POS_Y*TILE_MULT)+(BUTT_HEIGHT*TILE_MULT)/2, d1
         cmp.w   (MOUSE_POS_Y), d1
         ble     .noclick
 
