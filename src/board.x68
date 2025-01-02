@@ -476,6 +476,32 @@ piecerelease:
         movem.l (a7)+, d0-d6/a0-a1
         rts
 
+; checks if a given row is empty
+;
+; input    : d0.l - y board coordinate (row)
+; output   : d0.l - row status
+; modifies :
+boardchkempty:
+        movem.l d1-d2/a0, -(a7)
+
+        lea.l   board, a0
+        mulu    #BRD_WIDTH, d0
+        add.l   d0, a0
+
+        moveq.l #BRD_WIDTH/2-1, d2
+.loop:
+        move.w  (a0)+, d1
+        cmp.w   #$ffff, d1                      ; uses words to save iterations
+        bne     .notempty
+        dbra    d2, .loop
+        moveq.l #0, d0                          ; set D0 to 0 if row is empty
+        bra     .done
+.notempty:
+        moveq.l #1, d0                          ; set D0 to 1 if row is not empty
+.done:  
+        movem.l (a7)+, d1-d2/a0
+        rts
+
 ; check horizontal fill for x consecutive rows
 ;
 ; input    : d0.l - start y board coordinate

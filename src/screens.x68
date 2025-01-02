@@ -9,6 +9,9 @@ screens:
 ; TODO: add mouse to legal and start screens
 
 screen_legal:
+; --- INITIALIZE LEGAL SCREEN ---
+        jsr     mouseinit
+
         movem.l d0-d1/d5-d6/a0-a1, -(a7)
         ; clear screen
         move.b  #11, d0
@@ -98,14 +101,23 @@ screen_legal:
 
         jsr     scrplot
 
+; --- UPDATE LEGAL SCREEN ---
+
         move.l  #SNC_TIME_S*5, (SNC_CNT_DOWN)   ; 5 second timer
 .loop:
         jsr     kbdupd
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)
         bne     .done
+
+        jsr     mouseupd
+*        cmp.b   #1, (MOUSE_EDGE)
+        cmp.b   #1, (BUTT_PRESS)
+        beq     .done
+
         tst.l   (SNC_CNT_DOWN)
         bgt     .loop
 .done:
+        ; DON'T PASS THIS STATE TILL CLICK UP
         move.b  #1, (SCR_NUM)
 
         movem.l (a7)+, d0-d1/d5-d6/a0-a1
@@ -131,10 +143,9 @@ screen_legal:
 
 ; --- screen start: pantalla start -------------------------------------------
 screen_start:
-        clr.w   (BUTT_PRESS)
-        clr.w   (MOUSE_POS_X)
-        clr.w   (MOUSE_POS_Y)
-        clr.b   (MOUSE_VAL)
+*        MOVE.W   #0,(MOUSE_POS_X)
+*        MOVE.W   #0,(MOUSE_POS_Y)
+**        move.b   #0, (BUTT_PRESS)
         move.w  #0, (KBD_ENTER_PRESS)
         move.b  #0, (KBD_EDGE)
 
@@ -147,7 +158,7 @@ screen_start:
 .loop:
         ; --- CHECKING IF ENTER BUTTON IS PRESSED ------------------------
         jsr     kbdupd
-
+        
         ; CHECK FOR ENTER
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)
         beq     .END_KBD
@@ -159,8 +170,9 @@ screen_start:
         beq     .DONE
 
         jsr     mouseupd
-        btst.b  #0, (MOUSE_VAL)
-        beq     .loop
+*        cmp.b   #1, (MOUSE_EDGE)
+        cmp.b   #1, (BUTT_PRESS)
+        bne     .loop
 .done:
         sndplay #SND_MENUSLCT
         SNDPLAY #SND_MUSIC1, #SND_LOOP
@@ -172,40 +184,18 @@ screen_start:
 ; --- JSR FOR CHANGING THE MUSIC ---
 
 CHK_MUSIC:
-        cmp.b   #0, (GME_MUSIC)
-        beq     .PLAY_MUSIC1
-        cmp.b   #1, (GME_MUSIC)
-        beq     .PLAY_MUSIC2
-        cmp.b   #2, (GME_MUSIC)
-        beq     .PLAY_MUSIC3
         cmp.b   #3, (GME_MUSIC)
         beq     .OFF_MUSIC
-        bra     .END
 
-.PLAY_MUSIC1:                                   ; IF UP ARROW CLICKED MULTIPLE TIMES
         sndplay SND_STOP_ALL
         sndplay #SND_MENUSLCT
-        sndplay #SND_MUSIC1, #SND_LOOP
-        bra     .END
-
-.PLAY_MUSIC2:
-        sndplay SND_STOP_ALL
-        sndplay #SND_MENUSLCT
-        sndplay #SND_MUSIC2, #SND_LOOP
-        bra     .END
-
-.PLAY_MUSIC3:
-        sndplay SND_STOP_ALL
-        sndplay #SND_MENUSLCT
-        sndplay #SND_MUSIC3, #SND_LOOP
-        bra     .END
+        sndplay (GME_MUSIC), #SND_LOOP
+        rts
 
 .OFF_MUSIC:
         sndplay SND_STOP_ALL
         sndplay #SND_MENUSLCT
-
-.END:   rts
-
+        rts
 
 
 ; --- screen_type: pantalla de seleccio de type i music ----------------------
@@ -218,12 +208,11 @@ screen_type:
 ; ----------------------------------------------------------------------------
         move.w  #0, (KBD_ENTER_PRESS)
         move.b  #0, (KBD_EDGE)
-            
+
         ; --- PAINT BLACK SCREEN ---
         move.b  #11, d0
         move.w  #$ff00, d1
         trap    #15
-
 
         ; --- PAINTING BITMAP ---
         lea.l   bgmode, a1
@@ -236,9 +225,7 @@ screen_type:
 ; --- UPDATE -----------------------------------------------------------------
 
 ; READ INPPUT DEVICES
-
         jsr     kbdupd
-            
 ; ----------------------------------------------------------------------------
 ; UPDATE TYPE AND MUSIC SELECTION POSITION.
 ; INPUT    : NONE 
@@ -247,8 +234,8 @@ screen_type:
 ; ----------------------------------------------------------------------------
 
         movem.l d0-d1, -(a7)
-            
-        ;; UPDATE COORDINATE X
+
+        ; UPDATE COORDINATE X
         move.b  (GME_TYPE), d0
         btst.b  #KBD_LEFT_POS, (KBD_EDGE)
         beq     .CHKLFT
@@ -539,15 +526,23 @@ screen_type:
 .DONER:
         jsr     drawtile
 
-            
         jsr     SCRPLOT
-
         ; --- CHECKING IF ENTER BUTTON IS PRESSED ------------------------
         btst.b  #KBD_ENTER_POS, (KBD_EDGE)
         bne     .FIN2
+        
+        btst.b  #KBD_ESC_POS, (KBD_EDGE)
+        bne     .BACK_TO_SCREEN_START
+        
         bra     .LOOP2
+        
+.BACK_TO_SCREEN_START:
+        sndplay (GME_MUSIC), #SND_STOP
+        sndplay #SND_MENUSLCTD
+        move.b  #1, (SCR_NUM)
+        rts
 
-.FIN2:  
+.FIN2:
         btst.b  #0, (GME_TYPE)
         bne     .TYPEB_SCR
         bra     .TYPEA_SCR

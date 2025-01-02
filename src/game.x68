@@ -140,7 +140,7 @@ game_plot:
         rts
 
 game_spawn:
-        movem.l d0/d2, -(a7)
+        movem.l d0-d2, -(a7)
 
         ; TODO: get next piece by number generator
         moveq.l #0, d0
@@ -172,7 +172,33 @@ game_spawn:
 .collision:
         move.l  #game_over, (GME_STATE)
 .done:
-        movem.l (a7)+, d0/d2
+        ;************** ALLEGRO PLAYER ***************
+        move.b  (GME_MUSIC), d1
+        cmp.b   #3, d1                          ; if music is OFF skips this part
+        beq     .done2
+
+        moveq.l #5, d0                          ; checks if row 5 (height 15) is empty
+        jsr     boardchkempty 
+        cmp.b   #0, d0
+        beq     .emptyrow                       ; if its empty jump
+
+        ; not empty, play allegro version
+        cmp.b   #3, d1
+        bgt     .done2                          ; exits if current song is already allegro version
+        sndplay SND_STOP_ALL
+        add.b   #6, (GME_MUSIC)                 ; sets allegro version as the current song
+        sndplay (GME_MUSIC), #SND_LOOP
+
+        ; empty, play normal version
+.emptyrow:
+        cmp.b   #3, d1
+        blt     .done2                          ; exits if current song is already normal version
+        sndplay SND_STOP_ALL
+        sub.b   #6, (GME_MUSIC)                 ; resets allegro version to normal version
+        sndplay (GME_MUSIC), #SND_LOOP 
+        ;*********************************************
+.done2:
+        movem.l (a7)+, d0-d2
         rts
 
 game_player:
@@ -370,12 +396,10 @@ game_clr_rows:
         bra     .animation
 .tetris:
         sndplay #SND_TETRISACH
-
         ; line clear animation
 .animation:
         move.w  #BRD_WIDTH/2-1, d0
         move.b  #0, (SNC_PLOT)
-
 .clr:
         jsr     boardclrfill
         add.w   #1, (a7)
@@ -384,10 +408,8 @@ game_clr_rows:
         blo     .sync
         jsr     scrplot
         move.b  #0, (SNC_PLOT)
-
         dbra.w  d0, .clr
         addq.l  #8, a7
-
 .done:
         move.l  #game_spawn, (GME_STATE)
         movem.l (a7)+, d0-d2/d4
@@ -396,7 +418,7 @@ game_clr_rows:
 game_pause:
         movem.l d1-d2/d5-d6, -(a7)
 
-        sndplay SND_STOP_ALL
+        sndplay (GME_MUSIC), #SND_STOP
         sncdisable
         jsr     scrclr
         move.l  #$00f89568, d1
@@ -429,7 +451,7 @@ game_pause:
 game_over:
         movem.l d0-d6/a0, -(a7)
 
-        sndplay SND_STOP_ALL
+        sndplay (GME_MUSIC), #SND_STOP
         sndplay #SND_DEATH
 
         ; get color scheme based on current level and push them to the stack

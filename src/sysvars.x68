@@ -9,6 +9,7 @@ KBD_EDGE: ds.b  1                               ; key edge
 
 ; --- mouse --------------------------------------------------------------------
 MOUSE_VAL: ds.b 1                               ; mouse click state
+MOUSE_EDGE: ds.b 1                              ; mouse edge state
 MOUSE_POS_X: ds.w 1                             ; mouse x coordinate
 MOUSE_POS_Y: ds.w 1                             ; mouse y coordinate
 

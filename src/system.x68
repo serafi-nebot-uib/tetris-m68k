@@ -162,58 +162,83 @@ kbdupd:
         rts
 
 mouseinit:
+; init mouse
+; input    : none
+; output   : none
+; modifies : none
+; ------------------------------------------------------------------------------
         move.b  #0, (MOUSE_VAL)
+        move.w  #0, (MOUSE_POS_X)
+        move.w  #0, (MOUSE_POS_Y)
         ; move.l  #mouseupd, ($80+MOUSE_TRAP*4)
         rts
 
 mouseupd:
-        movem.l d0-d3, -(a7)
+; checks mouse info and updates button state.
+; input    : none
+; output   : none
+; modifies : none
+; ------------------------------------------------------------------------------
+        movem.l d0-d4, -(a7)
+
+        moveq.l #0, d0
+        moveq.l #0, d1
+        moveq.l #0, d2
+        moveq.l #0, d3
+        moveq.l #0, d4
+
+        move.b  #0, (BUTT_PRESS)                ; resets button status
 
         ; read current state of mouse and change mouse coordinates
         move.b  #61, d0
         move.b  #00, d1
         trap    #15
 
-        ; store mouse x coordinate
-        move.w  d1, (MOUSE_POS_X)
+        ; compute mousedge
+        move.b  (MOUSE_VAL), d3
+        not.b   d3
+        and.b   #%00000001, d0                  ; filters only left click
+        and.b   d0, d3
+        move.b  d3, (MOUSE_EDGE)
 
-        move.w  #15, d3
+        ; store mouseval & mouse x coordinate
+        move.b  d0, (MOUSE_VAL)
+        move.w  d1, (MOUSE_POS_X)
+        move.w  d1, d0
+
+        moveq.l #15, d4
 .loop:  lsl.l   #1, d1
         addx.w  d2, d2
-        dbra.w  d3, .loop
+        dbra    d4, .loop
 
         ; store mouse y coordinate
         move.w  d2, (MOUSE_POS_Y)
 
         ; if left click pressed and it's inside the button add 1
-        btst    #0, d0
-        bne     .lclick
-        bra     .noclick
-.lclick:
-        move.w  #(BUTT_POS_X*TILE_MULT)-(BUTT_WIDTH*TILE_MULT)/2, d1
-        cmp.w   (MOUSE_POS_X), d1
+*        btst.l  #0, d0
+*        bne     .noclick
+        btst.l  #0, d3
+        beq     .noclick 
+
+        move.w  #(BUTT_POS_X*TILE_MULT)-(BUTT_WIDTH*TILE_MULT)/2, d1 
+        cmp.w   d0, d1
         bge     .noclick
 
         move.w  #(BUTT_POS_Y*TILE_MULT)-(BUTT_HEIGHT*TILE_MULT)/2, d1
-        cmp.w   (MOUSE_POS_Y), d1
+        cmp.w   d2, d1
         bge     .noclick
 
         move.w  #(BUTT_POS_X*TILE_MULT)+(BUTT_WIDTH*TILE_MULT)/2, d1
-        cmp.w   (MOUSE_POS_X), d1
+        cmp.w   d0, d1
         ble     .noclick
 
         move.w  #(BUTT_POS_Y*TILE_MULT)+(BUTT_HEIGHT*TILE_MULT)/2, d1
-        cmp.w   (MOUSE_POS_Y), d1
+        cmp.w   d2, d1
         ble     .noclick
-
-        btst.b  #0, (MOUSE_VAL)
-        bne     .noclick
-        addq.w  #1, (BUTT_PRESS)
-        move.b  #1, (MOUSE_VAL)
-
-        bra     .noclick
+        
+        add.b   #1, (BUTT_PRESS)
 .noclick:
-        movem.l (a7)+, d0-d3
+        movem.l (a7)+, d0-d4
         rts
 
 ; sound system init

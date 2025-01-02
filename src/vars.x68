@@ -12,7 +12,7 @@ GME_B_HEIGHT: dc.b 5                            ; selected height
 GME_STATE: ds.l 1
 
 ; --- mouse --------------------------------------------------------------------
-BUTT_PRESS: ds.w 1                              ; 1 if screen button has been pressed
+BUTT_PRESS: ds.b 1                              ; 1 if screen button has been pressed
 
 ; --- keyboard -----------------------------------------------------------------
 KBD_ENTER_PRESS: ds.w 1                         ; holds 1 if enter has been pressed
