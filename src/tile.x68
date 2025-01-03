@@ -37,10 +37,10 @@ tileinit:
 
         movem.l (a7)+, d0-d2/a1
         rts
-        ifeq GLB_SCALE-GLB_SCALE_SMALL
+        ifeq    GLB_SCALE-GLB_SCALE_SMALL
 .tileset_path: dc.b 'tile-table-16.bin',0
         endc
-        ifeq GLB_SCALE-GLB_SCALE_BIG
+        ifeq    GLB_SCALE-GLB_SCALE_BIG
 .tileset_path: dc.b 'tile-table-32.bin',0
         endc
         ds.w    0
@@ -336,10 +336,10 @@ _drawstr:
 ;            a1.l - number array (in decimal digit form)
 ; output   :
 ; modifies :
-drawnumcol:
+drawdigitscol:
         movem.l d3-d6/a0-a4, -(a7)
         lea.l   drawtilecol, a3
-        bra     _drawnum
+        bra     _drawdigits
 ; draw decimal number from digit array
 ;
 ; input    : d3.b - draw leading 0s (flag: 1 -> true, 0 -> false)
@@ -349,10 +349,10 @@ drawnumcol:
 ;            a1.l - number array (in decimal digit form)
 ; output   :
 ; modifies :
-drawnum:
+drawdigits:
         movem.l d3-d6/a0-a4, -(a7)
         lea.l   drawtile, a3
-_drawnum:
+_drawdigits:
         move.l  (tileaddr), a4
         lea.l   tiletable, a2
         subq.w  #1, d4
@@ -376,3 +376,55 @@ _drawnum:
 .done:
         movem.l (a7)+, d3-d6/a0-a4
         rts
+
+; draw decimal number
+;
+; input    : d0.l - number to draw
+;            d1.l - override color
+;            d3.b - draw leading 0s (flag: 1 -> true, 0 -> false)
+;            d4.w - number of digits to draw
+;            d5.w - number start x coordinate
+;            d6.w - number start y coordinate
+; output   :
+; modifies :
+drawnumcol:
+        movem.l d4/a1-a2, -(a7)
+        lea.l   drawdigitscol, a2
+        bra     _drawnum
+; draw decimal number
+;
+; input    : d0.l - number to draw
+;            d3.b - draw leading 0s (flag: 1 -> true, 0 -> false)
+;            d4.w - number of digits to draw
+;            d5.w - number start x coordinate
+;            d6.w - number start y coordinate
+; output   :
+; modifies :
+drawnum:
+        movem.l d4/a1-a2, -(a7)
+        lea.l   drawdigits, a2
+_drawnum:
+        lea.l   .digits, a0
+        move.l  d1, -(a7)
+        moveq.l #5-1, d1
+.clr:
+        move.b  #0, (a0,d1.w)
+        dbra.w  d1, .clr
+
+        cmp.w   #5, d4
+        bls     .bcd
+        move.w  #5, d4
+.bcd:
+        moveq.l #0, d1
+        move.w  d4, d1
+        jsr     bcd
+
+        move.l a0, a1
+        move.l  (a7)+, d1
+        jsr     (a2)
+
+        movem.l (a7)+, d4/a1-a2
+        rts
+.digits:
+        ds.b    5
+        ds.w    0

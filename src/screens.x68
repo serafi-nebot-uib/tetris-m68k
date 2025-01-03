@@ -656,7 +656,7 @@ screen_level_a:
         moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
-        jsr     drawnum
+        jsr     drawdigits
         move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 
@@ -686,7 +686,7 @@ screen_level_a:
         moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
-        jsr     drawnum
+        jsr     drawdigits
         move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 
@@ -1099,7 +1099,7 @@ screen_level_b:
         moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
-        jsr     drawnum
+        jsr     drawdigits
         move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 
@@ -1129,7 +1129,7 @@ screen_level_b:
         moveq.l #0, d3
         lsl.l   #1, d2
         add.w   d2, d6
-        jsr     drawnum
+        jsr     drawdigits
         move.l  (a7)+, d3
         movem.l (a7)+, d0/a0
 

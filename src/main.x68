@@ -36,6 +36,15 @@ start:
         jsr     sysinit
         jsr     tileinit
 
+        move.l  #1234, d0
+        move.b  #0, d3
+        moveq.l #5, d4
+        moveq.l #0, d5
+        moveq.l #0, d6
+        jsr     drawnum
+        jsr     scrplot
+        simhalt
+
         move.b  #0, (SCR_NUM)
 .loop:
         moveq.l #0, d1

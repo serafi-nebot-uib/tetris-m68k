@@ -10,6 +10,7 @@ GME_B_HEIGHT_TABLE: dc.b 0, 3, 5, 8, 10, 12     ; board height list
 GME_B_HEIGHT: dc.b 5                            ; selected height
         ds.w    0
 GME_STATE: ds.l 1
+GME_HIGH_SCORE: ds.l 1
 
 ; --- mouse --------------------------------------------------------------------
 BUTT_PRESS: ds.b 1                              ; 1 if screen button has been pressed

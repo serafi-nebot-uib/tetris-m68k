@@ -725,7 +725,7 @@ boardlvlupd:
         move.w  #BRD_LVL_BASE_X, d5
         move.w  #BRD_LVL_BASE_Y, d6
         move.l  a0, a1
-        jsr     drawnum
+        jsr     drawdigits
 
         moveq.l #PIECE_WIDTH, d2
         moveq.l #PIECE_HEIGHT, d3
@@ -1070,7 +1070,7 @@ boardlineinc:
         move.l  #BRD_LINE_CNT_BASE_X, d5
         move.l  #BRD_LINE_CNT_BASE_Y, d6
         move.l  a0, a1
-        jsr     drawnum
+        jsr     drawdigits
 
         movem.l (a7)+, d0-d6/a0-a1
         rts
@@ -1141,7 +1141,7 @@ boardscoreupd:
         move.w  #BRD_SCO_BASE_X, d5
         move.w  #BRD_SCO_BASE_Y, d6
         move.l  a0, a1
-        jsr     drawnum
+        jsr     drawdigits
 
         movem.l (a7)+, d0-d6/a0-a1
         rts
@@ -1258,7 +1258,7 @@ boardstatupd:
         move.w  #BRD_STAT_SIZE, d4
         move.l  #$000019bc, d1
         move.l  a0, a1
-        jsr     drawnumcol
+        jsr     drawdigitscol
 
         movem.l (a7)+, d0-d6/a0-a1
         rts
