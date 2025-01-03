@@ -35,6 +35,8 @@ BRD_SCO_BASE_X: equ 29
 BRD_SCO_BASE_Y: equ 8
 BRD_SCO_SIZE: equ 5
 BRD_GO_PADDING: equ 2*TILE_MULT
+BRD_TOP_SCO_BASE_X: equ 29
+BRD_TOP_SCO_BASE_Y: equ 5
 
 ; --- button -------------------------------------------------------------------
 BUTT_POS_X: equ 320

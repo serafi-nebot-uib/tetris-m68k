@@ -1,6 +1,4 @@
 screens:
-        dc.l    screen_game
-
         dc.l    screen_legal
         dc.l    screen_start
         dc.l    screen_type
@@ -635,6 +633,10 @@ screen_level_a:
         lsl.l   #8, d1
         move.b  (a0)+, d1
 
+        tst.b   d3
+        bne     .digit
+        move.l  d1, (GME_HIGH_SCORE)
+.digit:
         ; convert score to decimal digit array
         movem.l d0/a0, -(a7)
         lea.l   SCO_SCORE, a0
@@ -1078,6 +1080,10 @@ screen_level_b:
         lsl.l   #8, d1
         move.b  (a0)+, d1
 
+        tst.b   d3
+        bne     .digit
+        move.l  d1, (GME_HIGH_SCORE)
+.digit:
         ; convert score to decimal digit array
         movem.l d0/a0, -(a7)
         lea.l   SCO_SCORE, a0

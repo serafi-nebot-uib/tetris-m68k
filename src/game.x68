@@ -112,13 +112,20 @@ game_type_b_init:
         rts
 
 game_plot:
-        movem.l d0-d2/d5-d6/a0, -(a7)
+        movem.l d0-d6/a0, -(a7)
         ; draw screen background
         jsr     scrclr
         lea.l   bggame, a1
         moveq.l #0, d5
         moveq.l #0, d6
         jsr     drawmap
+        ; draw top score
+        move.l  (GME_HIGH_SCORE), d0
+        move.b  #0, d3
+        moveq.l #5, d4
+        move.l  #BRD_TOP_SCO_BASE_X, d5
+        move.l  #BRD_TOP_SCO_BASE_Y, d6
+        jsr     drawnum
         ; update statistics box
         move.w  #0, (levelcnt)
         move.b  #0, (levelnum)
@@ -134,7 +141,7 @@ game_plot:
         jsr     boardstatupd
         dbra    d2, .statupd
 
-        movem.l (a7)+, d0-d2/d5-d6/a0
+        movem.l (a7)+, d0-d6/a0
         rts
 
 game_spawn:
