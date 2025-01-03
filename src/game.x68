@@ -264,10 +264,10 @@ game_player:
 ; -----------------------------
 ; TODO: remove this as it is only for testing
 .chkenter:
-        btst    #KBD_ENTER_POS, d0
-        beq     .chkctrl
-        move.l  #game_inc_level, (GME_STATE)
-        bra     .done
+        ; btst    #KBD_ENTER_POS, d0
+        ; beq     .chkctrl
+        ; move.l  #game_inc_level, (GME_STATE)
+        ; bra     .done
 .chkctrl:
         btst    #KBD_CTRL_POS, d0
         beq     .done
@@ -348,12 +348,13 @@ game_inc_level:
         ; update board pieces
         jsr     boardplot
         jsr     pieceplot
-        move.l  #game_player, (GME_STATE)
+        move.l  #game_spawn, (GME_STATE)
         move.l  (a7)+, d0
         rts
 
 game_clr_rows:
         movem.l d0-d2/d4, -(a7)
+        move.l  #game_spawn, (GME_STATE)
         ; d0.l -> piece y coord
         moveq.l #0, d0
         move.b  (piece+1), d0
@@ -393,6 +394,13 @@ game_clr_rows:
 
         ; update line & core stats
         jsr     boardlineinc
+        move.w  (linecount), d1
+        divu.w  #10, d1
+        swap    d1
+        cmp.w   d0, d1
+        bhs     .ninc
+        move.l  #game_inc_level, (GME_STATE)
+.ninc:
         jsr     boardscoreupd
 
         cmp.b   #4, d0
@@ -416,7 +424,6 @@ game_clr_rows:
         dbra.w  d0, .clr
         addq.l  #8, a7
 .done:
-        move.l  #game_spawn, (GME_STATE)
         movem.l (a7)+, d0-d2/d4
         rts
 

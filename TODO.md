@@ -1,6 +1,5 @@
 # Feature
 
-- Increase game level automatically
 - Randomly select next piece
 - Start game at selected level
 - Piece acceleration
