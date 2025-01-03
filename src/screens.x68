@@ -1,4 +1,6 @@
 screens:
+        dc.l    screen_game
+
         dc.l    screen_legal
         dc.l    screen_start
         dc.l    screen_type
@@ -589,7 +591,7 @@ screen_level_a:
         jsr     netscorereq
         jsr     netclose
 
-        lea.l   netbuff, a0
+        lea.l   NET_BUFFER, a0
         lea.l   SCO_NAME, a1
         ; check score list id
         cmp.b   #$03, (a0)+
@@ -1032,7 +1034,7 @@ screen_level_b:
         jsr     netscorereq
         jsr     netclose
 
-        lea.l   netbuff, a0
+        lea.l   NET_BUFFER, a0
         lea.l   SCO_NAME, a1
         ; check score list id
         cmp.b   #$03, (a0)+

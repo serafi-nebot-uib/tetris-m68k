@@ -1,8 +1,9 @@
-sysinit:
 ; initialize system
-; input   : none
-; output  : none
-; modifies: none
+;
+; input    :
+; output   :
+; modifies :
+sysinit:
         ori.w   #$0700, sr                      ; disable interrupts
         jsr     scrinit
         jsr     kbdinit
@@ -20,10 +21,20 @@ sysinit:
         ; rte
         rts
 
+; enable sync timer
+;
+; input    :
+; output   :
+; modifies :
 sncenable: macro
-        move.l  #sncinc, ($60+SNC_EXC*4)
+        move.l  #sncupd, ($60+SNC_EXC*4)
         endm
 
+; disable sync timer
+;
+; input    :
+; output   :
+; modifies :
 sncdisable: macro
         move.l  #sncskip, ($60+SNC_EXC*4)
         endm
@@ -31,11 +42,16 @@ sncdisable: macro
 sncskip:
         rte
 
-sncinc:
+sncupd:
         addq.b  #1, (SNC_PLOT)
         subq.l  #1, (SNC_CNT_DOWN)
         rte
 
+; initialize sync timer
+;
+; input    :
+; output   :
+; modifies :
 sncinit:
         move.b  #0, (SNC_PLOT)
         move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
@@ -51,13 +67,12 @@ sncinit:
         trap    #15
         rts
 
+; initialize screen
+;
+; input    :
+; output   :
+; modifies :
 scrinit:
-; init screen. set screen resolution, set windowed mode, clear screen,
-; enable double buffer.
-; input    : none
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------
         movem.l d0-d1, -(a7)
         ; set screen resolution
         move.b  #33, d0
@@ -80,6 +95,11 @@ scrinit:
         movem.l (a7)+, d0-d1
         rts
 
+; clear screen
+;
+; input    :
+; output   :
+; modifies :
 scrclr:
         movem.w d0-d1, -(a7)
         move.b  #11, d0
@@ -88,12 +108,12 @@ scrclr:
         movem.w (a7)+, d0-d1
         rts
 
+; update double buffer; show changes on screen
+;
+; input    :
+; output   :
+; modifies :
 scrplot:
-; updates double buffer
-; input    : none
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------
         move.w  d0, -(a7)
         ; switch buffers
         move.b  #94, d0
@@ -101,31 +121,23 @@ scrplot:
         move.w  (a7)+, d0
         rts
 
+; initialize keyboard
+;
+; input    :
+; output   :
+; modifies :
 kbdinit:
-; init keyboard
-; input    : none
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------
         clr.b   (KBD_VAL)
         clr.b   (KBD_EDGE)
         ; move.l  #kbdupd, ($80+KBD_TRAP*4)
         rts
 
+; update keyboard data
+;
+; input    :
+; output   :
+; modifies :
 kbdupd:
-; update keyboard info.
-; 7 -> shift
-; 6 -> ctrl
-; 5 -> esc
-; 4 -> spacebar
-; 3 -> down
-; 2 -> right
-; 1 -> up
-; 0 -> left
-; input    : none
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------
         movem.l d0-d3, -(a7)
 
         ; read first part
@@ -161,24 +173,24 @@ kbdupd:
         dbra.w  d3, .loop
         rts
 
+; initialize mouse
+;
+; input    :
+; output   :
+; modifies :
 mouseinit:
-; init mouse
-; input    : none
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------
         move.b  #0, (MOUSE_VAL)
         move.w  #0, (MOUSE_POS_X)
         move.w  #0, (MOUSE_POS_Y)
         ; move.l  #mouseupd, ($80+MOUSE_TRAP*4)
         rts
 
+; check mouse info and update button state
+;
+; input    :
+; output   :
+; modifies :
 mouseupd:
-; checks mouse info and updates button state.
-; input    : none
-; output   : none
-; modifies : none
-; ------------------------------------------------------------------------------
         movem.l d0-d4, -(a7)
 
         moveq.l #0, d0
@@ -215,8 +227,6 @@ mouseupd:
         move.w  d2, (MOUSE_POS_Y)
 
         ; if left click pressed and it's inside the button add 1
-*        btst.l  #0, d0
-*        bne     .noclick
         btst.l  #0, d3
         beq     .noclick 
 
@@ -259,26 +269,25 @@ sndinit:
         bra     .loop
 .done:  movem.l (a7)+, d0-d1/a0-a1
         rts
-
-.music1: dc.b   'snd/1-MUSIC1.wav',0            ; MUSIC 1
-.music2: dc.b   'snd/2-MUSIC2.wav',0            ; MUSIC 2 
-.music3: dc.b   'snd/3-MUSIC3.wav',0            ; MUSIC 3
-.btypsuc: dc.b  'snd/4-BTYPESUCCESS.wav',0      ; B-TYPE GOAL ACHIEVED (LINES COMPLETED)                      
-.endmusic: dc.b 'snd/5-ENDING.wav',0            ; A-TYPE & B-TYPE ENDING MUSIC
-.highscore: dc.b 'snd/6-HIGHSCORE.wav',0        ; HIGH SCORE SCREEN MUSIC
-.music1fst: dc.b 'snd/8-TRACK8.wav',0           ; MUSIC 1 ALLEGRO
-.music2fst: dc.b 'snd/9-TRACK9.wav',0           ; MUSIC 2 ALLEGRO
-.music3fst: dc.b 'snd/10-TRACK10.wav',0         ; MUSIC 3 ALLEGRO
-.menuslct: dc.b 'snd/SFX2.wav',0                ; LVL SELECTION & USERNAME KEY SOUND EFFECT
-.menuslctd: dc.b 'snd/SFX3.wav',0               ; LVL SELECTED SOUND EFFECT
-.shftpiece: dc.b 'snd/SFX4.wav',0               ; SHIFTING PIECE SIDEWAYS SOUND EFFECT
-.rotpiece: dc.b 'snd/SFX6.wav',0                ; ROTATING PIECE SOUND EFFECT
-.levelup: dc.b  'snd/SFX7.wav',0                ; LEVEL UP SOUND EFFECT
-.piecelock: dc.b 'snd/SFX8.wav',0               ; LOCK PIECE (FINAL POSITION) SOUND EFFECT
-.tetrisach: dc.b 'snd/SFX10.wav',0              ; TETRIS ACHIEVED (4-LINES CLEAR) SOUND EFFECT
-.linecompl: dc.b 'snd/SFX11.wav',0              ; LINE COMPLETED SOUND EFFECT
-.death: dc.b    'snd/SFX14.wav',0               ; DEATH SOUND SOUND EFFECT
-.endrckt: dc.b  'snd/SFX15.wav',0               ; ENDING ROCKET SOUND EFFECT
+.music1: dc.b   'snd/1-MUSIC1.wav',0            ; music 1
+.music2: dc.b   'snd/2-MUSIC2.wav',0            ; music 2 
+.music3: dc.b   'snd/3-MUSIC3.wav',0            ; music 3
+.btypsuc: dc.b  'snd/4-BTYPESUCCESS.wav',0      ; b-type goal achieved (lines completed)
+.endmusic: dc.b 'snd/5-ENDING.wav',0            ; a-type & b-type ending music
+.highscore: dc.b 'snd/6-HIGHSCORE.wav',0        ; high score screen music
+.music1fst: dc.b 'snd/8-TRACK8.wav',0           ; music 1 allegro
+.music2fst: dc.b 'snd/9-TRACK9.wav',0           ; music 2 allegro
+.music3fst: dc.b 'snd/10-TRACK10.wav',0         ; music 3 allegro
+.menuslct: dc.b 'snd/SFX2.wav',0                ; lvl selection & username key sound effect
+.menuslctd: dc.b 'snd/SFX3.wav',0               ; lvl selected sound effect
+.shftpiece: dc.b 'snd/SFX4.wav',0               ; shifting piece sideways sound effect
+.rotpiece: dc.b 'snd/SFX6.wav',0                ; rotating piece sound effect
+.levelup: dc.b  'snd/SFX7.wav',0                ; level up sound effect
+.piecelock: dc.b 'snd/SFX8.wav',0               ; lock piece (final position) sound effect
+.tetrisach: dc.b 'snd/SFX10.wav',0              ; tetris achieved (4-lines clear) sound effect
+.linecompl: dc.b 'snd/SFX11.wav',0              ; line completed sound effect
+.death: dc.b    'snd/SFX14.wav',0               ; death sound sound effect
+.endrckt: dc.b  'snd/SFX15.wav',0               ; ending rocket sound effect
         ds.w    0
 .list:  dc.l    .music1,.music2,.music3
         dc.l    .btypsuc,.endmusic,.highscore

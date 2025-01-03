@@ -1,14 +1,3 @@
-NET_BUFFER_LEN: equ 1024
-
-server_port: dc.w 6969
-server_host: dc.b 'tetris-m68k.westeurope.cloudapp.azure.com',0
-; server_host: dc.b '127.0.0.1',0
-; server_host: dc.b '172.16.39.1',0
-        ds.w    0
-
-netbuff: ds.b   NET_BUFFER_LEN
-        ds.w    0
-
 ; establish TCP connection with (server_host) at (server_port)
 ;
 ; input    :
@@ -19,10 +8,10 @@ netinit:
         ; TODO: retry logic
         ; network client init
         move.b  #100, d0
-        move.w  (server_port), d1
+        move.w  (NET_SERVER_PORT), d1
         swap    d1
         move.w  #1, d1                          ; configure conn as TCP
-        lea.l   server_host, a2
+        lea.l   NET_SERVER_HOST, a2
         trap    #15
         movem.l (a7)+, d0-d1/a2
         rts
@@ -39,7 +28,7 @@ netclose:
         move.b  (a7)+, d0
         rts
 
-; send d1 bytes from netbuff to the connected host
+; send d1 bytes from NET_BUFFER to the connected host
 ;
 ; input    : d1.w - number of bytes to send
 ; output   :
@@ -48,17 +37,17 @@ netsend:
         movem.l d0-d2/a1-a2, -(a7)
         move.b  #106, d0
         andi.l  #$ffff, d1
-        move.w  (server_port), d2
+        move.w  (NET_SERVER_PORT), d2
         lsl.l   #8, d2
         lsl.l   #8, d2
         or.l    d2, d1
-        lea.l   netbuff, a1
-        lea.l   server_host, a2
+        lea.l   NET_BUFFER, a1
+        lea.l   NET_SERVER_HOST, a2
         trap    #15
         movem.l (a7)+, d0-d2/a1-a2
         rts
 
-; send d1 bytes from netbuff to the connected host
+; send d1 bytes from NET_BUFFER to the connected host
 ;
 ; input    : d2.l - max retry time in 10s of ms
 ; output   : d1.w - number of bytes received
@@ -69,7 +58,7 @@ netrecv:
 .recv:
         move.b  #107, d0
         move.l  #NET_BUFFER_LEN, d1
-        lea.l   netbuff, a1
+        lea.l   NET_BUFFER, a1
         trap    #15
         ; retry on empty data
         tst.w   d1                              ; d1 -> number of bytes received
@@ -93,7 +82,7 @@ netrecv:
 netscorereq:
         movem.l d0-d1/a0, -(a7)
         ; build data frame
-        lea.l   netbuff, a0
+        lea.l   NET_BUFFER, a0
         move.b  #$04, (a0)+
         move.b  d0, (a0)+
         move.w  d1, (a0)+
@@ -110,7 +99,7 @@ netscorereq:
 ; score list decode
 scorelistdec:
         movem.l d0-d2/a0-a1, -(a7)
-        lea.l   netbuff, a0
+        lea.l   NET_BUFFER, a0
         lea.l   .player, a1
         ; check score list id
         cmp.b   #$03, (a0)+

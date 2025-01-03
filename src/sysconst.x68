@@ -1,7 +1,7 @@
 ; --- global -------------------------------------------------------------------
 GLB_SCALE_SMALL: equ 0
 GLB_SCALE_BIG: equ 1
-GLB_SCALE: equ  GLB_SCALE_BIG
+GLB_SCALE: equ  GLB_SCALE_SMALL
 GLB_VER_ORIGINAL: equ 0
 GLB_VER_HIGHRES: equ 1
 GLB_VER: equ GLB_VER_ORIGINAL
@@ -11,6 +11,9 @@ GLB_VER: equ GLB_VER_ORIGINAL
 SNC_EXC: equ    7
 SNC_TIME: equ   10                              ; 10 milliseconds -> 100 times/second
 SNC_TIME_S: equ 1000/SNC_TIME
+
+; --- network ---------------------------------------------------------------------
+NET_BUFFER_LEN: equ 1024
 
 ; --- screen -------------------------------------------------------------------
         ifeq    GLB_SCALE-GLB_SCALE_SMALL

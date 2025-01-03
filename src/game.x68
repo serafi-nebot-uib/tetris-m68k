@@ -134,8 +134,6 @@ game_plot:
         jsr     boardstatupd
         dbra    d2, .statupd
 
-        jsr     scrplot
-
         movem.l (a7)+, d0-d2/d5-d6/a0
         rts
 
@@ -434,6 +432,7 @@ game_pause:
 
         ; TODO: fix game restore (not everything is restored correctly)
         jsr     game_plot
+        jsr     boardplot
         jsr     pieceplot
         move.l  #game_player, (GME_STATE)
         sncenable
@@ -531,6 +530,5 @@ game_over:
         rts
 
 game_halt:
-        sndplay SND_STOP_ALL
 .halt:  bra     .halt
         rts
