@@ -1,28 +1,32 @@
 screen_game:
         movem.l d0/a0-a1, -(a7)
 ; --- init ---------------------------------------------------------------------
-        move.w  #0, (levelcnt)
-        move.b  #0, (levelnum)
         move.w  #0, (linecount)
         move.w  #0, (score)
+        ; setup selected level
+        move.w  (LVL_SEL_FNUM), d0
+        move.w  d0, (levelcnt)
+        move.b  d0, (levelnum)
+        jsr     boarddropupd
+
+        subq.w  #1, d0
+        blt     .scolvldone
+.scolvl:
+        jsr     boardscoreinc
+        dbra.w  d0, .scolvl
+.scolvldone:
+
         ; clear piecestats
         lea.l   piecestats, a0
         moveq.l #6, d0
 .piecestats:
         move.b  #0, (a0)+
         dbra    d0, .piecestats
-        ; reset scoretable
-        lea.l   scorevals, a0
-        lea.l   scoretable, a1
-        moveq.l #3, d0
-.scoretable:
-        move.w  (a0)+, (a1)+
-        dbra    d0, .scoretable
+
         ; TODO: get values from RNG
         move.b  #0, (piecenum)
         move.b  #1, (piecenumn)
         ; -------------------------
-        jsr     boarddropupd
         ; check if current game type B
         tst.b   (GME_TYPE)
         beq     .game_plot
@@ -127,8 +131,6 @@ game_plot:
         move.l  #BRD_TOP_SCO_BASE_Y, d6
         jsr     drawnum
         ; update statistics box
-        move.w  #0, (levelcnt)
-        move.b  #0, (levelnum)
         jsr     boardlvlupd
 
         moveq.l #0, d0

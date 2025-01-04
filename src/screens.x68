@@ -185,7 +185,7 @@ screen_start:
 
 CHK_MUSIC:
         cmp.b   #3, (GME_MUSIC)
-        beq     .OFF_MUSIC
+        bge     .OFF_MUSIC
 
         sndplay SND_STOP_ALL
         sndplay #SND_MENUSLCT

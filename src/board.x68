@@ -550,20 +550,6 @@ boardchkfill:
         movem.l (a7)+, d0-d3/a0-a1
         rts
 
-piecedropfind:
-        move.l  d0, -(a7)
-.drop:
-        piecemovd #1
-        jsr     piececoll
-        tst.b   d0
-        beq     .drop
-        piecemovu #1
-        move.b  (piece+1), d0
-        piecerollback
-        move.b  d0, (piece+2)
-        move.l  (a7)+, d0
-        rts
-
 ; drop non-filled rows according to row shift status
 ;
 ; input    : d0.l - start y board coordinate
