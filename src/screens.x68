@@ -328,6 +328,7 @@ screen_type:
         move.w  #TAM_TYPE_POS_Y<<TILE_SHIFT, d2
         move.w  #(TAM_TYPE_POS_X+1)<<TILE_SHIFT, d3
         move.w  #(TAM_TYPE_POS_Y+1)<<TILE_SHIFT, d4
+        subq.l  #1, d3
             
         ; DRAW SQUARE
         move.b  #87, d0
@@ -413,6 +414,7 @@ screen_type:
         move.w  #TAM_MUSIC_POS_Y<<TILE_SHIFT, d2
         move.w  #(TAM_MUSIC_POS_X+1)<<TILE_SHIFT, d3
         move.w  #(TAM_MUSIC_POS_Y+7)<<TILE_SHIFT, d4
+        subq.l  #1, d3
             
         ; DRAW SQUARE
         move.b  #87, d0

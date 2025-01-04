@@ -65,7 +65,7 @@ TAM_MUSIC_POS_Y equ 18
 LVL_SEL_BASE_X: equ 183
 LVL_SEL_BASE_Y: equ 183
 LVL_SEL_COL: equ $003b99f5                      ; fill color of the selection square
-LVL_SEL_SIDE: equ 29                            ; side length of the selection square
+LVL_SEL_SIDE: equ 28                            ; side length of the selection square
 LVL_SEL_SIDEM: equ 32                           ; number of pixels square is moved to the side
 LVL_SEL_BLACK_X: equ 46                         ; number of pixels black square is moved
 LVL_SEL_FONT_COL: equ $00ffffff

@@ -1,7 +1,6 @@
 # Feature
 
 - Randomly select next piece
-- Start game at selected level
 - Piece acceleration
 - Change to highscore screen when game is over
 - Create success screen for type-b
