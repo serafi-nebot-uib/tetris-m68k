@@ -1906,6 +1906,7 @@ screen_congrats_b:
 
 ; --- SUBRUTINE THAT UPDATES AND PLOTS THE NAME INTRODUCTION OF THE WINNER ---
 ENTER_NAME:
+        sndplay #SND_HIGHSCORE, #SND_LOOP
         move.w  #USR_I_POS_X, (LETPOSX)
         move.w  #USR_I_POS_Y, (LETPOSY)         ; ADD +2 OR +4 WHEN IT'S TOP 2 OR TOP 3 RESPECTIVELY
         ; adjust y pos for current high score
@@ -1926,7 +1927,8 @@ ENTER_NAME:
 
         ; --- GET TOP 3 PLAYERS FROM SERVER ---
         jsr     netinit
-        move.b  #1, d0
+        move.b  (GME_TYPE), d0
+        add.b   #1, d0
         move.w  #3, d1
         move.w  #300, d2                        ; 300*10ms = 3s timeout
         jsr     netscorereq
@@ -2259,8 +2261,39 @@ ENTER_NAME:
 .FIN_CONGR:
         sndplay #SND_MENUSLCTD
 
+        lea.l   USR, a0
+        lea.l   .player_name, a1
+        moveq.l #5, d0
+.name_loop:
+        move.w  (a0), d1
+        cmp.w   #10, d1
+        blo     .name_inv
+        cmp.w   #36, d1
+        blo     .name_chr
+.name_inv:
+        move.w  #$20, d1
+        bra     .name_cpy
+.name_chr:
+        add.b   #'A'-10, d1
+.name_cpy:
+        move.b  d1, (a1)+
+        addq.l  #2, a0
+        dbra    d0, .name_loop
 
+        jsr     netinit
+
+        move.b  (GME_TYPE), d0
+        add.b   #1, d0
+        move.l  (score), d1
+        move.l  #300, d2
+        move.w  (levelcnt), d3
+        lea.l   .player_name, a1
+        jsr     netscorepub
+        jsr     netclose
 
         move.b  #1, (SCR_NUM)
 
         rts
+.player_name:
+        ds.b    6
+        ds.w    0

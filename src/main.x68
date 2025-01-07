@@ -36,30 +36,7 @@ start:
         jsr     sysinit
         jsr     tileinit
 
-        jsr     netinit
-        move.b  #0, d0
-        addq.b  #1, d0
-        move.w  #37, (levelcnt)
-        move.l  #420, (score)
-        move.l  (score), d1
-        move.l  #300, d2
-        jsr     netscoreplace
-        jsr     netclose
-
-        cmp.l   #3, d1
-        bls     .top3
-        move.b  #1, (SCR_NUM)
-        bra     .done
-.top3:
-        move.w  d1, (USR_HIGHSCORE_POS)
-        move.b  #6, (SCR_NUM)
-        move.b  #0, d0
-        add.b   d0, (SCR_NUM)
-.done:
-
-        ; simhalt
-        ;
-        ; move.b  #0, (SCR_NUM)
+        move.b  #0, (SCR_NUM)
 .loop:
         moveq.l #0, d1
         move.b  (SCR_NUM), d1
