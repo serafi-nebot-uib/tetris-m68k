@@ -84,6 +84,13 @@ LVL_SEL_LEVEL_BASE_Y: equ 20
 LVL_SEL_LEVEL_LEN: equ 3
 
 ; --- user intro ---------------------------------------------------------------
-USR_I_POS_X: equ 12
-USR_I_POS_Y: equ 19
+CONGRATS_POS_X equ 13
+CONGRATS_POS_Y equ 7
+
+LETTER_B equ    11
+CONGR_B_POS_X equ 17
+CONGR_B_POS_Y equ 3
+
+USR_I_POS_X: equ 13
+USR_I_POS_Y: equ 20
 USR_MAX_SIZE: equ 6

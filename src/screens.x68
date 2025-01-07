@@ -5,6 +5,8 @@ screens:
         dc.l    screen_level_a
         dc.l    screen_level_b
         dc.l    screen_game
+        dc.l    screen_congrats_a
+        dc.l    screen_congrats_b
 
 ; TODO: add mouse to legal and start screens
 
@@ -1781,241 +1783,484 @@ SEL_HEIGHT:
 
 
 
-; ; ; ----------------------------------------------------------------------------
-; ; ; ----------------------------------------------------------------------------
-; ; ; --- SCREEN 5: Pantalla Username HighScore ----------------------------------
-; ; ; ----------------------------------------------------------------------------
-; ; ; ----------------------------------------------------------------------------
-; ;
-; ; SCREEN5:
-; ;
-; ; ; ----------------------------------------------------------------------------
-; ; ; INITIALIZE HIGHSCORE USER SCREEN.
-; ; ; INPUT    : NONE 
-; ; ; OUTPUT   : NONE
-; ; ; MODIFIES : NONE
-; ; ; ----------------------------------------------------------------------------
-; ;         move.w  #0, (KBD_ENTER_PRESS)
-; ;         move.w  #USRIPOSX, (LETPOSX)
-; ;         move.w  #USRIPOSY, (LETPOSY)
-; ;         lea     USR, a0
-; ;         move.l  a0, (USRLTRPOS)
-; ;         move.w  #USRMAXSIZE-1, d0
-; ; .LOOP:
-; ;         move.w  #36, (a0)+
-; ;         dbra.w    d0, .LOOP
-; ;             
-; ;         ; --- PAINT SCREEN TO BLACK ---
-; ;             
-; ;         move.b  #11, d0
-; ;         move.w  #$ff00, d1
-; ;         trap    #15
-; ;             
-; ;         ; --- PAINTING BITMAP ---
-; ;         lea.l   bgscore, a0
-; ;         jsr     drawmap
-; ;             
-; ;         jsr scrplot
-; ;
-; ;             
-; ;
-; ; .LOOP5:
-; ; ; --- UPDATE -----------------------------------------------------------------
-; ;
-; ; ; READ INPPUT DEVICES
-; ;
-; ;         jsr kbdupd
-; ;             
-; ; ; ----------------------------------------------------------------------------
-; ; ; UPDATE HIGHSCORE USER SCREEN.
-; ; ; INPUT    : NONE 
-; ; ; OUTPUT   : NONE
-; ; ; MODIFIES : NONE
-; ; ; ----------------------------------------------------------------------------
-; ;
-; ;         movem.l d0-d1, -(a7)
-; ;             
-; ;         lea     USR, a0
-; ;               
-; ;         ; PROBLEMA: TIENE QUE ESTAR PULSANDO AMBAS TECLAS PARA MOVERLA
-; ;           
-; ;         ; UPDATE COORDINATE X
-; ;         move.l  (USRLTRPOS), d0
-; ;         btst.b  #KBD_LEFT_POS, (KBD_EDGE)
-; ;         beq     .CHKLFT
-; ;         sub.l   #2, d0
-; ;         move.l  d0, (USRLTRPOS)
-; ; .CHKLFT: btst.b #KBD_RIGHT_POS, (KBD_EDGE)
-; ;         beq     .CONT
-; ;         add.l   #2, d0
-; ;         move.l  d0, (USRLTRPOS)
-; ;             
-; ;         ; CHECK COLLISIONS
-; ; .CONT:  move.l  a0, d1
-; ;         cmp.w   d1, d0
-; ;         bge     .CONT2
-; ;         move.l  d1, (USRLTRPOS)
-; ;         bra     .DONE1
-; ; .CONT2: add.w   #10, d1
-; ;         cmp.w   d1, d0
-; ;         ble     .DONE1
-; ;         move.l  d1, (USRLTRPOS)
-; ;             
-; ; .DONE1:
-; ;         move.l  USRLTRPOS, a1
-; ;         ; UPDATE COORDINATE Y
-; ;         btst.b  #KBD_UP_POS, (KBD_EDGE)
-; ;         beq     .CHKUP
-; ;         move.w  (a1), d0
-; ;         add.w   #1, d0
-; ;         move.w  d0, (a1)
-; ; .CHKUP: btst.b  #KBD_DOWN_POS, (KBD_EDGE)
-; ;         beq     .CONT3
-; ;         move.w  (a1), d0
-; ;         sub.w   #1, d0
-; ;         move.w  d0, (a1)
-; ;             
-; ;         ; CHECK COLLISIONS
-; ; .CONT3: move.w  (a1), d0
-; ;         cmp.w   #0, d0
-; ;         bge     .CONT4
-; ;         move.w  #36, (a1)
-; ;         bra     .DONE2
-; ; .CONT4: move.w  (a1), d0
-; ;         cmp.w   #36, d0
-; ;         ble     .DONE2
-; ;         move.w  #0, (a1)
-; ;
-; ; .DONE2:
-; ;
-; ;         ; CHECK FOR ENTER
-; ;         btst.b  #KBD_SPBAR_POS, (KBD_EDGE)
-; ;         beq     .END
-; ;         move.b  #1, (KBD_ENTER_PRESS)
-; ; .END:
-; ;
-; ;         movem.l (a7)+, d0-d1
-; ;
-; ; ; ----------------------------------------------------------------------------
-; ; ; PLOT HIGHSCORE USER SCREEN.
-; ; ; INPUT    : NONE 
-; ; ; OUTPUT   : NONE
-; ; ; MODIFIES : NONE
-; ; ; ----------------------------------------------------------------------------
-; ;             
-; ;         move.w  #5, d1
-; ;         lea     USR, a0
-; ; .LOOP51:
-; ;         move.l  (USRLTRPOS), d2
-; ;         move.l  a0, d3
-; ;             
-; ;         ; USED: D0,D1,A0,A1,A2
-; ;             
-; ;         ; paint one tile
-; ;         lea.l   tiletable, a1
-; ;         move.w  (a0)+, d0                       ; tile index
-; ;         lsl.l   #2, d0
-; ;         move.l  (a1,d0), d0
-; ;         lea.l   tiles, a2
-; ;         add.l   d0, a2
-; ;             
-; ;         cmp     d2, d3
-; ;         bne     .ISNOTCOL
-; ;             
-; ;             
-; ;         movem.l d0-d4, -(a7)
-; ;             
-; ;         move.b  #80, d0
-; ;         move.l  #$00000000, d1
-; ;         trap    #15
-; ;             
-; ;         move.b  #81, d0
-; ;         move.l  #LVL_SEL_COL, d1
-; ;         trap    #15
-; ;             
-; ;         move.b  #87, d0
-; ;         move.w  (LETPOSX), d1                   ; LX POS
-; ;         lsl.l   #4, d1
-; ;         sub.w   #1, d1
-; ;             
-; ;         move.w  (LETPOSY), d2                   ; UY POS
-; ;         lsl.l   #4, d2
-; ;         sub.w   #1, d2
-; ;             
-; ;         move.w  d1, d3
-; ;         add.w   #16, d3
-; ;             
-; ;         move.w  d2, d4
-; ;         add.w   #16, d4
-; ;             
-; ;         trap    #15
-; ;             
-; ;         jsr scrplot ; IF NOT COMMENTED, THE LETTER BLINKS
-; ;
-; ;         movem.l (a7)+, d0-d4
-; ;             
-; ;         bra     .CONTINUE
-; ;             
-; ; .ISNOTCOL:
-; ;         movem.l d0-d4, -(a7)
-; ;             
-; ;         move.b  #80, d0
-; ;         move.l  #$00000000, d1
-; ;         trap    #15
-; ;             
-; ;         move.b  #81, d0
-; ;         move.l  #$00000000, d1
-; ;         trap    #15
-; ;             
-; ;         move.b  #87, d0
-; ;         move.w  (LETPOSX), d1                   ; LX POS
-; ;         lsl.l   #4, d1
-; ;         sub.w   #1, d1
-; ;             
-; ;         move.w  (LETPOSY), d2                   ; UY POS
-; ;         lsl.l   #4, d2
-; ;         sub.w   #1, d2
-; ;             
-; ;         move.w  d1, d3
-; ;         add.w   #16, d3
-; ;             
-; ;         move.w  d2, d4
-; ;         add.w   #16, d4
-; ;             
-; ;         trap    #15
-; ;             
-; ;         movem.l (a7)+, d0-d4
-; ;             
-; ; .CONTINUE:
-; ;         move.l  a2, -(a7)
-; ;         move.w  (LETPOSY), -(a7)                ; y pos
-; ;         move.w  (LETPOSX), -(a7)                ; x pos
-; ;         jsr     drawtile
-; ;         addq.w  #8, a7
-; ;             
-; ;         add.w   #1, (LETPOSX)
-; ;             
-; ;         dbra    d1, .LOOP51
-; ;             
-; ;         move.w  #USRIPOSX, (LETPOSX)
-; ;             
-; ;
-; ;             
-; ;         move.b  (KBD_ENTER_PRESS), d0
-; ;         cmp.b   #1, d0
-; ;         beq     .FIN51
-; ;             
-; ;         btst.b  #KBD_CTRL_POS, (KBD_EDGE)
-; ;         bne     .FIN52
-; ;             
-; ;         jsr scrplot
-; ;
-; ;         bra     .LOOP5
-; ;             
-; ; .FIN52: move.b  #3, (SCR_NUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
-; ;
-; ;         rts
-; ;             
-; ;             
-; ; .FIN51: move.b  #1, (SCR_NUM)                 ; CHANGE TO DESIRED SCREEN WHEN DONE
-; ;
+
+
+
+
+
+
+; --- screen 6: pantalla celebracio tetris master type-a ---------------------
+screen_congrats_a:
+; ----------------------------------------------------------------------------
+; INITIALIZE CONGRATULATION TYPE-A USER INTRO WINDOW.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+        ; --- PAINT BLACK SCREEN ---
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        ; --- PAINTING BITMAP ---
+        lea.l   bgcongratulationsa, a1
+        moveq.l #0, d5
+        moveq.l #0, d6
+        jsr     drawmap
+        
+        ; --- DRAW COLOUR STRING (CONGRATULATIONS) ---        
+        lea.l   CONGRATULATIONS, a1
+        move.w  #CONGRATS_POS_X, d5
+        move.w  #CONGRATS_POS_Y, d6
+        move.l  #$000000ff, d1
+        jsr     drawstrcol
+
+        ; --- PLOT SCREEN ---
+        jsr     scrplot
+        
+        ; --- ENTER USERNAME INTRO UPDATE AND PLOT ---
+        jsr     ENTER_NAME
+
+        rts
+
+; --- screen 7: pantalla celebracio tetris master type-b ---------------------
+screen_congrats_b:
+; ----------------------------------------------------------------------------
+; INITIALIZE CONGRATULATION TYPE-B USER INTRO WINDOW.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+
+        ; --- PAINT BLACK SCREEN ---
+        move.b  #11, d0
+        move.w  #$ff00, d1
+        trap    #15
+
+        ; --- PAINTING BITMAP ---
+        lea.l   bgcongratulationsa, a1
+        moveq.l #0, d5
+        moveq.l #0, d6
+        jsr     drawmap
+        
+        ; --- DRAW COLOUR STRING (CONGRATULATIONS) ---        
+        lea.l   CONGRATULATIONS, a1
+        move.w  #CONGRATS_POS_X, d5
+        move.w  #CONGRATS_POS_Y, d6
+        move.l  #$000000ff, d1
+        jsr     drawstrcol
+        
+        ; --- DRAW BLACK SQUARE ON TOP OF LETTER A ---
+        
+        ; SET CONTOUR COLOUR
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; SET FILL COLOUR
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        ; DEFINE COORDINATES
+        move.w  #CONGR_B_POS_X<<TILE_SHIFT, d1
+        move.w  #CONGR_B_POS_Y<<TILE_SHIFT, d2
+        move.w  #(CONGR_B_POS_X+1)<<TILE_SHIFT, d3
+        move.w  #(CONGR_B_POS_Y+1)<<TILE_SHIFT, d4
+        subq.l  #1, d3
+            
+        ; DRAW SQUARE
+        move.b  #87, d0
+        trap    #15
+
+        
+        ; --- DRAW TILE LETTER B ---
+        lea.l   tiletable, a0
+        move.w  #LETTER_B, d0                   ; tile index
+        lsl.l   #2, d0
+        move.l  (a0,d0), a0
+        add.l   (tileaddr), a0
+
+        move.w  #CONGR_B_POS_X, d5              ; X pos
+        move.w  #CONGR_B_POS_Y, d6              ; Y pos
+        jsr     drawtile
+        
+        ; --- PLOT SCREEN ---
+        jsr     scrplot
+
+        ; --- ENTER USERNAME INTRO UPDATE AND PLOT ---
+        jsr     ENTER_NAME
+
+        rts
+
+
+
+
+
+
+
+
+
+
+
+
+; --- SUBRUTINE THAT UPDATES AND PLOTS THE NAME INTRODUCTION OF THE WINNER ---
+ENTER_NAME:
+        move.w  #USR_I_POS_X, (LETPOSX)
+        move.w  #USR_I_POS_Y, (LETPOSY)         ; ADD +2 OR +4 WHEN IT'S TOP 2 OR TOP 3 RESPECTIVELY
+        ; adjust y pos for current high score
+        move.w  (USR_HIGHSCORE_POS), d0
+        subq.w  #2, d0
+.LOOP_ENTER_NAME:
+        add.w   #2, (LETPOSY)
+        dbra.w  d0, .LOOP_ENTER_NAME
+
+        lea     USR, a0
+        move.l  a0, (USRLTRPOS)
+        move.w  #USR_MAX_SIZE-1, d0
+.LOOP_INIT_CGRTS:
+        move.w  #36, (a0)+
+        dbra    d0, .LOOP_INIT_CGRTS
+            
+        move.b  #0, (KBD_EDGE)
+
+        ; --- GET TOP 3 PLAYERS FROM SERVER ---
+        jsr     netinit
+        move.b  #1, d0
+        move.w  #3, d1
+        move.w  #300, d2                        ; 300*10ms = 3s timeout
+        jsr     netscorereq
+        jsr     netclose
+
+        lea.l   NET_BUFFER, a0
+        lea.l   SCO_NAME, a1
+        ; check score list id
+        cmp.b   #$03, (a0)+
+        bne     .score_done
+
+        ; number of scores
+        move.b  (a0)+, d0
+        lsl.w   #8, d0
+        move.b  (a0)+, d0
+
+        moveq.l #0, d3                          ; score iteration counter
+.score_loop:
+        move.w  (USR_HIGHSCORE_POS), d1
+        subq.l  #1, d1
+        cmp.w   d1, d3
+        beq     .score_nitr
+        ; check score id
+        cmp.b   #$02, (a0)+
+        bne     .score_done
+        moveq.l #0, d2                          ; player character tmp var
+        move.w  #0, d1
+.player_cpy:
+        move.b  (a0)+, d2
+        move.b  d2, (a1,d1.w)
+        addq.w  #1, d1
+        cmp.w   #6, d1
+        blo     .player_cpy
+        move.b  #0, 6(a1)                       ; add trailing 0 to indicate string end
+
+        move.w  #LVL_SEL_NAME_BASE_X, d5
+        move.w  #LVL_SEL_NAME_BASE_Y, d6
+        move.l  d3, d2
+        lsl.l   #1, d2
+        add.w   d2, d6
+        jsr     drawstr
+
+        ; skip game type
+        addq.l  #1, a0
+        ; player score
+        move.b  (a0)+, d1
+        lsl.l   #8, d1
+        move.b  (a0)+, d1
+        lsl.l   #8, d1
+        move.b  (a0)+, d1
+        lsl.l   #8, d1
+        move.b  (a0)+, d1
+
+        ; convert score to decimal digit array
+        movem.l d0/a0, -(a7)
+        lea.l   SCO_SCORE, a0
+        move.l  #LVL_SEL_SCORE_LEN-1, d2
+.score_clr:
+        move.b  #0, (a0)+
+        dbra    d2, .score_clr
+
+        move.l  d1, d0
+        move.l  #LVL_SEL_SCORE_LEN, d1
+        lea.l   SCO_SCORE, a0
+        jsr     bcd
+        move.l  a0, a1
+        move.w  #LVL_SEL_SCORE_BASE_X, d5
+        move.w  #LVL_SEL_SCORE_BASE_Y, d6
+        moveq.l #LVL_SEL_SCORE_LEN, d4
+        move.l  d3, d2
+        move.l  d3, -(a7)
+        moveq.l #0, d3
+        lsl.l   #1, d2
+        add.w   d2, d6
+        jsr     drawdigits
+        move.l  (a7)+, d3
+        movem.l (a7)+, d0/a0
+
+        ; game level
+        moveq.l #0, d1
+        move.b  (a0)+, d1
+        lsl.w   #8, d1
+        move.b  (a0)+, d1
+        ; convert level to decimal digit array
+        movem.l d0/a0, -(a7)
+        lea.l   SCO_SCORE, a0                   ; reuse score array
+        move.l  #LVL_SEL_LEVEL_LEN-1, d2
+.score_clr2:
+        move.b  #0, (a0)+
+        dbra    d2, .score_clr2
+
+        move.l  d1, d0
+        move.l  #LVL_SEL_LEVEL_LEN, d1
+        lea.l   SCO_SCORE, a0
+        jsr     bcd
+        move.l  a0, a1
+        move.w  #LVL_SEL_LEVEL_BASE_X, d5
+        move.w  #LVL_SEL_LEVEL_BASE_Y, d6
+        moveq.l #LVL_SEL_LEVEL_LEN, d4
+        move.l  d3, d2
+        move.l  d3, -(a7)
+        moveq.l #0, d3
+        lsl.l   #1, d2
+        add.w   d2, d6
+        jsr     drawdigits
+        move.l  (a7)+, d3
+        movem.l (a7)+, d0/a0
+.score_nitr:
+        addq.l  #1, d3
+        cmp.w   d0, d3
+        blo     .score_loop
+.score_done:
+
+        move.w  #LVL_SEL_SCORE_BASE_X, d5
+        move.w  (LETPOSY), d6
+        move.l  (score), d0
+        move.b  #0, d3
+        move.b  #5, d4
+        jsr     drawnum
+
+        move.w  #LVL_SEL_LEVEL_BASE_X, d5
+        move.w  (LETPOSY), d6
+        moveq.l #0, d0
+        move.w  (levelcnt), d0
+        move.b  #0, d3
+        move.b  #3, d4
+        jsr     drawnum
+
+        jsr     scrplot
+
+.LOOP_CONGR:
+; --- UPDATE -----------------------------------------------------------------
+
+; READ INPPUT DEVICES
+        jsr     kbdupd
+; ----------------------------------------------------------------------------
+; UPDATE TYPE AND MUSIC SELECTION POSITION.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+
+        movem.l d0-d1, -(a7)
+            
+        lea     USR, a0
+                      
+        ; UPDATE COORDINATE X
+        move.l  (USRLTRPOS), d0
+        btst.b  #KBD_LEFT_POS, (KBD_EDGE)
+        beq     .CHKLFT
+        sndplay #SND_MENUSLCT
+        sub.l   #2, d0
+        move.l  d0, (USRLTRPOS)
+.CHKLFT: btst.b #KBD_RIGHT_POS, (KBD_EDGE)
+        beq     .CONT
+        sndplay #SND_MENUSLCT
+        add.l   #2, d0
+        move.l  d0, (USRLTRPOS)
+            
+        ; CHECK COLLISIONS
+.CONT:  move.l  a0, d1
+        cmp.w   d1, d0
+        bge     .CONT2
+        move.l  d1, (USRLTRPOS)
+        bra     .DONE1
+.CONT2: add.w   #10, d1
+        cmp.w   d1, d0
+        ble     .DONE1
+        move.l  d1, (USRLTRPOS)
+            
+.DONE1:
+        move.l  USRLTRPOS, a1
+        ; UPDATE COORDINATE Y
+        btst.b  #KBD_UP_POS, (KBD_EDGE)
+        beq     .CHKUP
+        sndplay #SND_MENUSLCT
+        move.w  (a1), d0
+        add.w   #1, d0
+        move.w  d0, (a1)
+.CHKUP: btst.b  #KBD_DOWN_POS, (KBD_EDGE)
+        beq     .CONT3
+        sndplay #SND_MENUSLCT
+        move.w  (a1), d0
+        sub.w   #1, d0
+        move.w  d0, (a1)
+            
+        ; CHECK COLLISIONS
+.CONT3: move.w  (a1), d0
+        cmp.w   #0, d0
+        bge     .CONT4
+        move.w  #44, (a1)
+        bra     .DONE2
+.CONT4: move.w  (a1), d0
+
+        cmp.w   #37, d0
+        bne     .MISSCHAR
+        move.w  #39, (a1)
+.MISSCHAR:
+        cmp.w   #38, d0
+        bne     .MISSCHAR1
+        move.w  #36, (a1)
+.MISSCHAR1:
+        cmp.w   #44, d0
+        ble     .DONE2
+        move.w  #0, (a1)
+
+.DONE2:
+        movem.l (a7)+, d0-d1
+
+; ----------------------------------------------------------------------------
+; PLOT TYPE AND MUSIC SELECTION WINDOW.
+; INPUT    : NONE 
+; OUTPUT   : NONE
+; MODIFIES : NONE
+; ----------------------------------------------------------------------------
+        
+        move.w  #5, d1
+        lea     USR, a1
+            
+        ; --- THIS LOOP PAINTS ALL CARACTERS FROM FIRST TO LAST ---
+.LOOP51:
+        move.l  (USRLTRPOS), d2
+        move.l  a1, d3
+            
+        ; paint one tile
+        lea.l   tiletable, a0
+        move.w  (a1)+, d0                       ; tile index
+        lsl.l   #2, d0
+        move.l  (a0,d0), a0
+        add.l   (tileaddr), a0
+            
+        cmp     d2, d3
+        bne     .ISNOTCOL
+            
+        movem.l d0-d4, -(a7)
+            
+        ; --- PAINT CARACTER BACKGROUND (SELECTED) ---
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        move.b  #81, d0
+        move.l  #LVL_SEL_COL, d1
+        trap    #15
+            
+        move.b  #87, d0
+        move.w  (LETPOSX), d1                   ; LX POS
+        lsl.l   #4, d1
+        sub.w   #1, d1
+            
+        move.w  (LETPOSY), d2                   ; UY POS
+        lsl.l   #4, d2
+        sub.w   #1, d2
+            
+        move.w  d1, d3
+        add.w   #16, d3
+            
+        move.w  d2, d4
+        add.w   #16, d4
+            
+        mulu.w  #TILE_MULT, d1
+        mulu.w  #TILE_MULT, d2
+        mulu.w  #TILE_MULT, d3
+        mulu.w  #TILE_MULT, d4
+            
+        trap    #15
+            
+        jsr     scrplot                         ; IF NOT COMMENTED, THE LETTER "BLINKS"
+
+        movem.l (a7)+, d0-d4
+            
+        bra     .CONTINUE
+            
+.ISNOTCOL:
+        movem.l d0-d4, -(a7)
+            
+        ; --- PAINT CARACTER BACKGROUND (NOT SELECTED) ---
+        move.b  #80, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        move.b  #81, d0
+        move.l  #$00000000, d1
+        trap    #15
+            
+        move.b  #87, d0
+        move.w  (LETPOSX), d1                   ; LX POS
+        lsl.l   #4, d1
+        sub.w   #1, d1
+            
+        move.w  (LETPOSY), d2                   ; UY POS
+        lsl.l   #4, d2
+        sub.w   #1, d2
+            
+        move.w  d1, d3
+        add.w   #16, d3
+            
+        move.w  d2, d4
+        add.w   #16, d4
+            
+        mulu.w  #TILE_MULT, d1
+        mulu.w  #TILE_MULT, d2
+        mulu.w  #TILE_MULT, d3
+        mulu.w  #TILE_MULT, d4
+            
+        trap    #15
+            
+        movem.l (a7)+, d0-d4
+            
+.CONTINUE:
+        ; --- PAINT CARACTER TILE ---
+        move.w  (LETPOSX), d5                   ; x pos
+        move.w  (LETPOSY), d6                   ; y pos
+        jsr     drawtile
+            
+        add.w   #1, (LETPOSX)
+            
+        dbra    d1, .LOOP51
+            
+        move.w  #USR_I_POS_X, (LETPOSX)
+            
+            
+        jsr     scrplot
+
+
+        ; --- CHECKING IF ENTER BUTTON IS PRESSED ------------------------
+        btst.b  #KBD_ENTER_POS, (KBD_EDGE)
+        bne     .FIN_CONGR
+        bra     .LOOP_CONGR
+.FIN_CONGR:
+        sndplay #SND_MENUSLCTD
+
+
+
+        move.b  #1, (SCR_NUM)
+
+        rts

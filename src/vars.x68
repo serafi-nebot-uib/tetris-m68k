@@ -35,3 +35,12 @@ HIGH_SEL_POS_X: ds.w 1                          ; x pos of the selected level sq
 HIGH_SEL_POS_Y: ds.w 1                          ; y pos of the selected level square
 HIGH_SEL_NUM: ds.w 1                            ; selected number for height
 HIGH_SEL_FNUM: ds.w 1                           ; selected final number for height
+
+; --- user intro ---------------------------------------------------------------
+USR_HIGHSCORE_POS: ds.w 1
+LETPOSX: ds.w   1                               ; POSITION OF THE CURRENT LETTER SELECTION
+LETPOSY: ds.w   1
+USR:    ds.w    6
+USRLTRPOS: ds.l 1
+CONGRATULATIONS: dc.b 'CONGRATULATIONS ',0
+        ds.w    0

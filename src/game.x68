@@ -38,6 +38,8 @@ screen_game:
 ; --- update -------------------------------------------------------------------
         jsr     kbdupd
         move.l  (GME_STATE), a0
+        cmp.l   #0, a0
+        beq     .done
         jsr     (a0)
 ; --- sync ---------------------------------------------------------------------
 .sync:
@@ -47,6 +49,7 @@ screen_game:
 ; --- plot ---------------------------------------------------------------------
         jsr     scrplot
         bra     .loop
+.done:
         movem.l (a7)+, d0/a0-a1
         rts
 
@@ -540,8 +543,28 @@ game_over:
         dbra    d6, .loop
 
         add.l   #3*4, a7                        ; pop color scheme from stack
-        move.l  #game_halt, (GME_STATE)
 
+        move.l  #0, (GME_STATE)
+
+        ; check if score is in top 3
+        jsr     netinit
+        move.b  (GME_TYPE), d0
+        addq.b  #1, d0
+        move.l  (score), d1
+        move.l  #300, d2
+        jsr     netscoreplace
+        jsr     netclose
+
+        cmp.l   #3, d1
+        bls     .top3
+        move.b  #1, (SCR_NUM)
+        bra     .done
+.top3:
+        move.w  d1, (USR_HIGHSCORE_POS)
+        move.b  #6, (SCR_NUM)
+        move.b  (GME_TYPE), d0
+        add.b   d0, (SCR_NUM)
+.done:
         movem.l (a7)+, d0-d6/a0
         rts
 

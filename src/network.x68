@@ -92,6 +92,85 @@ netscorereq:
         movem.l (a7)+, d0-d1/a0
         rts
 
+; request score placement
+;
+; input    : d0.b - game type to retrieve
+;                   0 -> any
+;                   1 -> type A
+;                   2 -> type B
+;            d1.l - score
+;            d2.l - max retry time in 10s of ms
+; output   : d1.l - placement
+; modifies :
+netscoreplace:
+        movem.l d0/a0, -(a7)
+        ; build data frame
+        lea.l   NET_BUFFER, a0
+        move.b  #$06, (a0)+
+        move.b  d0, (a0)+                       ; copy game type
+        ; copy score
+        move.b  d1, 3(a0)
+        lsr.l   #8, d1
+        move.b  d1, 2(a0)
+        lsr.l   #8, d1
+        move.b  d1, 1(a0)
+        lsr.l   #8, d1
+        move.b  d1, (a0)
+        addq.l  #4, a0
+        move.w  #6, d1                          ; number of bytes to send
+        jsr     netsend
+        jsr     netrecv
+        lea.l   NET_BUFFER, a0
+        add.l   #2, a0
+        ; copy result
+        move.l  (a0)+, d1
+        movem.l (a7)+, d0/a0
+        rts
+
+; publish score
+;
+; input    : d0.b - game type
+;                   0 -> any
+;                   1 -> type A
+;                   2 -> type B
+;            d1.l - game score
+;            d2.l - max retry time in 10s of ms
+;            d3.w - game level
+;            a1.l - player name address
+; output   :
+; modifies :
+netscorepub:
+        movem.l d0-d1/a0, -(a7)
+        ; build data frame
+        lea.l   NET_BUFFER, a0
+        move.b  #$05, (a0)+                     ; score pub id
+        move.b  #$02, (a0)+                     ; score id
+        ; copy player name
+        move.w  #5, d4
+.player_cpy:
+        move.b  (a1)+, (a0)+
+        dbra.w  d4, .player_cpy
+        move.b  d0, (a0)+                       ; copy game type
+        ; copy score
+        move.b  d1, 3(a0)
+        lsr.l   #8, d1
+        move.b  d1, 2(a0)
+        lsr.l   #8, d1
+        move.b  d1, 1(a0)
+        lsr.l   #8, d1
+        move.b  d1, (a0)
+        addq.l  #4, a0
+        ; copy game level
+        move.b  d3, 1(a0)
+        lsr.l   #8, d3
+        move.b  d3, (a0)
+        addq.l  #2, a0
+        move.w  #15, d1                         ; number of bytes to send
+        jsr     netsend
+        jsr     netrecv
+        movem.l (a7)+, d0-d1/a0
+        rts
+
 
 
 
