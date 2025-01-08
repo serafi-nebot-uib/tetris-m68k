@@ -2262,20 +2262,12 @@ ENTER_NAME:
         sndplay #SND_MENUSLCTD
 
         lea.l   USR, a0
+        lea.l   .tile2chr, a2
         lea.l   .player_name, a1
         moveq.l #5, d0
 .name_loop:
         move.w  (a0), d1
-        cmp.w   #10, d1
-        blo     .name_inv
-        cmp.w   #36, d1
-        blo     .name_chr
-.name_inv:
-        move.w  #$20, d1
-        bra     .name_cpy
-.name_chr:
-        add.b   #'A'-10, d1
-.name_cpy:
+        move.b  (a2,d1.w), d1
         move.b  d1, (a1)+
         addq.l  #2, a0
         dbra    d0, .name_loop
@@ -2295,6 +2287,9 @@ ENTER_NAME:
         sndplay #SND_HIGHSCORE, #SND_STOP
 
         rts
+.tile2chr:
+        dc.b    '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ   ,/()"!'
+        ds.w    0
 .player_name:
         ds.b    6
         ds.w    0
