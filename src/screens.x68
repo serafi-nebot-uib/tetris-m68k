@@ -659,7 +659,7 @@ screen_level_a:
         moveq.l #LVL_SEL_SCORE_LEN, d4
         move.l  d3, d2
         move.l  d3, -(a7)
-        moveq.l #0, d3
+        moveq.l #1, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawdigits
@@ -689,7 +689,7 @@ screen_level_a:
         moveq.l #LVL_SEL_LEVEL_LEN, d4
         move.l  d3, d2
         move.l  d3, -(a7)
-        moveq.l #0, d3
+        moveq.l #1, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawdigits
@@ -1106,7 +1106,7 @@ screen_level_b:
         moveq.l #LVL_SEL_SCORE_LEN, d4
         move.l  d3, d2
         move.l  d3, -(a7)
-        moveq.l #0, d3
+        moveq.l #1, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawdigits
@@ -1136,7 +1136,7 @@ screen_level_b:
         moveq.l #LVL_SEL_LEVEL_LEN, d4
         move.l  d3, d2
         move.l  d3, -(a7)
-        moveq.l #0, d3
+        moveq.l #1, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawdigits
@@ -2000,7 +2000,7 @@ ENTER_NAME:
         moveq.l #LVL_SEL_SCORE_LEN, d4
         move.l  d3, d2
         move.l  d3, -(a7)
-        moveq.l #0, d3
+        moveq.l #1, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawdigits
@@ -2030,7 +2030,7 @@ ENTER_NAME:
         moveq.l #LVL_SEL_LEVEL_LEN, d4
         move.l  d3, d2
         move.l  d3, -(a7)
-        moveq.l #0, d3
+        moveq.l #1, d3
         lsl.l   #1, d2
         add.w   d2, d6
         jsr     drawdigits
@@ -2045,7 +2045,7 @@ ENTER_NAME:
         move.w  #LVL_SEL_SCORE_BASE_X, d5
         move.w  (LETPOSY), d6
         move.l  (score), d0
-        move.b  #0, d3
+        move.b  #1, d3
         move.b  #5, d4
         jsr     drawnum
 
@@ -2053,7 +2053,7 @@ ENTER_NAME:
         move.w  (LETPOSY), d6
         moveq.l #0, d0
         move.w  (levelcnt), d0
-        move.b  #0, d3
+        move.b  #1, d3
         move.b  #3, d4
         jsr     drawnum
 
@@ -2292,6 +2292,7 @@ ENTER_NAME:
         jsr     netclose
 
         move.b  #1, (SCR_NUM)
+        sndplay #SND_HIGHSCORE, #SND_STOP
 
         rts
 .player_name:

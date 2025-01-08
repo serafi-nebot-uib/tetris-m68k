@@ -1,6 +1,12 @@
 screen_game:
         movem.l d0/a0-a1, -(a7)
 ; --- init ---------------------------------------------------------------------
+        lea.l   board, a0
+        move.l  #BRD_SIZE-1, d0
+.brdclr:
+        move.b  #$ff, (a0)+
+        dbra    d0, .brdclr
+
         move.w  #0, (linecount)
         move.w  #0, (score)
         ; setup selected level
@@ -64,7 +70,8 @@ game_type_b_init:
         movea.l a2, a1
         add.l   #BRD_SIZE, a1
 
-        move.b  (GME_B_HEIGHT), d1
+        move.w  (HIGH_SEL_FNUM), d1
+        move.b  d1, (GME_B_HEIGHT)
         sub.b   (a0,d1.w), d0                   ; N = BRD_ROWS-GME_B_HEIGHT
         mulu    #BRD_COLS, d0                   ; N * BRD_COLS
         adda.l  d0, a2                          ; address on the board, initial tile spawning point
