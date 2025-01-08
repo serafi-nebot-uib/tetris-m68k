@@ -428,8 +428,39 @@ game_clr_rows:
         move.b  #0, (SNC_PLOT)
         dbra.w  d0, .clr
         addq.l  #8, a7
+
+        tst.b   (GME_TYPE)
+        beq     .done
+        ; check type-b success
+        cmp.w   #25, (linecount)
+        blo     .done
+        move.l  #game_type_b_success, (GME_STATE)
 .done:
         movem.l (a7)+, d0-d2/d4
+        rts
+
+game_type_b_success:
+        movem.l d0/d5-d6/a1, -(a7)
+        sndplay (GME_MUSIC), #SND_STOP
+        sndplay #SND_BTYPESUC
+
+        jsr     boardclr
+        lea.l   bgsuccesstypeb, a1
+        moveq.l #0, d5
+        moveq.l #0, d6
+        jsr     drawmap
+        jsr     scrplot
+
+        move.l  #0, (GME_STATE)
+        jsr     game_chk_top3
+
+        ; 3 second sleep
+        move.l  #300, (SNC_CNT_DOWN)
+.wait:
+        move.l  (SNC_CNT_DOWN), d0
+        bgt     .wait
+
+        movem.l (a7)+, d0/d5-d6/a1
         rts
 
 game_pause:
@@ -483,7 +514,7 @@ game_over:
         move.l  (a0)+, -(a7)                    ; first color to be drawn
 
         ; draw rectangle parameters
-        ; (except d1 which will be ovewritten by color trap 14 call)
+        ; (except d1 which will be ovewritten by color trap 15 call)
         move.l  #(BRD_BASE_X+BRD_WIDTH)<<TILE_SHIFT-1-BRD_GO_PADDING, d3
         move.l  #BRD_BASE_Y<<TILE_SHIFT, d2
         move.l  d2, d4
@@ -545,7 +576,13 @@ game_over:
         add.l   #3*4, a7                        ; pop color scheme from stack
 
         move.l  #0, (GME_STATE)
+        jsr     game_chk_top3
+.done:
+        movem.l (a7)+, d0-d6/a0
+        rts
 
+game_chk_top3:
+        movem.l d0-d2, -(a7)
         ; check if score is in top 3
         jsr     netinit
         move.b  (GME_TYPE), d0
@@ -565,7 +602,7 @@ game_over:
         move.b  (GME_TYPE), d0
         add.b   d0, (SCR_NUM)
 .done:
-        movem.l (a7)+, d0-d6/a0
+        movem.l (a7)+, d0-d2
         rts
 
 game_halt:

@@ -1838,7 +1838,7 @@ screen_congrats_b:
         trap    #15
 
         ; --- PAINTING BITMAP ---
-        lea.l   bgcongratulationsa, a1
+        lea.l   bgcongratulationsb, a1
         moveq.l #0, d5
         moveq.l #0, d6
         jsr     drawmap

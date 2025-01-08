@@ -28,8 +28,9 @@ tiletable:
         include 'bg/game.x68'
         include 'bg/type-a.x68'
         include 'bg/type-b.x68'
-        include 'bg/score-b.x68'
+        include 'bg/success-type-b.x68'
         include 'bg/congratulations-a.x68'
+        include 'bg/congratulations-b.x68'
 
 start:
 ; --- initialization -----------------------------------------------------------

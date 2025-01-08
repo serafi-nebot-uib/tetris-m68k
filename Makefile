@@ -18,5 +18,6 @@ tilemap:
 	./tool/tilemap.py map/bg-mode.csv src/bg/mode.x68 bgmode
 	./tool/tilemap.py map/bg-type-a.csv src/bg/type-a.x68 bgtypea
 	./tool/tilemap.py map/bg-type-b.csv src/bg/type-b.x68 bgtypeb
-	./tool/tilemap.py map/bg-score-b.csv src/bg/score-b.x68 bgscoreb
+	./tool/tilemap.py map/bg-success-type-b.csv src/bg/success-type-b.x68 bgsuccesstypeb
 	./tool/tilemap.py map/bg-congratulations-a.csv src/bg/congratulations-a.x68 bgcongratulationsa
+	./tool/tilemap.py map/bg-congratulations-b.csv src/bg/congratulations-b.x68 bgcongratulationsb
