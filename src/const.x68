@@ -71,7 +71,7 @@ LVL_SEL_BLACK_X: equ 46                         ; number of pixels black square 
 LVL_SEL_FONT_COL: equ $00ffffff
 
 ; --- height selection ---------------------------------------------------------
-HIGH_SEL_BASE_X: equ 407
+HIGH_SEL_BASE_X: equ 391
 HIGH_SEL_BASE_Y: equ 183
 
 LVL_SEL_NAME_BASE_X: equ 13

@@ -1202,7 +1202,7 @@ screen_level_b:
 
         move.l  d0, d5
         lsl.l   #1, d5
-        add.l   #25, d5
+        add.l   #24, d5
 
         move.l  d2, d6
         lsl.l   #1, d6
@@ -1610,7 +1610,7 @@ SEL_HEIGHT:
         ; DEFINE INITIAL COORDINATES
             
         move.w  #HIGH_SEL_BASE_X*TILE_MULT, d1
-        move.w  #4, d5
+        move.w  #2, d5
 .LOOPw_4H:
         move.w  #HIGH_SEL_BASE_Y*TILE_MULT, d2
         ; DEFINE COORDINATES
@@ -1630,7 +1630,7 @@ SEL_HEIGHT:
         dbra    d5, .LOOPw_4H
             
         move.w  #HIGH_SEL_BASE_X*TILE_MULT, d1
-        move.w  #4, d5
+        move.w  #2, d5
 .LOOP2w_4H:
         move.w  #(HIGH_SEL_BASE_Y+32)*TILE_MULT, d2
         ; DEFINE COORDINATES
@@ -1675,7 +1675,7 @@ SEL_HEIGHT:
 
         move.l  d0, d5
         lsl.l   #1, d5
-        add.l   #25, d5
+        add.l   #24, d5
 
         move.l  d2, d6
         lsl.l   #1, d6
@@ -1747,7 +1747,7 @@ SEL_HEIGHT:
 
         move.l  d0, d5
         lsl.l   #1, d5
-        add.l   #25, d5
+        add.l   #24, d5
 
         move.l  d2, d6
         lsl.l   #1, d6
