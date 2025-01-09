@@ -153,6 +153,17 @@ game_plot:
         jsr     boardstatupd
         dbra    d2, .statupd
 
+        ; draw b-type
+        lea.l   tiletable, a0
+        move.w  #10, d0                         ; letter B tile index
+        add.b   (GME_TYPE), d0
+        lsl.l   #2, d0
+        move.l  (a0,d0), a0
+        add.l   (tileaddr), a0
+        move.l  #7, d5
+        move.l  #4, d6
+        jsr     drawtile
+
         movem.l (a7)+, d0-d6/a0
         rts
 
