@@ -9,19 +9,6 @@ tiletable:
 
         org     $1000
 
-        include 'sysconst.x68'
-        include 'sysvars.x68'
-        include 'const.x68'
-        include 'vars.x68'
-        include 'system.x68'
-        include 'util.x68'
-        include 'tile.x68'
-        include 'piece.x68'
-        include 'board.x68'
-        include 'screens.x68'
-        include 'game.x68'
-        include 'network.x68'
-
         include 'bg/home.x68'
         include 'bg/mode.x68'
         include 'bg/game.x68'
@@ -30,6 +17,19 @@ tiletable:
         include 'bg/success-type-b.x68'
         include 'bg/congratulations-a.x68'
         include 'bg/congratulations-b.x68'
+
+        include 'sysconst.x68'
+        include 'sysvars.x68'
+        include 'const.x68'
+        include 'vars.x68'
+        include 'system.x68'
+        include 'network.x68'
+        include 'util.x68'
+        include 'tile.x68'
+        include 'piece.x68'
+        include 'board.x68'
+        include 'game.x68'
+        include 'screens.x68'
 
 start:
 ; --- initialization -----------------------------------------------------------
