@@ -8,7 +8,7 @@ screen_game:
         dbra    d0, .brdclr
 
         move.w  #0, (linecount)
-        move.w  #0, (score)
+        move.l  #0, (score)
         ; setup selected level
         move.w  (LVL_SEL_FNUM), d0
         move.w  d0, (levelcnt)
@@ -26,7 +26,7 @@ screen_game:
         lea.l   piecestats, a0
         moveq.l #6, d0
 .piecestats:
-        move.b  #0, (a0)+
+        move.w  #0, (a0)+
         dbra    d0, .piecestats
 
         ; initialize prng seed with current time
@@ -358,6 +358,7 @@ game_player:
         jsr     piececoll
         cmp.b   #0, d0
         bne     .rollback
+        sndplay #SND_SHFTPIECE
         jsr     piececlr
         jsr     pieceplot
         piececommit
