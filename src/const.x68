@@ -47,6 +47,12 @@ SCO_DOUBLE: equ 10
 SCO_TRIPLE: equ 30
 SCO_TETRIS: equ 120
 
+; --- game ---------------------------------------------------------------------
+GME_ACCEL_UPD_FREQ: equ 3
+GME_ACCEL_DELAY: equ $08
+GME_ACCEL_SPEED_X: equ 3
+GME_ACCEL_SPEED_Y: equ 5
+
 ; --- button -------------------------------------------------------------------
 BUTT_POS_X: equ 320
 BUTT_POS_Y: equ 240

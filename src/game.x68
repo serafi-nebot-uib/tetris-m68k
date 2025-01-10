@@ -15,7 +15,6 @@ screen_game:
         move.b  d0, (levelnum)
         jsr     boarddropupd
 
-        ; increase score table to default level
         subq.w  #1, d0
         blt     .scolvldone
 .scolvl:
@@ -227,7 +226,7 @@ game_spawn:
         rts
 
 game_player:
-        movem.l d0-d2, -(a7)
+        movem.l d0-d3, -(a7)
         move.b  #$ff, d2                        ; sound ignore
         ; check if piece should be moved down
         move.l  (SNC_CNT_DOWN), d0
@@ -249,21 +248,91 @@ game_player:
         move.b  (KBD_EDGE), d0
         move.b  (KBD_VAL), d1
 .chkdown:
+        move.b  (GME_ACCEL_LOCK_X), d3
+        cmp.b   #1, d3
+        beq     .cont
+        
+        ; ***** ACCELERATION ****
+        btst    #KBD_DOWN_POS, d1
+        beq     .rst
+        add.w   #1, (DOWNPRESSED)
+        move.w  (DOWNPRESSED), d3
+        cmp.w   #GME_ACCEL_DELAY, d3            ; delay until acceleration start
+        ble     .cont                       
+        move.l  #GME_ACCEL_UPD_FREQ, (SNC_PIECE_TIME)
+        move.l  #GME_ACCEL_SPEED_X, (SNC_CNT_DOWN)
+.wait:
+        move.l  (SNC_CNT_DOWN), d0
+        bgt     .wait
+        btst    #KBD_DOWN_POS, d0
+        beq     .snc                      
+.rst: 
+        move.w  #0, (DOWNPRESSED)
+        move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
+        ; ***********************
+.cont:              
         btst    #KBD_DOWN_POS, d0
         beq     .chkleft
+        move.b  #0, (GME_ACCEL_LOCK_X)       
+.snc:   
         piecemovd #1
         move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol
+        
 .chkleft:
+        ; ***** LEFT ACCELERATION ****
+        btst    #KBD_LEFT_POS, d1
+        beq     .rst2
+        add.w   #1, (LEFTPRESSED)
+        move.w  (LEFTPRESSED), d3
+        cmp.w   #GME_ACCEL_DELAY, d3            ; delay until acceleration start
+        ble     .cont2                       
+        move.l  #GME_ACCEL_UPD_FREQ, (SNC_PIECE_TIME)
+        move.l  #GME_ACCEL_SPEED_Y, (SNC_CNT_DOWN)
+.wait2:
+        move.l  (SNC_CNT_DOWN), d0
+        bgt     .wait2
+        btst    #KBD_LEFT_POS, d0
+        beq     .snc2                     
+.rst2: 
+        move.w  #0, (LEFTPRESSED)
+        move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
+        ; ****************************
+.cont2:
         btst    #KBD_LEFT_POS, d0
         beq     .chkright
+.snc2:
         piecemovl #1
-        bra     .chkcol
+        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
+        bra     .chkcol       
+        
 .chkright:
+        ; ***** RIGHT ACCELERATION ****
+        btst    #KBD_RIGHT_POS, d1
+        beq     .rst3
+        add.w   #1, (RIGHTPRESSED)
+        move.w  (RIGHTPRESSED), d3
+        cmp.w   #GME_ACCEL_DELAY, d3            ; delay until acceleration start
+        ble     .cont3                       
+        move.l  #GME_ACCEL_UPD_FREQ, (SNC_PIECE_TIME)
+        move.l  #GME_ACCEL_SPEED_Y, (SNC_CNT_DOWN)
+.wait3:
+        move.l  (SNC_CNT_DOWN), d0
+        bgt     .wait3
+        btst    #KBD_RIGHT_POS, d0
+        beq     .snc3                  
+.rst3: 
+        move.w  #0, (RIGHTPRESSED)
+        move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
+        ; *****************************
+.cont3:
         btst    #KBD_RIGHT_POS, d0
         beq     .chkup
+.snc3:
         piecemovr #1
+        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol
+
 .chkup:
         btst    #KBD_UP_POS, d0
         beq     .chkspbar
@@ -295,13 +364,18 @@ game_player:
         bra     .done
 .rollback:
         piecerollback
+        move.b  #1, (GME_ACCEL_LOCK_X)
+        move.w  #0, (DOWNPRESSED)
+        move.w  #0, (LEFTPRESSED)
+        move.w  #0, (RIGHTPRESSED)
+        move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
         move.b  #$ff, d2
 .done:
         cmp.b   #$ff, d2
         beq     .exit
         sndplay d2
 .exit:
-        movem.l (a7)+, d0-d2
+        movem.l (a7)+, d0-d3
         rts
 
 game_drop:
@@ -610,3 +684,4 @@ game_chk_top3:
 .done:
         movem.l (a7)+, d0-d2
         rts
+

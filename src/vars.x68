@@ -11,11 +11,16 @@ GME_B_HEIGHT: dc.b 5                            ; selected height
 GME_STATE: ds.l 1
 GME_HIGH_SCORE: ds.l 1
 
+GME_ACCEL_LOCK_X: dc.b 1
+
 ; --- mouse --------------------------------------------------------------------
 BUTT_PRESS: ds.b 1                              ; 1 if screen button has been pressed
 
 ; --- keyboard -----------------------------------------------------------------
 KBD_ENTER_PRESS: ds.w 1                         ; holds 1 if enter has been pressed
+DOWNPRESSED: dc.w 0
+LEFTPRESSED: dc.w 0
+RIGHTPRESSED: dc.w 0
 
 ; --- level selection ----------------------------------------------------------
 LVL_SEL_POS_X: ds.w 1                           ; x pos of the selected level square

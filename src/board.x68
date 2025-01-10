@@ -599,6 +599,7 @@ boarddropupd:
         move.b  (a0,d0), d0
         andi.l  #$ff, d0
         move.l  d0, (SNC_PIECE_TIME)
+        move.l  d0, (SNC_PIECE_TIME_BUFFER)
 
         movem.l (a7)+, d0/a0
         rts
