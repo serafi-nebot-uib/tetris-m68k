@@ -274,8 +274,9 @@ game_player:
         btst    #KBD_DOWN_POS, d0
         beq     .chkleft
         move.b  #0, (GME_ACCEL_LOCK_X)
-.snc:   
+.snc:
         piecemovd #1
+        sndplay #SND_SHFTPIECE
         move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol
 
@@ -358,7 +359,6 @@ game_player:
         jsr     piececoll
         cmp.b   #0, d0
         bne     .rollback
-        sndplay #SND_SHFTPIECE
         jsr     piececlr
         jsr     pieceplot
         piececommit
