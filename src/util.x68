@@ -1,4 +1,4 @@
-PRNG16: dc.w    $8988                           ; initial seed
+PRNG16: dc.w    $8795                           ; initial seed
 PRNG32: ds.l    1                               ; random number store
 PRNBUFFER: ds.l 6
 PIECEBUFFER: dc.b 1 

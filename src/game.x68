@@ -251,7 +251,7 @@ game_player:
         move.b  (GME_ACCEL_LOCK_X), d3
         cmp.b   #1, d3
         beq     .cont
-        
+
         ; ***** ACCELERATION ****
         btst    #KBD_DOWN_POS, d1
         beq     .rst
@@ -270,15 +270,15 @@ game_player:
         move.w  #0, (DOWNPRESSED)
         move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
         ; ***********************
-.cont:              
+.cont:
         btst    #KBD_DOWN_POS, d0
         beq     .chkleft
-        move.b  #0, (GME_ACCEL_LOCK_X)       
+        move.b  #0, (GME_ACCEL_LOCK_X)
 .snc:   
         piecemovd #1
         move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol
-        
+
 .chkleft:
         ; ***** LEFT ACCELERATION ****
         btst    #KBD_LEFT_POS, d1
