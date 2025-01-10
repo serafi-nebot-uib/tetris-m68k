@@ -1,6 +1,7 @@
 ; --- sync ---------------------------------------------------------------------
 SNC_PLOT: ds.b  1
 SNC_CNT_DOWN: ds.l 1
+SNC_CNT_DOWN_BUFFER: ds.l 1
 SNC_PIECE_TIME: dc.l SNC_TIME_S*1
 SNC_PIECE_TIME_BUFFER: dc.l SNC_TIME_S*1
 
