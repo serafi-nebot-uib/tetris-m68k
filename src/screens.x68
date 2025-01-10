@@ -8,8 +8,6 @@ screens:
         dc.l    screen_congrats_a
         dc.l    screen_congrats_b
 
-; TODO: add mouse to legal and start screens
-
 screen_legal:
 ; --- INITIALIZE LEGAL SCREEN ---
         jsr     mouseinit

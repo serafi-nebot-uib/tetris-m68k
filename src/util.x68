@@ -42,14 +42,13 @@ randgen:
         move.l  d0, PRNG32                      ; save back to seed word
         rts 
 
-; TODO: move prn_piece to board.x68
 ; generates a pseudo random number between [0,6]
 ;
 ; input    :
 ; output   : d0 - piecenumber
 ; modifies :
 prn_piece:
-        movem.l d0/d2, -(a7)
+        move.l  d2, -(a7)
         move.l  PRNG32, d0
         jsr     randgen
         andi.l  #$7fffffff, d0                  ; asseguram que el nombre és positiu
@@ -57,5 +56,5 @@ prn_piece:
         moveq.l #16, d2                         ; posicions de desplaçament
         lsr.l   d2, d0                          ; número entre 0 - 6
         move.b  d0, (PIECEBUFFER)               ; guarda el resultat
-        movem.l (a7)+, d0/d2
+        move.l  (a7)+, d2
         rts

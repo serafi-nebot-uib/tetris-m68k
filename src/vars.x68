@@ -6,7 +6,6 @@ SCR_NUM: ds.b   1                               ; decimal number to select the s
 GME_TYPE: ds.b  1
 GME_MUSIC: ds.b 1
 GME_B_HEIGHT_TABLE: dc.b 0, 3, 5, 8, 10, 12     ; board height list
-; TODO: dynamically initialize GME_B_HEIGHT
 GME_B_HEIGHT: dc.b 5                            ; selected height
         ds.w    0
 GME_STATE: ds.l 1

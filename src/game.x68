@@ -29,10 +29,21 @@ screen_game:
         move.b  #0, (a0)+
         dbra    d0, .piecestats
 
-        ; TODO: get values from RNG
-        move.b  #0, (piecenum)
-        move.b  #1, (piecenumn)
-        ; -------------------------
+        ; initialize prng seed with current time
+        moveq.l #8, d0
+        trap    #15
+        move.l  d1, d0                          ; set current time as seed
+        move.l  #$af-$100, d1                   ; initial mask for PRNG, #$fffffea7, #$b4bcd35c
+        jsr     randgen
+        ; gets initial pseudo random pieces
+        moveq.l #0, d0
+        jsr     prn_piece
+        move.b  d0, (piecenum)
+        moveq.l #0, d0
+        jsr     prn_piece
+        move.b  d0, (piecenumn)
+        add.b   #1, (piecenumn)
+
         ; check if current game type B
         tst.b   (GME_TYPE)
         beq     .game_plot
@@ -169,24 +180,9 @@ game_plot:
 
 game_spawn:
         movem.l d0-d2, -(a7)
-
-        ; TODO: get next piece by number generator
+        ; get a new pseudorandom piece
         moveq.l #0, d0
-        move.b  (piecenumn), d0
-        addq.l  #1, d0
-        divu    #7, d0
-        swap    d0
-        andi.l  #$ffff, d0
-        ;-----------------------------------------------------------------------
-
-        ; ; TODO: get next piece by number generator
-        ; move.l  d0, d2
-        ; addq.l  #1, d2
-        ; divu    #7, d2
-        ; swap    d2
-        ; andi.l  #$ffff, d2
-        ; ;-----------------------------------------------------------------------
-
+        jsr     prn_piece
         ; boardnextupd is called first so that the color profile for the
         ; current piece isn't changed
         jsr     boardnextupd
@@ -275,29 +271,19 @@ game_player:
         bra     .chkcol
 .chkspbar:
         btst    #KBD_SPBAR_POS, d0
-        beq     .chkesc
+        beq     .chkctrl
         move.l  #game_drop, (GME_STATE)
         bra     .done
-.chkesc:
-        btst    #KBD_ESC_POS, d0
-        beq     .chkenter
-        move.l  #game_pause, (GME_STATE)
-        bra     .done
-
-; -----------------------------
-; TODO: remove this as it is only for testing
-.chkenter:
-        ; btst    #KBD_ENTER_POS, d0
-        ; beq     .chkctrl
-        ; move.l  #game_inc_level, (GME_STATE)
-        ; bra     .done
+; .chkesc:
+;         btst    #KBD_ESC_POS, d0
+;         beq     .chkctrl
+;         move.l  #game_pause, (GME_STATE)
+;         bra     .done
 .chkctrl:
         btst    #KBD_CTRL_POS, d0
         beq     .done
-        move.l  #game_spawn, (GME_STATE)
-        bra     .done
-; -----------------------------
-
+        jsr     piecerotl
+        move.b  #SND_ROTPIECE, d2
 .chkcol:
         jsr     piececoll
         cmp.b   #0, d0
@@ -422,6 +408,8 @@ game_clr_rows:
         swap    d1
         cmp.w   d0, d1
         bhs     .ninc
+        tst.b   (GME_TYPE)                      ; avoid level increase for b-type mode 
+        bne     .ninc
         move.l  #game_inc_level, (GME_STATE)
 .ninc:
         jsr     boardscoreupd
@@ -538,7 +526,6 @@ game_over:
         move.l  d2, d4
         add.l   #4*TILE_MULT, d4
 
-        ; TODO: optimize plot loop (e.g. put bar height in stack)
         move.l  #BRD_HEIGHT-1, d6
 .loop:
         move.l  (a7), d1
@@ -621,8 +608,4 @@ game_chk_top3:
         add.b   d0, (SCR_NUM)
 .done:
         movem.l (a7)+, d0-d2
-        rts
-
-game_halt:
-.halt:  bra     .halt
         rts

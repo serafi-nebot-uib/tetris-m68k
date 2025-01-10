@@ -147,12 +147,6 @@ pieceinit:
         move.b  d1, (piecenum)
         move.b  d0, (piecenumn)
 
-        ; andi.l  #$000000ff, d1
-        ; divu    #7, d1
-        ; swap    d1
-        ; andi.l  #$ffff, d1
-        ; move.b  d1, (piecenum)                  ; store new piecenum
-
         ; get piece matrix data address with piece number
         lsl.l   #2, d1
         lea.l   piece_table, a0
@@ -359,7 +353,6 @@ piececoll:
 .loop:
         ; check block bounds
         move.b  d1, d2                          ; y
-        ; TODO: optimize mulu (lsl?)
         mulu    d3, d2                          ; y * width
         add.b   d0, d2                          ; y * width + x
         move.b  (a0,d2), d5                     ; get current piece block
@@ -450,7 +443,6 @@ piecerelease:
         lsr.w   #8, d0
         ; i = y*width + x
         move.l  d1, d5
-        ; TODO: can muls be optimized?
         muls    #BRD_WIDTH, d5                  ; y*width
         add.l   d0, d5                          ; y*width + x
         add.l   d5, a1
@@ -1150,7 +1142,12 @@ boardnextupd:
         beq     .isOorI
 
         ;sets an offset to center the piece on next square
+        ifeq    GLB_SCALE-GLB_SCALE_SMALL
         move.l  #$00080000, (tileoffset)
+        endc
+        ifeq    GLB_SCALE-GLB_SCALE_BIG
+        move.l  #$00100000, (tileoffset)
+        endc
         bra     .nxtstep
 .isOorI:
         move.l  #$00000000, (tileoffset)

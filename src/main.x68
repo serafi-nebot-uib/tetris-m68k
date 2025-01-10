@@ -3,7 +3,6 @@
 ; NOTE: tile table data is declared at the very beginning of the code, so that
 ; any included file can use its label, but stored at a higher address to avoid
 ; overwriting code when loading data
-; TODO: check if loaded data exceeds maximum permitted size
         org     $20000
 tileaddr: ds.l  1
 tiletable:
