@@ -258,14 +258,14 @@ game_player:
         add.w   #1, (DOWNPRESSED)
         move.w  (DOWNPRESSED), d3
         cmp.w   #GME_ACCEL_DELAY, d3            ; delay until acceleration start
-        ble     .cont                       
+        ble     .cont
         move.l  #GME_ACCEL_UPD_FREQ, (SNC_PIECE_TIME)
         move.l  #GME_ACCEL_SPEED_X, (SNC_CNT_DOWN)
 .wait:
         move.l  (SNC_CNT_DOWN), d0
         bgt     .wait
         btst    #KBD_DOWN_POS, d0
-        beq     .snc                      
+        beq     .snc
 .rst: 
         move.w  #0, (DOWNPRESSED)
         move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
@@ -286,7 +286,7 @@ game_player:
         add.w   #1, (LEFTPRESSED)
         move.w  (LEFTPRESSED), d3
         cmp.w   #GME_ACCEL_DELAY, d3            ; delay until acceleration start
-        ble     .cont2                       
+        ble     .cont2
         move.l  #GME_ACCEL_UPD_FREQ, (SNC_PIECE_TIME)
         move.l  #GME_ACCEL_SPEED_Y, (SNC_CNT_DOWN)
 .wait2:

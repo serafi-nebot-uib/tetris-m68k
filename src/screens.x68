@@ -982,6 +982,7 @@ screen_level_a:
 
 .PAST_SCREEN_A:
         move.b  #2, (SCR_NUM)                   ; CHANGE TO DESIRED SCREEN WHEN DONE
+        sndplay #SND_MENUSLCTD
         rts
             
 .NEXT_SCREEN_A:
@@ -1488,9 +1489,9 @@ LOOP4_L:
         bra     LOOP4_L
 
 .FIN42: move.b  #2, (SCR_NUM)                   ; CHANGE TO DESIRED SCREEN WHEN DONE
-            
+        sndplay #SND_MENUSLCTD
         rts
-            
+
 .FIN_LVL_B: sndplay #SND_MENUSLCTD
         bra     SEL_HEIGHT                      ; CHANGE TO DESIRED SCREEN WHEN DONE
 
