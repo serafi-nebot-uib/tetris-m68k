@@ -15,6 +15,7 @@ screen_game:
         move.b  d0, (levelnum)
         jsr     boarddropupd
 
+        ; increase score table to default level
         subq.w  #1, d0
         blt     .scolvldone
 .scolvl:
