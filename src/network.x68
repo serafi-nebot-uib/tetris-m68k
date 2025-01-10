@@ -47,7 +47,7 @@ netsend:
         movem.l (a7)+, d0-d2/a1-a2
         rts
 
-; send d1 bytes from NET_BUFFER to the connected host
+; copy received data from connection to NET_BUFFER
 ;
 ; input    : d2.l - max retry time in 10s of ms
 ; output   : d1.w - number of bytes received

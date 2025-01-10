@@ -38,6 +38,15 @@ BRD_GO_PADDING: equ 2*TILE_MULT
 BRD_TOP_SCO_BASE_X: equ 29
 BRD_TOP_SCO_BASE_Y: equ 5
 
+PIECE_WIDTH: equ 4
+PIECE_HEIGHT: equ 2
+
+; --- score --------------------------------------------------------------------
+SCO_SINGLE: equ 4
+SCO_DOUBLE: equ 10
+SCO_TRIPLE: equ 30
+SCO_TETRIS: equ 120
+
 ; --- button -------------------------------------------------------------------
 BUTT_POS_X: equ 320
 BUTT_POS_Y: equ 240

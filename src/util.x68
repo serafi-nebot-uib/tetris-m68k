@@ -6,7 +6,6 @@
 ; output   :
 ; modifies :
 bcd:
-        ; code sourced from perplexity.ai: "easy68k binary to bcd"
         movem.l d0-d2, -(a7)
         subq.l  #1, d1
 .loop:

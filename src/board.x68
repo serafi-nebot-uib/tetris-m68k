@@ -1,11 +1,3 @@
-PIECE_WIDTH: equ 4
-PIECE_HEIGHT: equ 2
-
-SCO_SINGLE: equ 40
-SCO_DOUBLE: equ 100
-SCO_TRIPLE: equ 300
-SCO_TETRIS: equ 1200
-
 ; TODO: move variables to game vars (necessary?)
 levelcnt: dc.w  0                               ; current total level
 levelnum: dc.b  0                               ; current piece color level
@@ -589,63 +581,6 @@ boarddropdown:
         movem.l (a7)+, d0-d2/d4/a0-a1
         rts
 
-boardclrfill:
-; sp+0 -> column count [1, BRD_WIDTH/2]
-; sp+2 -> board start y coord << 8 | row count
-; sp+4 -> row fill status higher word
-; sp+6 -> row fill status lower word
-        movem.l d0-d6, -(a7)
-
-.base:  equ     32                              ; pc + d0-d6 = 8*4 = 32
-
-        ; set color to black
-        move.l  #$00000000, d1
-        move.b  #80, d0
-        trap    #15
-        move.b  #81, d0
-        trap    #15
-
-        ; d1.w -> start x pixel
-        ; d3.w -> end x pixel
-        move.w  .base+0(a7), d0
-        move.w  #BRD_WIDTH/2, d1
-        sub.w   d0, d1                          ; start count
-        lsl.w   #1, d0                          ; column count * 2
-        move.w  d1, d3
-        add.w   d0, d3                          ; end column
-        add.w   #BRD_BASE_X, d1                 ; tile start x
-        add.w   #BRD_BASE_X, d3                 ; tile end x
-        lsl.w   #TILE_SHIFT, d1                 ; pixel start x
-        lsl.w   #TILE_SHIFT, d3                 ; pixel end x
-        sub.w   #1, d3
-
-        ; d0.b -> trap 15 task number
-        move.b  #87, d0
-
-        ; d5.l -> row fill status
-        move.l  .base+4(a7), d6
-
-        ; d5.w -> y loop counter
-        move.b  .base+3(a7), d5                 ; row count
-        subq.b  #1, d5
-.loop:
-        btst    #0, d6
-        beq     .nitr
-        moveq.l #0, d2
-        move.b  .base+2(a7), d2                 ; board start y coord
-        add.b   d5, d2                          ; current board y coord
-        add.b   #BRD_BASE_Y, d2                 ; current tile y coord
-        lsl.w   #TILE_SHIFT, d2                 ; start y pixel
-        move.w  d2, d4
-        add.w   #TILE_SIZE-1, d4                ; end y pixel
-        trap    #15
-.nitr:
-        lsr.l   #1, d6
-        dbra.w  d5, .loop
-
-        movem.l (a7)+, d0-d6
-        rts
-
 ; update drop rate according to current level
 ;
 ; input    :
@@ -667,96 +602,6 @@ boarddropupd:
 
         movem.l (a7)+, d0/a0
         rts
-
-; update piece colors based on current level
-;
-; input    :
-; output   :
-; modifies :
-boardlvlupd:
-        movem.l d0-d7/a0-a4, -(a7)
-        ; clear previous level number
-        ; set color
-        move.l  #$00000000, d1
-        move.b  #80, d0
-        trap    #15
-        move.b  #81, d0
-        trap    #15
-        ; draw rectangle
-        move.b  #87, d0
-        move.w  #BRD_LVL_BASE_X<<TILE_SHIFT, d1
-        move.w  #BRD_LVL_BASE_Y<<TILE_SHIFT, d2
-        move.w  #(BRD_LVL_BASE_X+3)<<TILE_SHIFT-1, d3
-        move.w  #(BRD_LVL_BASE_Y+1)<<TILE_SHIFT-1, d4
-        trap    #15
-
-        ; convert current level number to bcd
-        moveq.l #0, d0
-        move.w  (levelcnt), d0
-        moveq.l #3, d1
-        lea.l   .lvldigits, a0
-        jsr     bcd
-
-        ; plot number from bcd result
-        moveq.l #1, d3
-        move.w  #BRD_LVL_SIZE, d4
-        move.w  #BRD_LVL_BASE_X, d5
-        move.w  #BRD_LVL_BASE_Y, d6
-        move.l  a0, a1
-        jsr     drawdigits
-
-        moveq.l #PIECE_WIDTH, d2
-        moveq.l #PIECE_HEIGHT, d3
-        move.w  #BRD_STAT_BASE_Y+(6*3+1), d6
-        lea.l   piece_table, a2
-        lea.l   .statoff, a3
-        lea.l   .spacing+28, a4
-        moveq.l #6, d7
-.loop:
-        ; a1.l - piece address
-        move.l  a2, a1
-        move.l  d7, d0
-        moveq.l #0, d1
-        move.b  (a3,d0), d1
-        move.w  #BRD_STAT_BASE_X, d5
-        add.w   d1, d5
-        lsl.l   #2, d0
-        move.l  (a1,d0), a1
-        piececolptrn a1, d0, d1
-        jsr     pieceupdcol
-
-        btst    #0, d1                          ; mira el bit de patró de la peça (0: patró 1/ 1: patró 2)
-        bne     .isptrn2                        ; si el bit de patró és 1 -> jumps .isptrn2
-        addi.l  #64, (piece_ptrn)               ; suma el desplaçament per a situarse sobre piece_ptrn1sm
-        bra     .nxtstep
-.isptrn2:
-        addi.l  #52, (piece_ptrn)               ; suma el desplaçament per a situarse sobre piece_ptrn2sm
-.nxtstep:
-        move.l  (piece_ptrn), a0
-        addq.l  #2, a1
-
-        move.l  -(a4), (tileoffset)
-        jsr     piecematplotsm
-        subq.w  #3, d6
-
-        dbra    d7, .loop
-        move.l  #0, (tileoffset)                ; resets tileoffset
-        jsr     boardplot
-
-        movem.l (a7)+, d0-d7/a0-a4
-        rts
-
-.spacing:
-        ifeq    GLB_SCALE-GLB_SCALE_SMALL
-        dc.l    $00040014, $0004001a, $0004001c, $0009001e, $00040022, $00040028, $00090025
-        endc
-        ifeq    GLB_SCALE-GLB_SCALE_BIG
-        dc.l    $00000014, $0000001a, $0000001d, $000a0022, $00000026, $00000031, $00050026
-        endc
-
-.statoff: dc.b  1,1,1,2,1,1,1
-.lvldigits: dc.b 0,0,0
-        ds.w    0
 
 ; --- plotting -----------------------------------------------------------------
 
@@ -1324,3 +1169,152 @@ boardplot:
 
         movem.l (a7)+, d0-d3/d5-d6/a0-a1
         rts
+
+; clear plotted rows from board
+;
+; input    : sp+0 - column count [1, BRD_WIDTH/2]
+;            sp+2 - board start y coord << 8 | row count
+;            sp+4 - row fill status higher word
+;            sp+6 - row fill status lower word
+; output   :
+; modifies :
+boardclrfill:
+        movem.l d0-d6, -(a7)
+
+.base:  equ     32                              ; pc + d0-d6 = 8*4 = 32
+
+        ; set color to black
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+
+        ; d1.w -> start x pixel
+        ; d3.w -> end x pixel
+        move.w  .base+0(a7), d0
+        move.w  #BRD_WIDTH/2, d1
+        sub.w   d0, d1                          ; start count
+        lsl.w   #1, d0                          ; column count * 2
+        move.w  d1, d3
+        add.w   d0, d3                          ; end column
+        add.w   #BRD_BASE_X, d1                 ; tile start x
+        add.w   #BRD_BASE_X, d3                 ; tile end x
+        lsl.w   #TILE_SHIFT, d1                 ; pixel start x
+        lsl.w   #TILE_SHIFT, d3                 ; pixel end x
+        sub.w   #1, d3
+
+        ; d0.b -> trap 15 task number
+        move.b  #87, d0
+
+        ; d5.l -> row fill status
+        move.l  .base+4(a7), d6
+
+        ; d5.w -> y loop counter
+        move.b  .base+3(a7), d5                 ; row count
+        subq.b  #1, d5
+.loop:
+        btst    #0, d6
+        beq     .nitr
+        moveq.l #0, d2
+        move.b  .base+2(a7), d2                 ; board start y coord
+        add.b   d5, d2                          ; current board y coord
+        add.b   #BRD_BASE_Y, d2                 ; current tile y coord
+        lsl.w   #TILE_SHIFT, d2                 ; start y pixel
+        move.w  d2, d4
+        add.w   #TILE_SIZE-1, d4                ; end y pixel
+        trap    #15
+.nitr:
+        lsr.l   #1, d6
+        dbra.w  d5, .loop
+
+        movem.l (a7)+, d0-d6
+        rts
+
+; update piece colors based on current level
+;
+; input    :
+; output   :
+; modifies :
+boardlvlupd:
+        movem.l d0-d7/a0-a4, -(a7)
+        ; clear previous level number
+        ; set color
+        move.l  #$00000000, d1
+        move.b  #80, d0
+        trap    #15
+        move.b  #81, d0
+        trap    #15
+        ; draw rectangle
+        move.b  #87, d0
+        move.w  #BRD_LVL_BASE_X<<TILE_SHIFT, d1
+        move.w  #BRD_LVL_BASE_Y<<TILE_SHIFT, d2
+        move.w  #(BRD_LVL_BASE_X+3)<<TILE_SHIFT-1, d3
+        move.w  #(BRD_LVL_BASE_Y+1)<<TILE_SHIFT-1, d4
+        trap    #15
+
+        ; convert current level number to bcd
+        moveq.l #0, d0
+        move.w  (levelcnt), d0
+        moveq.l #3, d1
+        lea.l   .lvldigits, a0
+        jsr     bcd
+
+        ; plot number from bcd result
+        moveq.l #1, d3
+        move.w  #BRD_LVL_SIZE, d4
+        move.w  #BRD_LVL_BASE_X, d5
+        move.w  #BRD_LVL_BASE_Y, d6
+        move.l  a0, a1
+        jsr     drawdigits
+
+        moveq.l #PIECE_WIDTH, d2
+        moveq.l #PIECE_HEIGHT, d3
+        move.w  #BRD_STAT_BASE_Y+(6*3+1), d6
+        lea.l   piece_table, a2
+        lea.l   .statoff, a3
+        lea.l   .spacing+28, a4
+        moveq.l #6, d7
+.loop:
+        ; a1.l - piece address
+        move.l  a2, a1
+        move.l  d7, d0
+        moveq.l #0, d1
+        move.b  (a3,d0), d1
+        move.w  #BRD_STAT_BASE_X, d5
+        add.w   d1, d5
+        lsl.l   #2, d0
+        move.l  (a1,d0), a1
+        piececolptrn a1, d0, d1
+        jsr     pieceupdcol
+
+        btst    #0, d1                          ; mira el bit de patró de la peça (0: patró 1/ 1: patró 2)
+        bne     .isptrn2                        ; si el bit de patró és 1 -> jumps .isptrn2
+        addi.l  #64, (piece_ptrn)               ; suma el desplaçament per a situarse sobre piece_ptrn1sm
+        bra     .nxtstep
+.isptrn2:
+        addi.l  #52, (piece_ptrn)               ; suma el desplaçament per a situarse sobre piece_ptrn2sm
+.nxtstep:
+        move.l  (piece_ptrn), a0
+        addq.l  #2, a1
+
+        move.l  -(a4), (tileoffset)
+        jsr     piecematplotsm
+        subq.w  #3, d6
+
+        dbra    d7, .loop
+        move.l  #0, (tileoffset)                ; resets tileoffset
+        jsr     boardplot
+
+        movem.l (a7)+, d0-d7/a0-a4
+        rts
+.spacing:
+        ifeq    GLB_SCALE-GLB_SCALE_SMALL
+        dc.l    $00040014, $0004001a, $0004001c, $0009001e, $00040022, $00040028, $00090025
+        endc
+        ifeq    GLB_SCALE-GLB_SCALE_BIG
+        dc.l    $00000014, $0000001a, $0000001d, $000a0022, $00000026, $00000031, $00050026
+        endc
+.statoff: dc.b  1,1,1,2,1,1,1
+.lvldigits: dc.b 0,0,0
+        ds.w    0
