@@ -49,14 +49,13 @@ randgen:
 ; modifies :
 prn_piece:
         move.l  d2, -(a7)
-        jsr     tstrandgen
+        jsr     randgen2
         moveq.l #0, d0
         move.w  (prng16), d0
-        
-        andi.l  #$7fffffff, d0                  ; asseguram que el nombre Ã©s positiu
+        andi.l  #$7fffffff, d0                  ; asseguram que el nombre és positiu
         mulu    #7, d0                          ; multiplicar per 7
-        moveq.l #16, d2                         ; posicions de desplaÃ§ament
-        lsr.l   d2, d0                          ; nÃºmero entre 0 - 6
+        moveq.l #16, d2                         ; posicions de desplaÃÂ§ament
+        lsr.l   d2, d0                          ; número entre 0 - 6
         move.b  d0, (PIECEBUFFER)               ; guarda el resultat
         move.l  (a7)+, d2
         rts
@@ -66,30 +65,30 @@ prn_piece:
 ; input    :
 ; output   : PRNG16 - piecenumber
 ; modifies :
-tstrandgen:
+randgen2:
         movem.l d0-d2, -(a7)
         moveq.l #0, d0
         moveq.l #0, d1
         moveq.l #0, d2
-        
-        move.w  (PRNG16), d0                     
-        move.w  d0, d1                                 
-        move.w  d0, d2                           
+
+        move.w  (PRNG16), d0
+        move.w  d0, d1
+        move.w  d0, d2
 
         andi.w  #$0200, d1                      ; Màscara del bit 9
-        lsr.w   #8, d1                          ; Desplaça el bit 9 cap al bit 0
-        
+        lsr.w   #8, d1                          ; DesplaÃ§a el bit 9 cap al bit 0
+
         andi.w  #$0002, d2                      ; Màscara del bit 1
         lsr.w   #1, d2                          ; Desplaça el bit 1 fins al bit 0
-        
+
         eor.w   d2, d1                          ; X-OR entre els bits 9 i 1, el resultat es guarda a d1                  
-        andi.w  #1, d1                          ; Asseguram que en d1 només quedi el bit resultant de la X-OR
-        
+        andi.w  #1, d1                          ; Asseguram que en d1 nomÃ©s quedi el bit resultant de la X-OR
+
         lsr.w   #1, d0                          ; desplaça un bit cap a la dreta, introdueix un 0 en el bit 15
         moveq.l #15, d2                         
         lsl.w   d2, d1                          ; prepara el bit de la X-OR al bit 15
         or.w    d1, d0                          
         move.w  d0, (prng16)                    ; emmagatzema el registre "scrambled" a PRNG16
-        
+
         movem.l (a7)+, d0-d2
         rts

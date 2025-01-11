@@ -57,6 +57,7 @@ screen_game:
         move.l  (GME_STATE), a0
         cmp.l   #0, a0
         beq     .done
+        jsr     randgen2
         jsr     (a0)
 ; --- sync ---------------------------------------------------------------------
 .sync:
@@ -180,9 +181,13 @@ game_plot:
 
 game_spawn:
         movem.l d0-d2, -(a7)
-        ; get a new pseudorandom piece
+        ; get a new pseudorandom piece     
+.prnpiece: 
         moveq.l #0, d0
+        move.b  (piecenumn), d2
         jsr     prn_piece
+        cmp.b   d2,d0
+        beq     .prnpiece 
         ; boardnextupd is called first so that the color profile for the
         ; current piece isn't changed
         jsr     boardnextupd
@@ -276,7 +281,6 @@ game_player:
         move.b  #0, (GME_ACCEL_LOCK_X)       
 .snc:   
         piecemovd #1
-        sndplay #SND_SHFTPIECE
         move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol
         
@@ -288,7 +292,6 @@ game_player:
         move.w  (LEFTPRESSED), d3
         cmp.w   #GME_ACCEL_DELAY, d3            ; delay until acceleration start
         ble     .cont2                       
-        move.l  #GME_ACCEL_UPD_FREQ, (SNC_PIECE_TIME)
 
         move.l  (SNC_CNT_DOWN), (SNC_CNT_DOWN_BUFFER)
         move.l  #GME_ACCEL_SPEED_Y, (SNC_CNT_DOWN)
@@ -296,7 +299,6 @@ game_player:
         move.l  (SNC_CNT_DOWN), d0
         bgt     .wait2
         
-*        move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
         move.l  (SNC_CNT_DOWN_BUFFER), (SNC_CNT_DOWN)
         btst    #KBD_LEFT_POS, d0
         beq     .snc2                     
@@ -310,7 +312,6 @@ game_player:
 .snc2:
         piecemovl #1
         sndplay #SND_SHFTPIECE
-*        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol       
         
 .chkright:
@@ -321,7 +322,6 @@ game_player:
         move.w  (RIGHTPRESSED), d3
         cmp.w   #GME_ACCEL_DELAY, d3            ; delay until acceleration start
         ble     .cont3                       
-        move.l  #GME_ACCEL_UPD_FREQ, (SNC_PIECE_TIME)
         
         move.l  (SNC_CNT_DOWN), (SNC_CNT_DOWN_BUFFER)
         move.l  #GME_ACCEL_SPEED_Y, (SNC_CNT_DOWN)
@@ -329,7 +329,6 @@ game_player:
         move.l  (SNC_CNT_DOWN), d0
         bgt     .wait3
         
-*        move.l  (SNC_PIECE_TIME_BUFFER), (SNC_PIECE_TIME)
         move.l  (SNC_CNT_DOWN_BUFFER), (SNC_CNT_DOWN)
         btst    #KBD_RIGHT_POS, d0
         beq     .snc3                  
@@ -343,7 +342,6 @@ game_player:
 .snc3:
         piecemovr #1
         sndplay #SND_SHFTPIECE
-*        move.l  (SNC_PIECE_TIME), (SNC_CNT_DOWN)
         bra     .chkcol
 
 .chkup:
